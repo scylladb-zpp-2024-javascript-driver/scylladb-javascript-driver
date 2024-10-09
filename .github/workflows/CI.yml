@@ -27,7 +27,7 @@ jobs:
         settings:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            build: yarn build --target x86_64-unknown-linux-gnu --use-napi-cross
+            build: yarn build --target x86_64-unknown-linux-gnu
     name: Build and run tests - ${{ matrix.settings.target }} - node@20
     runs-on: ${{ matrix.settings.host }}
     outputs:
