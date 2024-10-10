@@ -1,4 +1,4 @@
-#![deny(clippy::all)]
+#![allow(dead_code)]
 
 use scylla::SessionBuilder;
 
@@ -13,8 +13,10 @@ pub async fn test_connection(uri: String) -> String {
   match SessionBuilder::new().known_node(uri).build().await {
     Ok(data) => data,
     Err(_) => {
-      return "ErrorXD".to_string();
+      return "Error".to_string();
     }
   };
   "Success".to_string()
 }
+
+pub mod auth;
