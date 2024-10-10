@@ -5,5 +5,6 @@
 
 export declare function testConnection(uri: string): Promise<string>
 export declare class PlainTextAuthProvider {
+  id: number
   constructor()
 }
