@@ -1,5 +1,3 @@
-export * from './rust'
-
 /*
  * Copyright DataStax, Inc.
  *
@@ -16,6 +14,10 @@ export * from './rust'
  * limitations under the License.
  */
 
+// Im not sure this works: ToDo test the typescript part
+export * from './rust'
+
+// The rest of the dataStax driver
 import * as events from 'events';
 import * as tls from 'tls';
 import { URL } from 'url';

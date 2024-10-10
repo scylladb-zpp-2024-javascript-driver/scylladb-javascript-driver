@@ -1,9 +1,3 @@
-'use strict';
-
-exports.rust = require('./rust')
-exports.funny = function(){console.log("Hello")};
-
-
 /*
  * Copyright DataStax, Inc.
  *
@@ -19,6 +13,12 @@ exports.funny = function(){console.log("Hello")};
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+'use strict';
+// Exposing test functions of our code
+exports.rust = require('./rust')
+exports.funny = function(){console.log("Hello")};
+
+// The rest of DataStax driver
 const clientOptions = require('./lib/client-options');
 exports.Client = require('./lib/client');
 exports.ExecutionProfile = require('./lib/execution-profile').ExecutionProfile;
