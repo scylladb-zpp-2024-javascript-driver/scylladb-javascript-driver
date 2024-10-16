@@ -1,0 +1,24 @@
+environment:
+  appveyor_build_worker_cloud: gce
+  ci_type: ci_unit_appveyor
+  matrix:
+    - nodejs_version: 16
+    - nodejs_version: 18
+    - nodejs_version: 20
+image: Visual Studio 2017
+platform:
+  - x64
+install:
+  - ps: .\ci\hardwareinfo.ps1
+  - ps: .\ci\appveyor.ps1
+  - npm install
+  - npm install mocha-appveyor-reporter@0
+build: off
+test_script:
+  - "npm run %ci_type%"
+on_finish:
+  - ps: .\ci\hardwareinfo.ps1
+cache:
+  - node_modules -> package.json
+  - C:\Users\appveyor\.ccm\repository
+  - C:\Users\appveyor\deps -> .\ci\appveyor.ps1

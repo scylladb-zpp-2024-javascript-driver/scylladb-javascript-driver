@@ -1,0 +1,105 @@
+title:    DataStax Node.js Driver
+summary:  DataStax Node.js Driver for Apache Cassandra
+theme:    datastax
+swiftype_drivers: nodejsdrivers
+sections:
+  - title:    Features
+    prefix:   /features
+    type:     markdown
+    files:    'doc/features/**/*.md'
+  - title:    Frequently Asked Questions
+    prefix:   /faq
+    type:     markdown
+    files:    'doc/faq/**/*.md'
+  - title:    Getting Started
+    prefix:   /getting-started
+    type:     markdown
+    files:    'doc/getting-started/**/*.md'
+  - title:    Three simple rules for coding with the driver
+    prefix:   /coding-rules
+    type:     markdown
+    files:    'doc/coding-rules/**/*.md'
+  - title:    Upgrade Guide
+    prefix:   /upgrade-guide
+    type:     markdown
+    files:    'doc/upgrade-guide/**/*.md'
+  - title:    API docs
+    prefix:   /api
+    type:     jsdoc
+    config:   doc/jsdoc.json
+links:
+  - title: Code
+    href:  https://github.com/datastax/nodejs-driver/
+  - title: Issues
+    href:  https://datastax-oss.atlassian.net/projects/NODEJS/issues
+  - title: Mailing List
+    href:  https://groups.google.com/a/lists.datastax.com/forum/#!forum/nodejs-driver-user
+  - title: Npm
+    href:  https://www.npmjs.org/package/cassandra-driver
+versions:
+  - name: '4.7'
+    ref: 'master'
+  - name: '4.6'
+    ref: 'v4.6.4'
+  - name: '4.5'
+    ref: '4.5'
+  - name: '4.4'
+    ref: '4.4'
+  - name: '4.3'
+    ref: '4.3'
+  - name: '4.2'
+    ref: '4.2'
+  - name: '4.1'
+    ref: '4.1'
+  - name: '4.0'
+    ref: '4.0'
+  - name: '3.6'
+    ref: '3.6'
+  - name: '3.5'
+    ref: '3.5'
+  - name: '3.4'
+    ref: '3.4'
+  - name: '3.3'
+    ref: '3.3'
+  - name: '3.2'
+    ref: '3.2'
+  - name: '3.1'
+    ref: '3.1'
+  - name: '3.0'
+    ref: '3.0'
+checks:
+  external_links:
+    exclude:
+      - 'https://twitter.com/dsJavaDriver'
+      - 'https://twitter.com/datastaxeng'
+      - 'https://twitter.com/datastax'
+      - 'https://projectreactor.io'
+      - 'https://docs.datastax.com/en/drivers/java/4.[0-9]+/com/datastax/oss/driver/internal/'
+      - 'http://www.planetcassandra.org/blog/user-defined-functions-in-cassandra-3-0/'
+      - 'http://www.planetcassandra.org/making-the-change-from-thrift-to-cql/'
+      - 'https://academy.datastax.com/slack'
+      - 'https://community.datastax.com/index.html'
+      - 'https://micrometer.io/docs'
+      - 'http://datastax.github.io/java-driver/features/shaded_jar/'
+      - 'https://ci.appveyor.com/api/projects/status/m21t2tfdpmkjex1l/branch/master?svg=true'
+      - 'https://ci.appveyor.com/api/projects/status/m21t2tfdpmkjex1l/branch/master'
+      - 'https://github.com/datastax/nodejs-dse-driver'
+  internal_links:
+    exclude:
+      - 'netty_pipeline/'
+      - '../core/'
+      - '%5Bguava%20eviction%5D'
+
+rewrites:
+  - search: 'http://docs.datastax.com/en/latest-nodejs-driver-api/module-metadata-Metadata.html'
+    replace: 'https://docs.datastax.com/en/developer/nodejs-driver/latest/api/module.metadata/'
+  - search: 'http://docs.datastax.com/en/latest-nodejs-driver-api/module-types-InetAddress.html'
+    replace: 'https://docs.datastax.com/en/developer/nodejs-driver/latest/api/module.types/class.InetAddress/'
+  - search: 'http://docs.datastax.com/en/latest-nodejs-driver-api/module-types-LocalDate.html'
+    replace: 'https://docs.datastax.com/en/developer/nodejs-driver/latest/api/module.types/class.LocalDate/'
+  - search: 'http://docs.datastax.com/en/latest-nodejs-driver-api/module-types-LocalTime.html'
+    replace: 'https://docs.datastax.com/en/developer/nodejs-driver/latest/api/module.types/class.LocalTime/'
+  - search: 'http://docs.datastax.com/en/latest-nodejs-driver-api/module-types-ResultSet.html'
+    replace: 'https://docs.datastax.com/en/developer/nodejs-driver/latest/api/module.types/class.ResultSet/'
+  - search: 'http://docs.datastax.com/en/latest-nodejs-driver-api/'
+    replace: 'https://docs.datastax.com/en/developer/nodejs-driver/latest/api/'
