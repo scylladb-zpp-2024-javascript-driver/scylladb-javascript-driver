@@ -42,3 +42,20 @@ Files in .gitignore
 - Cargo.lock
 - X.Y.node
 
+## Not implemented functions
+For functions not yet implemented:
+```js
+function function_name()) {
+    throw new Error(`TODO: Not implemented`);
+}
+```
+
+And for functions that will be not implemented:
+```js
+/**
+ * @deprecated The method should not be used
+ */
+function function_name() {
+    throw new ReferenceError(`This function is not supported by our driver`);
+}
+```
