@@ -1,3 +1,30 @@
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+
+pids
+logs
+results
+.idea
+.vscode
+
+npm-debug.log
+node_modules
+testing.js
+test/localConfig.json
+.DS_Store
+out/
+/certs
+/docs
+**/typescript/*.js
+**/typescript/*.js.map
+**/typescript/generated.ts
+
 # Created by https://www.toptal.com/developers/gitignore/api/node
 # Edit at https://www.toptal.com/developers/gitignore?templates=node
 

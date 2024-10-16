@@ -27,7 +27,7 @@ jobs:
         settings:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            build: yarn build --target x86_64-unknown-linux-gnu
+            build: npm run build -- --target x86_64-unknown-linux-gnu
     name: Build and run tests - ${{ matrix.settings.target }} - node@20
     runs-on: ${{ matrix.settings.host }}
     outputs:
@@ -40,7 +40,7 @@ jobs:
         if: ${{ !matrix.settings.docker }}
         with:
           node-version: 20
-          cache: yarn
+          cache: npm
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         if: ${{ !matrix.settings.docker }}
@@ -59,7 +59,7 @@ jobs:
             target/
           key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
       - name: Install dependencies
-        run: yarn install
+        run: npm i
       - name: Build in docker
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
@@ -75,4 +75,4 @@ jobs:
         if: ${{ !matrix.settings.docker }}
         shell: bash
       - name: Run tests
-        run: yarn test
+        run: npm test

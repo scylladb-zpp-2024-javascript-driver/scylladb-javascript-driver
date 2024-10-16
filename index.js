@@ -310,6 +310,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { testConnection } = nativeBinding
+const { testConnection, PlainTextAuthProvider } = nativeBinding
 
 module.exports.testConnection = testConnection
+module.exports.PlainTextAuthProvider = PlainTextAuthProvider
