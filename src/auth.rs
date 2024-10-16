@@ -15,17 +15,25 @@ pub struct PlainTextAuthProvider {
   // !!!It's best to test it a bit more before assuming it's true!!!
 }
 
-// yup. If you are running rust-analyzer in VSCode, this impl will show errors.
+// yup. If you are running rust-analyzer in VSCode, this impl with constructor will show errors.
 // (https://github.com/rust-lang/rust-analyzer/issues/14233)
 // It should be possible to disable this errors, but apparently no way to fix it...
+// But this is small enough error, to just don't expose constructors as constructors
 #[napi]
 impl PlainTextAuthProvider {
-  #[napi(constructor)]
+  #[napi]
+  // #[napi(constructor)]
   pub fn new() -> Self {
     println!("Plain text constructor!");
     PlainTextAuthProvider {
       id: 10,
       internal: scylla::SessionBuilder::new(),
     }
+  }
+
+  #[napi]
+  pub fn test() -> u32 {
+    println!("Plain text constructor!");
+    1
   }
 }

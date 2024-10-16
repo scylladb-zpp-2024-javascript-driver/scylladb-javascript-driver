@@ -15,7 +15,7 @@
  */
 'use strict';
 const { assert } = require('chai');
-const api = require('../../index');
+const api = require('../../');
 const auth = require('../../lib/auth');
 const helper = require('../test-helper');
 

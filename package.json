@@ -3,7 +3,28 @@
   "version": "0.0.0",
   "description": "",
   "license": "Apache-2.0",
-  "types": "./index.d.ts",
+  "main": "main.js",
+  "types": "main.d.ts",
+  "napi": {
+    "name": "scylladb-javascript-driver",
+    "triples": {
+      "additional": [
+        "aarch64-apple-darwin",
+        "aarch64-linux-android",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-unknown-linux-musl",
+        "aarch64-pc-windows-msvc",
+        "armv7-unknown-linux-gnueabihf",
+        "armv7-unknown-linux-musleabihf",
+        "x86_64-unknown-linux-musl",
+        "x86_64-unknown-freebsd",
+        "i686-pc-windows-msvc",
+        "armv7-linux-androideabi",
+        "universal-apple-darwin",
+        "riscv64gc-unknown-linux-gnu"
+      ]
+    }
+  },
   "dependencies": {
     "@types/long": "~5.0.0",
     "@types/node": ">=8",
@@ -22,8 +43,7 @@
     "temp": ">= 0.8.3"
   },
   "scripts": {
-    "install_all": "npm i && cd ./rust && yarn install",
-    "build": "cd ./rust && yarn build", 
+    "build": "napi build --platform --release",
     "test": "./node_modules/.bin/mocha test/unit -R spec -t 5000 --recursive",
     "unit": "./node_modules/.bin/mocha test/unit -R spec -t 5000 --recursive",
     "integration_short": "./node_modules/.bin/mocha test/integration/short -R spec -t 5000 --recursive",
@@ -32,6 +52,11 @@
     "ci_appveyor": ".\\\"node_modules/.bin/mocha\" test/unit test/integration/short --recursive -R mocha-appveyor-reporter --exit",
     "ci_unit_appveyor": ".\\\"node_modules/.bin/mocha\" test/unit --recursive -R mocha-appveyor-reporter --exit",
     "server_api": "./node_modules/.bin/mocha test/integration/short -g '@SERVER_API' --recursive --exit",
+    "artifacts": "napi artifacts",
+    "build:debug": "napi build --platform",
+    "prepublishOnly": "napi prepublish -t npm",
+    "universal": "napi universal",
+    "version": "napi version",
     "eslint": "eslint lib test"
   },
   "engines": {
