@@ -40,7 +40,7 @@ jobs:
         if: ${{ !matrix.settings.docker }}
         with:
           node-version: 20
-          cache: yarn
+          cache: npm
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         if: ${{ !matrix.settings.docker }}
@@ -59,7 +59,7 @@ jobs:
             target/
           key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
       - name: Install dependencies
-        run: npm run install_all
+        run: npm i
       - name: Build in docker
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
