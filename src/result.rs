@@ -5,6 +5,7 @@ use napi::{
 };
 use scylla::{frame::response::result::CqlValue, QueryResult};
 
+use crate::types::duration::DurationWrapper;
 use crate::utils::js_error;
 
 #[napi]
@@ -121,7 +122,7 @@ impl CqlValueWrapper {
             CqlValue::Decimal(_) => CqlType::Decimal, // NOI
             CqlValue::Date(_) => CqlType::Date,       // NOI
             CqlValue::Double(_) => CqlType::Double,
-            CqlValue::Duration(_) => CqlType::Duration, // NOI
+            CqlValue::Duration(_) => CqlType::Duration,
             CqlValue::Empty => CqlType::Empty,
             CqlValue::Float(_) => CqlType::Float,
             CqlValue::Int(_) => CqlType::Int,
@@ -189,6 +190,13 @@ impl CqlValueWrapper {
         }
     }
 
+    #[napi]
+    pub fn get_duration(&self) -> napi::Result<DurationWrapper> {
+        match self.inner.as_cql_duration() {
+            Some(r) => Ok(DurationWrapper::from_cql_duration(r)),
+            None => Err(Self::generic_error("duration")),
+        }
+    }
     #[napi]
     pub fn get_float(&self) -> napi::Result<f32> {
         match self.inner.as_float() {

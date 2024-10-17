@@ -310,7 +310,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { testConnection, PlainTextAuthProvider, QueryResultWrapper, RowWrapper, CqlValueWrapper, CqlType, testsGetCqlWrapperAscii, testsGetCqlWrapperBoolean, testsGetCqlWrapperBlob, testsGetCqlWrapperCounter, testsGetCqlWrapperDouble, testsGetCqlWrapperFloat, testsGetCqlWrapperInt, testsGetCqlWrapperText, testsGetCqlWrapperSet, testsGetCqlWrapperSmallInt, testsGetCqlWrapperTinyInt, testsGetCqlWrapperUuid, testsGetCqlWrapperTimeUuid, SessionOptions, SessionWrapper, testsBigintToI64, Duration, TimeUuidWrapper, UuidWrapper } = nativeBinding
+const { testConnection, PlainTextAuthProvider, QueryResultWrapper, RowWrapper, CqlValueWrapper, CqlType, testsGetCqlWrapperAscii, testsGetCqlWrapperBoolean, testsGetCqlWrapperBlob, testsGetCqlWrapperCounter, testsGetCqlWrapperDouble, testsGetCqlWrapperFloat, testsGetCqlWrapperInt, testsGetCqlWrapperText, testsGetCqlWrapperSet, testsGetCqlWrapperSmallInt, testsGetCqlWrapperTinyInt, testsGetCqlWrapperUuid, testsGetCqlWrapperTimeUuid, SessionOptions, SessionWrapper, testsBigintToI64, DurationWrapper, TimeUuidWrapper, UuidWrapper } = nativeBinding
 
 module.exports.testConnection = testConnection
 module.exports.PlainTextAuthProvider = PlainTextAuthProvider
@@ -334,6 +334,6 @@ module.exports.testsGetCqlWrapperTimeUuid = testsGetCqlWrapperTimeUuid
 module.exports.SessionOptions = SessionOptions
 module.exports.SessionWrapper = SessionWrapper
 module.exports.testsBigintToI64 = testsBigintToI64
-module.exports.Duration = Duration
+module.exports.DurationWrapper = DurationWrapper
 module.exports.TimeUuidWrapper = TimeUuidWrapper
 module.exports.UuidWrapper = UuidWrapper

@@ -83,6 +83,7 @@ export declare class CqlValueWrapper {
   getBlob(): Buffer
   getCounter(): bigint
   getDouble(): number
+  getDuration(): DurationWrapper
   getFloat(): number
   getInt(): number
   getText(): string
@@ -100,11 +101,11 @@ export declare class SessionWrapper {
   static createSession(options: SessionOptions): Promise<SessionWrapper>
   queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
 }
-export declare class Duration {
+export declare class DurationWrapper {
   months: number
   days: number
   nanoseconds: number
-  static new(months: number, days: number, nsBigint: bigint): Duration
+  static new(months: number, days: number, nsBigint: bigint): DurationWrapper
   getNanoseconds(): bigint
 }
 export declare class TimeUuidWrapper {
