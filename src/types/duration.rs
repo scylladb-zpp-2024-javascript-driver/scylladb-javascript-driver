@@ -1,4 +1,5 @@
 use napi::{bindgen_prelude::BigInt, Error, Status};
+use scylla::frame::value::CqlDuration;
 
 #[napi]
 // Will PartialEq or Eq be exposed to napi?
@@ -40,4 +41,14 @@ impl Duration {
     res.sign_bit = if self.nanoseconds < 0 { true } else { false };
     res
   }
+}
+
+impl Duration {
+    pub fn from_cql_duration(duration: CqlDuration) -> Self{
+      Duration{
+        months: duration.months,
+        days: duration.days,
+        nanoseconds: duration.nanoseconds
+      }
+    }
 }
