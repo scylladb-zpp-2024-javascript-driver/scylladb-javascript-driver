@@ -100,6 +100,12 @@ export declare class SessionWrapper {
   static createSession(options: SessionOptions): Promise<SessionWrapper>
   queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
 }
+export declare class Duration {
+  static new(months: number, days: number, nanoseconds: number): Duration
+  toBuffer(): Buffer
+  toString(): string
+  static fromBuffer(buffer: Buffer): Duration
+}
 export declare class TimeUuidWrapper {
   getBuffer(): Buffer
 }
