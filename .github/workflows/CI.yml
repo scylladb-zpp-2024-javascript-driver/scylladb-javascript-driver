@@ -81,3 +81,6 @@ jobs:
         run: npx prettier "{lib,examples,test}/**/*.js" --check
       - name: Run tests
         run: npm test
+      - name: Cargo fmt and clippy
+        run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
+          -D warnings
