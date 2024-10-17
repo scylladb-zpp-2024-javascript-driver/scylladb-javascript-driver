@@ -101,9 +101,11 @@ export declare class SessionWrapper {
   queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
 }
 export declare class Duration {
-  static new(months: number, days: number, ns1: number, ns2: number, filler: number): Duration
-  getObject(): Array<number>
-  static fromBuffer(buffer: Buffer): Duration
+  months: number
+  days: number
+  nanoseconds: number
+  static new(months: number, days: number, nsBigint: bigint): Duration
+  getNanoseconds(): bigint
 }
 export declare class TimeUuidWrapper {
   getBuffer(): Buffer
