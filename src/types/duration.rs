@@ -1,51 +1,43 @@
-use std::cmp::min;
-
-use napi::{bindgen_prelude::Buffer, Status};
-use scylla::frame::value::{CqlDuration, Value};
+use napi::{bindgen_prelude::BigInt, Error, Status};
 
 #[napi]
 // Will PartialEq or Eq be exposed to napi?
 #[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub struct Duration {
-  internal: CqlDuration,
+  pub months: i32,
+  pub days: i32,
+  pub nanoseconds: i64,
 }
 
 #[napi]
 impl Duration {
   #[napi]
-  pub fn new(months: i32, days: i32, ns1: i64, ns2: i64, filler: i64) -> Self {
-    let nanoseconds = ns1 + ns2 * filler;
-    Duration {
-      internal: CqlDuration {
-        months,
-        days,
-        nanoseconds,
-      },
+  pub fn new(months: i32, days: i32, ns_bigint: BigInt) -> napi::Result<Self> {
+    let ns = ns_bigint.get_i64();
+    if !ns.1 {
+      return Err(Error::new(
+        Status::GenericFailure,
+        "Invalid use: Should not happen?",
+      ));
     }
+    let nanoseconds: i64 = ns.0
+      * if ns_bigint.sign_bit && ns.0 > 0 {
+        -1
+      } else {
+        1
+      };
+    Ok(Duration {
+      months,
+      days,
+      nanoseconds,
+    })
   }
 
   #[napi]
-  pub fn get_object(&self) -> napi::Result<Vec<i64>> {
-    let re: i64 = i32::MAX.into();
-    // println!("ns in rust: {}", self.internal.nanoseconds);
-    Ok(vec![
-      self.internal.months.into(),
-      self.internal.days.into(),
-      (self.internal.nanoseconds / re),
-      (self.internal.nanoseconds % re),
-      re,
-    ])
-  }
-
-  #[napi]
-  // Consider BufferRef
-  pub fn from_buffer(buffer: Buffer) -> napi::Result<Duration> {
-    let tmp = Duration::new(2, 0, 0, 0, 0);
-    let arg: Vec<u8> = buffer.into();
-    tmp
-      .internal
-      .serialize(&mut arg.clone())
-      .map_err(|e| napi::Error::new(Status::GenericFailure, format!("{}", e)))?;
-    Ok(tmp)
+  pub fn get_nanoseconds(&self) -> BigInt {
+    let tmp: i128 = self.nanoseconds.into();
+    let mut res: BigInt = BigInt::from(tmp.abs());
+    res.sign_bit = if self.nanoseconds < 0 { true } else { false };
+    res
   }
 }

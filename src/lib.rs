@@ -1,4 +1,3 @@
-
 use scylla::SessionBuilder;
 
 #[macro_use]
@@ -9,7 +8,7 @@ extern crate napi_derive;
 #[napi]
 pub async fn test_connection(uri: String) -> String {
   println!("Connecting to {} ...", uri);
-  
+
   match SessionBuilder::new().known_node(uri).build().await {
     Ok(data) => data,
     Err(_) => {
@@ -21,6 +20,6 @@ pub async fn test_connection(uri: String) -> String {
 
 // Link other file
 pub mod auth;
-pub mod types;
 pub mod result;
 pub mod session;
+pub mod types;
