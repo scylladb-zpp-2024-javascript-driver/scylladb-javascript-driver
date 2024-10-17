@@ -34,11 +34,9 @@ export const enum CqlTypes {
 }
 
 export declare class Duration {
-  static new(months: number, days: number, nanoseconds: number): Duration
-  toBuffer(): Buffer
-  toString(): string
+  static new(months: number, days: number, ns1: number, ns2: number, filler: number): Duration
+  getObject(): Array<number>
   static fromBuffer(buffer: Buffer): Duration
-  static fromString(input: string): Duration
 }
 export declare class PlainTextAuthProvider {
   id: number
