@@ -32,6 +32,14 @@ export const enum CqlTypes {
   Uuid = 24,
   Varint = 25
 }
+
+export declare class Duration {
+  static new(months: number, days: number, nanoseconds: number): Duration
+  toBuffer(): Buffer
+  toString(): string
+  static fromBuffer(buffer: Buffer): Duration
+  static fromString(input: string): Duration
+}
 export declare class PlainTextAuthProvider {
   id: number
   static new(): PlainTextAuthProvider
