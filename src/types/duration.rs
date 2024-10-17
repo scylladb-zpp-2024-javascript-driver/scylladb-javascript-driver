@@ -38,17 +38,17 @@ impl Duration {
   pub fn get_nanoseconds(&self) -> BigInt {
     let tmp: i128 = self.nanoseconds.into();
     let mut res: BigInt = BigInt::from(tmp.abs());
-    res.sign_bit = if self.nanoseconds < 0 { true } else { false };
+    res.sign_bit = self.nanoseconds < 0;
     res
   }
 }
 
 impl Duration {
-    pub fn from_cql_duration(duration: CqlDuration) -> Self{
-      Duration{
-        months: duration.months,
-        days: duration.days,
-        nanoseconds: duration.nanoseconds
-      }
+  pub fn from_cql_duration(duration: CqlDuration) -> Self {
+    Duration {
+      months: duration.months,
+      days: duration.days,
+      nanoseconds: duration.nanoseconds,
     }
+  }
 }
