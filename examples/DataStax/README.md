@@ -3,8 +3,8 @@
 This examples are from the [datastax driver repository](https://github.com/datastax/nodejs-driver/tree/master).
 This folder contains examples on how to use some features of the DataStax Node.js Driver.
 
-They assume you have a running a ScyllaDB / Cassandra at the default port.
-You can provide ip address of the database by setting ``SCYLLA_URI`` env variable. Any port provided alongside ip will be ignored.
+They assume you have a running a ScyllaDB / Cassandra instance.
+You can provide ip address of the database by setting ``SCYLLA_URI`` env variable.
 
 You should also visit the [Documentation][doc-index] and [FAQ][faq].
 
