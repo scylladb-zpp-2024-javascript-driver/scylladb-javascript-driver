@@ -1,11 +1,15 @@
 # DataStax Node.js Driver usage samples
 
-This examples are from https://github.com/datastax/nodejs-driver/tree/master repository
+This examples are from the [datastax driver repository](https://github.com/datastax/nodejs-driver/tree/master).
 This folder contains examples on how to use some features of the DataStax Node.js Driver.
+
+They assume you have a running a ScyllaDB / Cassandra instance.
+You can provide ip address of the database by setting ``SCYLLA_URI`` env variable.
 
 You should also visit the [Documentation][doc-index] and [FAQ][faq].
 
 ## Code samples
+
 - Basic
   - [Connect](basic/basic-connect.js)
   - [Execute with promise-based API](basic/basic-execute.js)
@@ -35,7 +39,6 @@ only call `client.shutdown()` when exiting your application.
 
 If you have any questions regarding these examples, feel free to post your questions in the [mailing list][mailing-list].
 
-[dse]: https://www.datastax.com/products/datastax-enterprise
 [doc-index]: https://docs.datastax.com/en/developer/nodejs-driver/latest/
 [mailing-list]: https://groups.google.com/a/lists.datastax.com/forum/#!forum/nodejs-driver-user
 [faq]: https://docs.datastax.com/en/developer/nodejs-driver/latest/faq/

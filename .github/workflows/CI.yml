@@ -90,6 +90,9 @@ jobs:
           SCYLLA_URI=172.42.0.2:9042 node runner.js
       - name: Run tests
         run: npm test
+      - name: Cargo fmt and clippy
+        run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
+          -D warnings
       - name: Stop the cluster
         if: ${{ always() }}
         run: docker compose -f .github/docker-compose.yml stop
