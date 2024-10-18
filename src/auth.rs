@@ -32,7 +32,10 @@ impl PlainTextAuthProvider {
 
   #[napi]
   pub fn test(&self) -> u32 {
-    println!("Plain text function!: accessing internal: {}",self.internal.config.disallow_shard_aware_port);
+    println!(
+      "Plain text function!: accessing internal: {}",
+      self.internal.config.disallow_shard_aware_port
+    );
     1
   }
 }
