@@ -5,7 +5,7 @@ const Uuid = cassandra.types.Uuid;
 const UnderscoreCqlToCamelCaseMappings =
   cassandra.mapping.UnderscoreCqlToCamelCaseMappings;
 
-const client = new cassandra.Client({ contactPoints: ['127.0.0.1'], localDataCenter: 'dc1' });
+const client = new cassandra.Client(getClientArgs());
 
 const mapper = new cassandra.mapping.Mapper(client, {
   models: {
