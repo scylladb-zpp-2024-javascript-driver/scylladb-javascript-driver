@@ -35,6 +35,10 @@ jobs:
       OPENSSL_STATIC: ${{ steps.install_openssl.outputs.OPENSSL_STATIC }}
     steps:
       - uses: actions/checkout@v4
+      - name: Setup 3-node Scylla cluster
+        run: |
+          sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
+          docker compose -f .github/docker-compose.yml up -d --wait
       - name: Setup node
         uses: actions/setup-node@v4
         if: ${{ !matrix.settings.docker }}
