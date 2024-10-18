@@ -35,6 +35,10 @@ jobs:
       OPENSSL_STATIC: ${{ steps.install_openssl.outputs.OPENSSL_STATIC }}
     steps:
       - uses: actions/checkout@v4
+      - name: Setup 3-node Scylla cluster
+        run: |
+          sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
+          docker compose -f .github/docker-compose.yml up -d --wait
       - name: Setup node
         uses: actions/setup-node@v4
         if: ${{ !matrix.settings.docker }}
@@ -77,7 +81,17 @@ jobs:
       - name: Run tests
         run: npm test
       - name: Run examples
-        run: npm run examples
+        run: SCYLLA_URI=172.42.0.2:9042 npm run examples
       - name: Cargo fmt and clippy
         run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
           -D warnings
+      - name: Stop the cluster
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml stop
+      - name: Print the cluster logs
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml logs
+      - name: Remove cluster
+        run: docker compose -f .github/docker-compose.yml down
+
+        
