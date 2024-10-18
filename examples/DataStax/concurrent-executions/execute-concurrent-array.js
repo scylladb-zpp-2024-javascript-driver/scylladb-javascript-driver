@@ -1,9 +1,10 @@
 "use strict";
 const cassandra = require('scylladb-javascript-driver');
+const {getClientArgs} = require('../util');
 const executeConcurrent = cassandra.concurrent.executeConcurrent;
 const Uuid = cassandra.types.Uuid;
 
-const client = new cassandra.Client({ contactPoints: ['127.0.0.1'], localDataCenter: 'dc1' });
+const client = new cassandra.Client(getClientArgs());
 
 /**
  * Inserts multiple rows in a table from an Array using the built in method <code>executeConcurrent()</code>,

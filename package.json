@@ -46,6 +46,7 @@
     "build": "napi build --platform --release",
     "test": "./node_modules/.bin/mocha test/unit -R spec -t 5000 --recursive",
     "unit": "./node_modules/.bin/mocha test/unit -R spec -t 5000 --recursive",
+    "examples": "node ./examples/DataStax/runner.js",
     "integration_short": "./node_modules/.bin/mocha test/integration/short -R spec -t 5000 --recursive",
     "integration_long": "./node_modules/.bin/mocha test/integration/long -R spec -t 5000 --recursive",
     "ci_jenkins": "./node_modules/.bin/mocha test/unit test/integration/short --recursive -R mocha-jenkins-reporter --exit",
