@@ -84,7 +84,7 @@ jobs:
         run: |
           cd examples/DataStax
           npm i
-          SCYLLA_URI=172.42.0.2:9042 node runner.js
+          SCYLLA_URI=172.42.0.2 node runner.js
       - name: Cargo fmt and clippy
         run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
           -D warnings
