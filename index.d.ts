@@ -9,3 +9,20 @@ export declare class PlainTextAuthProvider {
   static new(): PlainTextAuthProvider
   static test(): number
 }
+export declare class QueryResultWrapper {
+  getRows(): Array<RowWrapper>
+}
+export declare class RowWrapper {
+  getColumns(): Array<CqlValueWrapper>
+}
+export declare class CqlValueWrapper {
+  stringify(): string
+}
+export declare class SessionOptions {
+  connectPoints: Array<string>
+  static empty(): SessionOptions
+}
+export declare class SessionWrapper {
+  static createSession(options: SessionOptions): Promise<SessionWrapper>
+  queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
+}
