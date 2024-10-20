@@ -1,7 +1,8 @@
 "use strict";
 const cassandra = require('scylladb-javascript-driver');
+const {getClientArgs} = require('../util');
 
-const client = new cassandra.Client({ contactPoints: ['127.0.0.1'], localDataCenter: 'dc1' });
+const client = new cassandra.Client(getClientArgs());
 
 /**
  * Creates a table with a Tuple type, inserts a row and selects a row.
