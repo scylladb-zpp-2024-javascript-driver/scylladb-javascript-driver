@@ -51,6 +51,9 @@ export default [
       // TODO: FIX
       "no-unused-private-class-members": "off",
 
+      // TODO: FIX
+      "no-case-declarations": "off",
+
       "no-constructor-return": "error",
       "no-duplicate-imports": "error",
       "default-case-last": "error",
