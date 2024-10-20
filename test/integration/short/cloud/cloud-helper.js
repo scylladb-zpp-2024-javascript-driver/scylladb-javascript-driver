@@ -1,19 +1,19 @@
-'use strict';
+"use strict";
 
-const format = require('util').format;
-const path = require('path');
-const exec = require('child_process').exec;
+const format = require("util").format;
+const path = require("path");
+const exec = require("child_process").exec;
 
-const Client = require('../../../../lib/client');
-const helper = require('../../../test-helper');
+const Client = require("../../../../lib/client");
+const helper = require("../../../test-helper");
 
-const ccmCmdString = 'docker exec $(docker ps -a -q --filter ancestor=single_endpoint) ccm %s';
+const ccmCmdString =
+  "docker exec $(docker ps -a -q --filter ancestor=single_endpoint) ccm %s";
 
-const cloudHelper = module.exports = {
-
+const cloudHelper = (module.exports = {
   getOptions: function (options1, options2) {
     const baseOptions = {
-      protocolOptions: { maxVersion: 4 }
+      protocolOptions: { maxVersion: 4 },
     };
 
     return Object.assign(baseOptions, options1, options2);
@@ -26,14 +26,18 @@ const cloudHelper = module.exports = {
    */
   getClient: function (options) {
     const client = new Client(
-      cloudHelper.getOptions({ cloud: { secureConnectBundle: 'certs/bundles/creds-v1.zip' } }, options));
+      cloudHelper.getOptions(
+        { cloud: { secureConnectBundle: "certs/bundles/creds-v1.zip" } },
+        options,
+      ),
+    );
 
     helper.shutdownAfterThisTest(client);
 
     return client;
   },
 
-  setup: function(options) {
+  setup: function (options) {
     options = options || {};
 
     const setupInfo = {
@@ -47,11 +51,13 @@ const cloudHelper = module.exports = {
         return;
       }
 
-      const queries = options.queries.join('; ');
-      return this.execCcm(`node1 cqlsh -u cassandra -p cassandra -x "${queries}"`);
+      const queries = options.queries.join("; ");
+      return this.execCcm(
+        `node1 cqlsh -u cassandra -p cassandra -x "${queries}"`,
+      );
     });
 
-    before(() => setupInfo.setupSucceeded = true);
+    before(() => (setupInfo.setupSucceeded = true));
 
     after(() => {
       if (!setupInfo.setupSucceeded) {
@@ -70,36 +76,42 @@ const cloudHelper = module.exports = {
   },
 
   runContainer: function () {
-    helper.trace('Starting SNI container');
-    let singleEndpointPath = process.env['SINGLE_ENDPOINT_PATH'];
+    helper.trace("Starting SNI container");
+    let singleEndpointPath = process.env["SINGLE_ENDPOINT_PATH"];
     if (!singleEndpointPath) {
-      singleEndpointPath = path.join(process.env['HOME'], 'proxy', 'run.sh');
+      singleEndpointPath = path.join(process.env["HOME"], "proxy", "run.sh");
       helper.trace("SINGLE_ENDPOINT_PATH not set, using " + singleEndpointPath);
     }
 
-    return this.execCommand(singleEndpointPath, { 'REQUIRE_CLIENT_CERTIFICATE': 'true' });
+    return this.execCommand(singleEndpointPath, {
+      REQUIRE_CLIENT_CERTIFICATE: "true",
+    });
   },
 
   stopContainer: function () {
-    return this.execCommand('docker kill $(docker ps -a -q --filter ancestor=single_endpoint)');
+    return this.execCommand(
+      "docker kill $(docker ps -a -q --filter ancestor=single_endpoint)",
+    );
   },
 
   execCommand: function (cmd, env) {
-    return new Promise((resolve, reject) => exec(cmd, { env }, (err, stdout, stderr) => {
-      if (stderr) {
-        helper.trace(stderr);
-      }
+    return new Promise((resolve, reject) =>
+      exec(cmd, { env }, (err, stdout, stderr) => {
+        if (stderr) {
+          helper.trace(stderr);
+        }
 
-      if (err) {
-        reject(err);
-      } else {
-        resolve(stdout);
-      }
-    }));
+        if (err) {
+          reject(err);
+        } else {
+          resolve(stdout);
+        }
+      }),
+    );
   },
 
   startAllNodes: function () {
-    return this.execCcm('start --root');
+    return this.execCcm("start --root");
   },
 
   stopNode: function (nodeId) {
@@ -108,6 +120,5 @@ const cloudHelper = module.exports = {
 
   startNode: function (nodeId) {
     return this.execCcm(`node${nodeId} start --root --wait-for-binary-proto`);
-  }
-};
-
+  },
+});

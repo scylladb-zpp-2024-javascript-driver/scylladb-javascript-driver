@@ -1,11 +1,12 @@
-import { Client, EmptyCallback, ExecutionOptions, Host, HostMap } from '../../';
-import { types } from '../types';
-
+import { Client, EmptyCallback, ExecutionOptions, Host, HostMap } from "../../";
+import { types } from "../types";
 
 export namespace policies {
   function defaultAddressTranslator(): addressResolution.AddressTranslator;
 
-  function defaultLoadBalancingPolicy(localDc?: string): loadBalancing.LoadBalancingPolicy;
+  function defaultLoadBalancingPolicy(
+    localDc?: string,
+  ): loadBalancing.LoadBalancingPolicy;
 
   function defaultReconnectionPolicy(): reconnection.ReconnectionPolicy;
 
@@ -34,7 +35,8 @@ export namespace policies {
       newQueryPlan(
         keyspace: string,
         executionOptions: ExecutionOptions,
-        callback: (error: Error, iterator: Iterator<Host>) => void): void;
+        callback: (error: Error, iterator: Iterator<Host>) => void,
+      ): void;
 
       getOptions(): Map<string, object>;
     }
@@ -51,15 +53,17 @@ export namespace policies {
       constructor(childPolicy: LoadBalancingPolicy, allowList: string[]);
     }
 
-    class WhiteListPolicy extends AllowListPolicy {
-    }
+    class WhiteListPolicy extends AllowListPolicy {}
 
     class RoundRobinPolicy extends LoadBalancingPolicy {
       constructor();
     }
 
     class DefaultLoadBalancingPolicy extends LoadBalancingPolicy {
-      constructor(options?: { localDc?: string, filter?: (host: Host) => boolean });
+      constructor(options?: {
+        localDc?: string;
+        filter?: (host: Host) => boolean;
+      });
     }
   }
 
@@ -70,11 +74,14 @@ export namespace policies {
       getOptions(): Map<string, object>;
 
       newSchedule(): Iterator<number>;
-
     }
 
     class ExponentialReconnectionPolicy implements ReconnectionPolicy {
-      constructor(baseDelay: number, maxDelay: number, startWithNoDelay?: boolean);
+      constructor(
+        baseDelay: number,
+        maxDelay: number,
+        startWithNoDelay?: boolean,
+      );
 
       getOptions(): Map<string, object>;
 
@@ -114,43 +121,61 @@ export namespace policies {
         consistency: types.consistencies,
         received: number,
         blockFor: number,
-        isDataPresent: boolean): DecisionInfo;
+        isDataPresent: boolean,
+      ): DecisionInfo;
 
-      onRequestError(info: OperationInfo, consistency: types.consistencies, err: Error): DecisionInfo;
+      onRequestError(
+        info: OperationInfo,
+        consistency: types.consistencies,
+        err: Error,
+      ): DecisionInfo;
 
       onUnavailable(
-        info: OperationInfo, consistency: types.consistencies, required: number, alive: boolean): DecisionInfo;
+        info: OperationInfo,
+        consistency: types.consistencies,
+        required: number,
+        alive: boolean,
+      ): DecisionInfo;
 
       onWriteTimeout(
         info: OperationInfo,
         consistency: types.consistencies,
         received: number,
         blockFor: number,
-        writeType: string): DecisionInfo;
+        writeType: string,
+      ): DecisionInfo;
 
       rethrowResult(): DecisionInfo;
 
-      retryResult(consistency: types.consistencies, useCurrentHost?: boolean): DecisionInfo;
+      retryResult(
+        consistency: types.consistencies,
+        useCurrentHost?: boolean,
+      ): DecisionInfo;
     }
 
     namespace RetryDecision {
       enum retryDecision {
         ignore,
         rethrow,
-        retry
+        retry,
       }
     }
   }
 
   namespace speculativeExecution {
-    class ConstantSpeculativeExecutionPolicy implements SpeculativeExecutionPolicy {
+    class ConstantSpeculativeExecutionPolicy
+      implements SpeculativeExecutionPolicy
+    {
       constructor(delay: number, maxSpeculativeExecutions: number);
 
       getOptions(): Map<string, object>;
 
       init(client: Client): void;
 
-      newPlan(keyspace: string, queryInfo: string | Array<object>): { nextExecution: Function };
+      newPlan(
+        keyspace: string,
+        queryInfo: string | Array<object>,
+      ): { nextExecution: Function };
 
       shutdown(): void;
     }
@@ -162,7 +187,10 @@ export namespace policies {
 
       init(client: Client): void;
 
-      newPlan(keyspace: string, queryInfo: string | Array<object>): { nextExecution: Function };
+      newPlan(
+        keyspace: string,
+        queryInfo: string | Array<object>,
+      ): { nextExecution: Function };
 
       shutdown(): void;
     }
@@ -172,7 +200,10 @@ export namespace policies {
 
       init(client: Client): void;
 
-      newPlan(keyspace: string, queryInfo: string|Array<object>): { nextExecution: Function };
+      newPlan(
+        keyspace: string,
+        queryInfo: string | Array<object>,
+      ): { nextExecution: Function };
 
       shutdown(): void;
     }
@@ -188,7 +219,7 @@ export namespace policies {
     }
 
     interface TimestampGenerator {
-      next(client: Client): types.Long|number;
+      next(client: Client): types.Long | number;
     }
   }
 }

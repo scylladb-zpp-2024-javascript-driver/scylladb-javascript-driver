@@ -1,6 +1,6 @@
 "use strict";
-const cassandra = require('scylladb-javascript-driver');
-const {getClientArgs} = require('../util');
+const cassandra = require("scylladb-javascript-driver");
+const { getClientArgs } = require("../util");
 const executeConcurrent = cassandra.concurrent.executeConcurrent;
 const Uuid = cassandra.types.Uuid;
 
@@ -15,22 +15,27 @@ async function example() {
   await client.execute(`CREATE KEYSPACE IF NOT EXISTS examples
                         WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1' }`);
   await client.execute(`USE examples`);
-  await client.execute(`CREATE TABLE IF NOT EXISTS tbl_sample_kv (id uuid, value text, PRIMARY KEY (id))`);
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS tbl_sample_kv (id uuid, value text, PRIMARY KEY (id))`,
+  );
 
   // The maximum amount of async executions that are going to be launched in parallel
   // at any given time
   const concurrencyLevel = 32;
 
   // Use an Array with 10000 different values
-  const values = Array.from(new Array(10000).keys()).map(x => [ Uuid.random(), x.toString() ]);
+  const values = Array.from(new Array(10000).keys()).map((x) => [
+    Uuid.random(),
+    x.toString(),
+  ]);
 
   try {
-
-    const query = 'INSERT INTO tbl_sample_kv (id, value) VALUES (?, ?)';
+    const query = "INSERT INTO tbl_sample_kv (id, value) VALUES (?, ?)";
     await executeConcurrent(client, query, values);
 
-    console.log(`Finished executing ${values.length} queries with a concurrency level of ${concurrencyLevel}.`);
-
+    console.log(
+      `Finished executing ${values.length} queries with a concurrency level of ${concurrencyLevel}.`,
+    );
   } finally {
     await client.shutdown();
   }
@@ -39,4 +44,6 @@ async function example() {
 example();
 
 // Exit on unhandledRejection
-process.on('unhandledRejection', (reason) => { throw reason; });
+process.on("unhandledRejection", (reason) => {
+  throw reason;
+});

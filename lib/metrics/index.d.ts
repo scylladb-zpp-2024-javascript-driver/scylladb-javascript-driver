@@ -1,4 +1,4 @@
-import { errors } from '../../';
+import { errors } from "../../";
 
 export namespace metrics {
   interface ClientMetrics {

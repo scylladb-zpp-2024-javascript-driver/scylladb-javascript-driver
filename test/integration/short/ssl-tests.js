@@ -1,27 +1,27 @@
-'use strict';
-const assert = require('assert');
-const util = require('util');
+"use strict";
+const assert = require("assert");
+const util = require("util");
 
-const helper = require('../../test-helper');
-const Client = require('../../../lib/client');
-const errors = require('../../../lib/errors');
-const utils = require('../../../lib/utils');
-const types = require('../../../lib/types');
+const helper = require("../../test-helper");
+const Client = require("../../../lib/client");
+const errors = require("../../../lib/errors");
+const utils = require("../../../lib/utils");
+const types = require("../../../lib/types");
 
-describe('Client @SERVER_API', function () {
+describe("Client @SERVER_API", function () {
   this.timeout(60000);
-  context('with ssl enabled', function () {
-    const keyspace = helper.getRandomName('ks');
-    const table = keyspace + '.' + helper.getRandomName('table');
+  context("with ssl enabled", function () {
+    const keyspace = helper.getRandomName("ks");
+    const table = keyspace + "." + helper.getRandomName("table");
     const setupQueries = [
       helper.createKeyspaceCql(keyspace, 1),
-      helper.createTableCql(table)
+      helper.createTableCql(table),
     ];
     before(helper.ccmHelper.start(1, { ssl: true }));
     before(helper.executeTask(newInstance(), setupQueries));
     after(helper.ccmHelper.remove);
-    describe('#connect()', function () {
-      it('should connect to a ssl enabled cluster', function (done) {
+    describe("#connect()", function () {
+      it("should connect to a ssl enabled cluster", function (done) {
         const client = newInstance();
         client.connect(function (err) {
           assert.ifError(err);
@@ -29,8 +29,10 @@ describe('Client @SERVER_API', function () {
           helper.finish(client, done)();
         });
       });
-      it('should callback in error when rejecting unauthorized', function (done) {
-        const client = newInstance({ sslOptions: { rejectUnauthorized: true }});
+      it("should callback in error when rejecting unauthorized", function (done) {
+        const client = newInstance({
+          sslOptions: { rejectUnauthorized: true },
+        });
         client.connect(function (err) {
           helper.assertInstanceOf(err, errors.NoHostAvailableError);
           assert.strictEqual(Object.keys(err.innerErrors).length, 1);
@@ -39,19 +41,35 @@ describe('Client @SERVER_API', function () {
         });
       });
     });
-    describe('#execute()', function () {
-      it('should handle multiple requests in parallel', function (done) {
+    describe("#execute()", function () {
+      it("should handle multiple requests in parallel", function (done) {
         const parallelLimit = 800;
         const client = newInstance();
-        utils.series([
-          client.connect.bind(client),
-          function insert(next) {
-            const query = util.format('INSERT INTO %s (id, text_sample) VALUES (?, ?)', table);
-            utils.timesLimit(20000, parallelLimit, function (n, timesNext) {
-              client.execute(query, [ types.Uuid.random(), 'value ' + n ], { prepare: true }, timesNext);
-            }, next);
-          }
-        ], helper.finish(client, done));
+        utils.series(
+          [
+            client.connect.bind(client),
+            function insert(next) {
+              const query = util.format(
+                "INSERT INTO %s (id, text_sample) VALUES (?, ?)",
+                table,
+              );
+              utils.timesLimit(
+                20000,
+                parallelLimit,
+                function (n, timesNext) {
+                  client.execute(
+                    query,
+                    [types.Uuid.random(), "value " + n],
+                    { prepare: true },
+                    timesNext,
+                  );
+                },
+                next,
+              );
+            },
+          ],
+          helper.finish(client, done),
+        );
       });
     });
   });
@@ -59,5 +77,7 @@ describe('Client @SERVER_API', function () {
 
 /** @returns {Client}  */
 function newInstance(options) {
-  return new Client(utils.deepExtend({ sslOptions: {} }, helper.baseOptions, options));
+  return new Client(
+    utils.deepExtend({ sslOptions: {} }, helper.baseOptions, options),
+  );
 }

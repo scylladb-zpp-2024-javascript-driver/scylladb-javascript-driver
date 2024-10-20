@@ -24,7 +24,11 @@ export namespace auth {
   }
 
   class DseGssapiAuthProvider implements AuthProvider {
-    constructor(gssOptions?: { authorizationId?: string, service?: string, hostNameResolver?: Function });
+    constructor(gssOptions?: {
+      authorizationId?: string;
+      service?: string;
+      hostNameResolver?: Function;
+    });
 
     newAuthenticator(endpoint: string, name: string): Authenticator;
   }

@@ -2,20 +2,20 @@ name: CI
 env:
   DEBUG: napi:*
   APP_NAME: scylladb-javascript-driver
-  MACOSX_DEPLOYMENT_TARGET: '10.13'
+  MACOSX_DEPLOYMENT_TARGET: "10.13"
 permissions:
   contents: write
   id-token: write
-'on':
+"on":
   push:
     branches:
-      - '**'
+      - "**"
     tags-ignore:
-      - '**'
+      - "**"
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
       - LICENSE
-      - '**/*.gitignore'
+      - "**/*.gitignore"
       - .editorconfig
       - docs/**
   pull_request: null
@@ -78,16 +78,18 @@ jobs:
         run: ${{ matrix.settings.build }}
         if: ${{ !matrix.settings.docker }}
         shell: bash
-      - name: Run tests
-        run: npm test
+      - name: Cargo fmt and clippy
+        run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
+          -D warnings
+      - name: Prettier for JS
+        run: npx prettier "{lib,examples,test}/**/*.js" --check
       - name: Run examples
         run: |
           cd examples/DataStax
           npm i
           SCYLLA_URI=172.42.0.2:9042 node runner.js
-      - name: Cargo fmt and clippy
-        run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
-          -D warnings
+      - name: Run tests
+        run: npm test
       - name: Stop the cluster
         if: ${{ always() }}
         run: docker compose -f .github/docker-compose.yml stop
@@ -96,5 +98,3 @@ jobs:
         run: docker compose -f .github/docker-compose.yml logs
       - name: Remove cluster
         run: docker compose -f .github/docker-compose.yml down
-      - name: Prettier for JS
-        run: npx prettier . --check

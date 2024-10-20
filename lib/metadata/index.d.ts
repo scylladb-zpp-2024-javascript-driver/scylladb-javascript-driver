@@ -1,13 +1,12 @@
-import { types } from '../types';
-import { EmptyCallback, Host, token, ValueCallback } from '../../';
+import { types } from "../types";
+import { EmptyCallback, Host, token, ValueCallback } from "../../";
 import dataTypes = types.dataTypes;
 import Uuid = types.Uuid;
 import InetAddress = types.InetAddress;
 
 export namespace metadata {
-
   interface Aggregate {
-    argumentTypes: Array<{ code: dataTypes, info: any }>;
+    argumentTypes: Array<{ code: dataTypes; info: any }>;
     finalFunction: string;
     initCondition: string;
     keyspaceName: string;
@@ -44,7 +43,7 @@ export namespace metadata {
   enum IndexKind {
     custom = 0,
     keys,
-    composites
+    composites,
   }
 
   interface Index {
@@ -69,14 +68,14 @@ export namespace metadata {
     columnsByName: { [key: string]: ColumnInfo };
     comment: string;
     compactionClass: string;
-    compactionOptions: { [option: string]: any; };
+    compactionOptions: { [option: string]: any };
     compression: {
       class?: string;
       [option: string]: any;
     };
     crcCheckChange?: number;
     defaultTtl: number;
-    extensions: { [option: string]: any; };
+    extensions: { [option: string]: any };
     gcGraceSeconds: number;
     localReadRepairChance: number;
     maxIndexInterval?: number;
@@ -111,12 +110,18 @@ export namespace metadata {
     startedAt: number | types.Long;
     duration: number;
     clientAddress: string;
-    events: Array<{ id: Uuid; activity: any; source: any; elapsed: any; thread: any }>;
+    events: Array<{
+      id: Uuid;
+      activity: any;
+      source: any;
+      elapsed: any;
+      thread: any;
+    }>;
   }
 
   interface SchemaFunction {
     argumentNames: string[];
-    argumentTypes: Array<{ code: dataTypes, info: any }>;
+    argumentTypes: Array<{ code: dataTypes; info: any }>;
     body: string;
     calledOnNullInput: boolean;
     keyspaceName: string;
@@ -128,53 +133,108 @@ export namespace metadata {
 
   interface Udt {
     name: string;
-    fields: ColumnInfo[]
+    fields: ColumnInfo[];
   }
 
   interface Metadata {
-    keyspaces: { [name: string]: { name: string, strategy: string }};
+    keyspaces: { [name: string]: { name: string; strategy: string } };
 
     clearPrepared(): void;
 
-    getAggregate(keyspaceName: string, name: string, signature: string[] | Array<{ code: number, info: any }>, callback: ValueCallback<Aggregate>): void;
+    getAggregate(
+      keyspaceName: string,
+      name: string,
+      signature: string[] | Array<{ code: number; info: any }>,
+      callback: ValueCallback<Aggregate>,
+    ): void;
 
-    getAggregate(keyspaceName: string, name: string, signature: string[] | Array<{ code: number, info: any }>): Promise<Aggregate>;
+    getAggregate(
+      keyspaceName: string,
+      name: string,
+      signature: string[] | Array<{ code: number; info: any }>,
+    ): Promise<Aggregate>;
 
-    getAggregates(keyspaceName: string, name: string, callback: ValueCallback<Aggregate[]>): void;
+    getAggregates(
+      keyspaceName: string,
+      name: string,
+      callback: ValueCallback<Aggregate[]>,
+    ): void;
 
     getAggregates(keyspaceName: string, name: string): Promise<Aggregate[]>;
 
-    getFunction(keyspaceName: string, name: string, signature: string[] | Array<{ code: number, info: any }>, callback: ValueCallback<SchemaFunction>): void;
+    getFunction(
+      keyspaceName: string,
+      name: string,
+      signature: string[] | Array<{ code: number; info: any }>,
+      callback: ValueCallback<SchemaFunction>,
+    ): void;
 
-    getFunction(keyspaceName: string, name: string, signature: string[] | Array<{ code: number, info: any }>): Promise<SchemaFunction>;
+    getFunction(
+      keyspaceName: string,
+      name: string,
+      signature: string[] | Array<{ code: number; info: any }>,
+    ): Promise<SchemaFunction>;
 
-    getFunctions(keyspaceName: string, name: string, callback: ValueCallback<SchemaFunction[]>): void;
+    getFunctions(
+      keyspaceName: string,
+      name: string,
+      callback: ValueCallback<SchemaFunction[]>,
+    ): void;
 
     getFunctions(keyspaceName: string, name: string): Promise<SchemaFunction[]>;
 
-    getMaterializedView(keyspaceName: string, name: string, callback: ValueCallback<MaterializedView>): void;
+    getMaterializedView(
+      keyspaceName: string,
+      name: string,
+      callback: ValueCallback<MaterializedView>,
+    ): void;
 
-    getMaterializedView(keyspaceName: string, name: string, callback: EmptyCallback): Promise<MaterializedView>;
+    getMaterializedView(
+      keyspaceName: string,
+      name: string,
+      callback: EmptyCallback,
+    ): Promise<MaterializedView>;
 
-    getReplicas(keyspaceName: string, token: Buffer | token.Token | token.TokenRange): Host[];
+    getReplicas(
+      keyspaceName: string,
+      token: Buffer | token.Token | token.TokenRange,
+    ): Host[];
 
-    getTable(keyspaceName: string, name: string, callback: ValueCallback<TableMetadata>): void;
+    getTable(
+      keyspaceName: string,
+      name: string,
+      callback: ValueCallback<TableMetadata>,
+    ): void;
 
     getTable(keyspaceName: string, name: string): Promise<TableMetadata>;
 
     getTokenRanges(): Set<token.TokenRange>;
 
-    getTokenRangesForHost(keyspaceName: string, host: Host): Set<token.TokenRange> | null;
+    getTokenRangesForHost(
+      keyspaceName: string,
+      host: Host,
+    ): Set<token.TokenRange> | null;
 
-    getTrace(traceId: Uuid, consistency: types.consistencies, callback: ValueCallback<QueryTrace>): void;
+    getTrace(
+      traceId: Uuid,
+      consistency: types.consistencies,
+      callback: ValueCallback<QueryTrace>,
+    ): void;
 
-    getTrace(traceId: Uuid, consistency: types.consistencies): Promise<QueryTrace>;
+    getTrace(
+      traceId: Uuid,
+      consistency: types.consistencies,
+    ): Promise<QueryTrace>;
 
     getTrace(traceId: Uuid, callback: ValueCallback<QueryTrace>): void;
 
     getTrace(traceId: Uuid): Promise<QueryTrace>;
 
-    getUdt(keyspaceName: string, name: string, callback: ValueCallback<Udt>): void;
+    getUdt(
+      keyspaceName: string,
+      name: string,
+      callback: ValueCallback<Udt>,
+    ): void;
 
     getUdt(keyspaceName: string, name: string): Promise<Udt>;
 

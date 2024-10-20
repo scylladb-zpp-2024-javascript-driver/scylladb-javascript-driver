@@ -1,17 +1,17 @@
 "use strict";
-const sinon = require('sinon');
-const assert = require('assert');
+const sinon = require("sinon");
+const assert = require("assert");
 
-const StreamIdStack = require('../../lib/stream-id-stack');
+const StreamIdStack = require("../../lib/stream-id-stack");
 
-describe('StreamIdStack', function () {
+describe("StreamIdStack", function () {
   let clock;
 
-  before(() => clock = sinon.useFakeTimers());
+  before(() => (clock = sinon.useFakeTimers()));
   after(() => clock.restore());
 
   this.timeout(2000);
-  it('should pop and push', function () {
+  it("should pop and push", function () {
     const stack = newInstance();
     assert.strictEqual(stack.pop(), 0);
     assert.strictEqual(stack.pop(), 1);
@@ -23,11 +23,11 @@ describe('StreamIdStack', function () {
     assert.strictEqual(stack.pop(), 1);
     stack.clear();
   });
-  it('should not use more than allowed by the protocol version', function () {
+  it("should not use more than allowed by the protocol version", function () {
     [
       [1, 128],
       [2, 128],
-      [3, Math.pow(2, 15)]
+      [3, Math.pow(2, 15)],
     ].forEach(function (value) {
       const version = value[0];
       const maxSize = value[1];
@@ -37,8 +37,7 @@ describe('StreamIdStack', function () {
       for (let i = 0; i < maxSize + 20; i++) {
         if (i < maxSize) {
           assert.strictEqual(ids[i], i);
-        }
-        else {
+        } else {
           assert.strictEqual(ids[i], null);
         }
       }
@@ -47,7 +46,7 @@ describe('StreamIdStack', function () {
       stack.clear();
     });
   });
-  it('should yield the lowest available id', function () {
+  it("should yield the lowest available id", function () {
     const stack = newInstance(3);
     const ids = pop(stack, 128 * 3 - 1);
     assert.strictEqual(ids.length, 128 * 3 - 1);
@@ -67,7 +66,7 @@ describe('StreamIdStack', function () {
     assert.strictEqual(stack.groups.length, 4);
     stack.clear();
   });
-  it('should release unused groups', function () {
+  it("should release unused groups", function () {
     const releaseDelay = 5000;
     const stack = newInstance(3, releaseDelay);
     //6 groups,
@@ -97,7 +96,7 @@ describe('StreamIdStack', function () {
 
     stack.clear();
   });
-  it('should not release the current group', function () {
+  it("should not release the current group", function () {
     const releaseDelay = 100;
     const stack = newInstance(3, releaseDelay);
 
@@ -116,7 +115,7 @@ describe('StreamIdStack', function () {
     assert.strictEqual(stack.groups.length, 6);
     stack.clear();
   });
-  it('should not release more than release size per time', function () {
+  it("should not release more than release size per time", function () {
     const releaseDelay = 100;
     const stack = newInstance(3, releaseDelay);
     //12 groups,

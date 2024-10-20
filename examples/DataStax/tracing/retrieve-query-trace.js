@@ -1,37 +1,46 @@
 "use strict";
-const cassandra = require('scylladb-javascript-driver');
-const {getClientArgs} = require('../util');
+const cassandra = require("scylladb-javascript-driver");
+const { getClientArgs } = require("../util");
 
 const client = new cassandra.Client(getClientArgs());
 
 /**
  * Creates a table and retrieves its information
  */
-client.connect()
+client
+  .connect()
   .then(function () {
-    const query = "CREATE KEYSPACE IF NOT EXISTS examples WITH replication =" +
+    const query =
+      "CREATE KEYSPACE IF NOT EXISTS examples WITH replication =" +
       "{'class': 'SimpleStrategy', 'replication_factor': '1' }";
     return client.execute(query);
   })
   .then(function () {
-    const query = "CREATE TABLE IF NOT EXISTS examples.trace_tbl1 (id uuid, txt text, PRIMARY KEY(id))";
+    const query =
+      "CREATE TABLE IF NOT EXISTS examples.trace_tbl1 (id uuid, txt text, PRIMARY KEY(id))";
     return client.execute(query);
   })
   .then(function () {
     const query = "INSERT INTO examples.trace_tbl1 (id, txt) VALUES (?, ?)";
-    return client.execute(query, [cassandra.types.Uuid.random(), 'hello trace'], { traceQuery: true});
+    return client.execute(
+      query,
+      [cassandra.types.Uuid.random(), "hello trace"],
+      { traceQuery: true },
+    );
   })
   .then(function (result) {
     const traceId = result.info.traceId;
     return client.metadata.getTrace(traceId);
   })
   .then(function (trace) {
-    console.log('Trace for the execution of the query:');
+    console.log("Trace for the execution of the query:");
     console.log(trace);
-    console.log('The trace was retrieved successfully');
+    console.log("The trace was retrieved successfully");
     return client.shutdown();
   })
   .catch(function (err) {
-    console.error('There was an error', err);
-    return client.shutdown().then(() => { throw err; });
+    console.error("There was an error", err);
+    return client.shutdown().then(() => {
+      throw err;
+    });
   });

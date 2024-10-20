@@ -1,38 +1,52 @@
-'use strict';
+"use strict";
 
-const { assert } = require('chai');
+const { assert } = require("chai");
 
-const { Uuid } = require('../../../../lib/types');
-const mapperTestHelper = require('./mapper-test-helper');
-const helper = require('../../../test-helper');
-const { UnderscoreCqlToCamelCaseMappings } = require('../../../../lib/mapping/table-mappings');
+const { Uuid } = require("../../../../lib/types");
+const mapperTestHelper = require("./mapper-test-helper");
+const helper = require("../../../test-helper");
+const {
+  UnderscoreCqlToCamelCaseMappings,
+} = require("../../../../lib/mapping/table-mappings");
 
-describe('Mapper', function () {
+describe("Mapper", function () {
   mapperTestHelper.setupOnce(this);
 
-  context('using fromModel and toModel mapping functions function', () => {
-    const mapper = mapperTestHelper.getMapper({ models: {
-      'Video': {
-        tables: [ 'videos', 'user_videos' ],
-        mappings: new UnderscoreCqlToCamelCaseMappings(),
-        columns: {
-          'videoid': 'videoId',
-          'userid': { name: 'userId', fromModel: Uuid.fromString, toModel: v => v.toString() },
-          'description': { fromModel: JSON.stringify, toModel: JSON.parse }
-        }
-      }
-    }});
+  context("using fromModel and toModel mapping functions function", () => {
+    const mapper = mapperTestHelper.getMapper({
+      models: {
+        Video: {
+          tables: ["videos", "user_videos"],
+          mappings: new UnderscoreCqlToCamelCaseMappings(),
+          columns: {
+            videoid: "videoId",
+            userid: {
+              name: "userId",
+              fromModel: Uuid.fromString,
+              toModel: (v) => v.toString(),
+            },
+            description: { fromModel: JSON.stringify, toModel: JSON.parse },
+          },
+        },
+      },
+    });
 
-    const videoMapper = mapper.forModel('Video');
+    const videoMapper = mapper.forModel("Video");
 
-    it('should use the custom mapping functions for the values', async () => {
+    it("should use the custom mapping functions for the values", async () => {
       let result;
       const videoId = Uuid.random();
       const userId = Uuid.random().toString();
-      const name = 'sample';
+      const name = "sample";
       const addedDate = new Date();
-      const description1 = { prop1: 1, prop2: 'two' };
-      await videoMapper.insert({ videoId, userId, name, description: description1, addedDate });
+      const description1 = { prop1: 1, prop2: "two" };
+      await videoMapper.insert({
+        videoId,
+        userId,
+        name,
+        description: description1,
+        addedDate,
+      });
       result = (await videoMapper.find({ videoId })).first();
       // userId should be a string, even though it's stored as a "uuid"
       assert.strictEqual(result.userId, userId);
@@ -44,8 +58,14 @@ describe('Mapper', function () {
       assert.strictEqual(result.name, name);
 
       // Update the description
-      const description2 = { prop1: 1, prop2: 'two', anotherProp: true };
-      await videoMapper.update({ videoId, userId, name, description: description2, addedDate });
+      const description2 = { prop1: 1, prop2: "two", anotherProp: true };
+      await videoMapper.update({
+        videoId,
+        userId,
+        name,
+        description: description2,
+        addedDate,
+      });
       result = (await videoMapper.find({ videoId })).first();
       assert.deepEqual(result.description, description2);
 
@@ -57,48 +77,64 @@ describe('Mapper', function () {
       assert.lengthOf((await videoMapper.find({ userId })).toArray(), 0);
     });
 
-    it('should throw an error when mapping function throws an error', async () => {
-      const mapper = mapperTestHelper.getMapper({ models: {
-        'Video': {
-          tables: [ 'videos', 'user_videos' ],
-          mappings: new UnderscoreCqlToCamelCaseMappings(),
-          columns: {
-            'videoid': 'videoId',
-            'added_date': 'addedDate',
-            'userid': {
-              name: 'userId',
-              fromModel: () => {
-                throw new Error('fromModel error');
+    it("should throw an error when mapping function throws an error", async () => {
+      const mapper = mapperTestHelper.getMapper({
+        models: {
+          Video: {
+            tables: ["videos", "user_videos"],
+            mappings: new UnderscoreCqlToCamelCaseMappings(),
+            columns: {
+              videoid: "videoId",
+              added_date: "addedDate",
+              userid: {
+                name: "userId",
+                fromModel: () => {
+                  throw new Error("fromModel error");
+                },
+                toModel: () => {
+                  throw new Error("toModel error");
+                },
               },
-              toModel: () => {
-                throw new Error('toModel error');
-              }
             },
-          }
-        }
-      }});
+          },
+        },
+      });
 
-      const videoMapper = mapper.forModel('Video');
+      const videoMapper = mapper.forModel("Video");
       const videoId = Uuid.random();
       const userId = Uuid.random();
       await helper.assertThrowsAsync(
-        videoMapper.insert({ videoId, userId, name: 'Sample name', description: 'description', addedDate: new Date() }),
+        videoMapper.insert({
+          videoId,
+          userId,
+          name: "Sample name",
+          description: "description",
+          addedDate: new Date(),
+        }),
         Error,
-        'fromModel error'
+        "fromModel error",
       );
       await helper.assertThrowsAsync(
-        videoMapper.update({ videoId, userId, name: 'Sample name', description: 'description', addedDate: new Date() }),
+        videoMapper.update({
+          videoId,
+          userId,
+          name: "Sample name",
+          description: "description",
+          addedDate: new Date(),
+        }),
         Error,
-        'fromModel error'
+        "fromModel error",
       );
       await helper.assertThrowsAsync(
         videoMapper.remove({ videoId, userId, addedDate: new Date() }),
         Error,
-        'fromModel error'
+        "fromModel error",
       );
 
       // Use an existing row
-      const rs = await videoMapper.find({ videoId: mapperTestHelper.videoIds[0] });
+      const rs = await videoMapper.find({
+        videoId: mapperTestHelper.videoIds[0],
+      });
       // Throws when adapting row values
       assert.throws(() => rs.toArray(), /toModel error/);
     });
