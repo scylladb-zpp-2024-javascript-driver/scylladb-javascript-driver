@@ -1,11 +1,7 @@
-name: CI
+name: Tests
 env:
   DEBUG: napi:*
   APP_NAME: scylladb-javascript-driver
-  MACOSX_DEPLOYMENT_TARGET: "10.13"
-permissions:
-  contents: write
-  id-token: write
 "on":
   push:
     branches:
@@ -78,11 +74,6 @@ jobs:
         run: ${{ matrix.settings.build }}
         if: ${{ !matrix.settings.docker }}
         shell: bash
-      - name: Cargo fmt and clippy
-        run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
-          -D warnings
-      - name: Prettier for JS
-        run: npx prettier "{lib,examples,test}/**/*.js" --check
       - name: Run examples
         run: |
           cd examples/DataStax
