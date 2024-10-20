@@ -8,7 +8,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
-napi = { version = "2.12.2", default-features = false, features = ["napi4", "async"] }
+napi = { version = "2.12.2", default-features = false, features = ["napi4", "napi6", "async"] }
 napi-derive = "2.12.2"
 scylla = { git = "https://github.com/scylladb/scylla-rust-driver.git", rev = "v0.14.0", features = [
     "ssl",
