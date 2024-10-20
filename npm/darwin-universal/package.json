@@ -1,0 +1,15 @@
+{
+  "name": "scylladb-javascript-driver-darwin-universal",
+  "version": "0.0.0",
+  "os": [
+    "darwin"
+  ],
+  "main": "scylladb-javascript-driver.darwin-universal.node",
+  "files": [
+    "scylladb-javascript-driver.darwin-universal.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}
