@@ -1,111 +1,106 @@
-'use strict';
-const { assert } = require('chai');
-const api = require('../../');
-const auth = require('../../lib/auth');
-const helper = require('../test-helper');
+"use strict";
+const { assert } = require("chai");
+const api = require("../../");
+const auth = require("../../lib/auth");
+const helper = require("../test-helper");
 
-describe('API', function () {
-  it('should expose auth module', function () {
+describe("API", function () {
+  it("should expose auth module", function () {
     assert.ok(api.auth);
-    assert.strictEqual(typeof api.auth.DsePlainTextAuthProvider, 'function');
-    assert.ok(new api.auth.DsePlainTextAuthProvider('u', 'pass') instanceof auth.AuthProvider);
-    if (helper.requireOptional('kerberos')) {
-      assert.ok(new api.auth.DseGssapiAuthProvider() instanceof auth.AuthProvider);
+    assert.strictEqual(typeof api.auth.DsePlainTextAuthProvider, "function");
+    assert.ok(
+      new api.auth.DsePlainTextAuthProvider("u", "pass") instanceof
+        auth.AuthProvider,
+    );
+    if (helper.requireOptional("kerberos")) {
+      assert.ok(
+        new api.auth.DseGssapiAuthProvider() instanceof auth.AuthProvider,
+      );
     }
   });
 
-  it('should expose geometry module', function () {
+  it("should expose geometry module", function () {
     assert.ok(api.geometry);
-    checkConstructor(api.geometry, 'LineString');
-    checkConstructor(api.geometry, 'Point');
-    checkConstructor(api.geometry, 'Polygon');
+    checkConstructor(api.geometry, "LineString");
+    checkConstructor(api.geometry, "Point");
+    checkConstructor(api.geometry, "Polygon");
   });
 
-  it('should expose Client constructor', function () {
-    checkConstructor(api, 'Client');
+  it("should expose Client constructor", function () {
+    checkConstructor(api, "Client");
   });
 
-  it('should expose GraphResultSet constructor', function () {
-    checkConstructor(api.datastax.graph, 'GraphResultSet');
+  it("should expose GraphResultSet constructor", function () {
+    checkConstructor(api.datastax.graph, "GraphResultSet");
   });
 
-  it('should expose graph types constructor', function () {
-    checkConstructor(api.datastax.graph, 'Edge');
-    checkConstructor(api.datastax.graph, 'Element');
-    checkConstructor(api.datastax.graph, 'Path');
-    checkConstructor(api.datastax.graph, 'Property');
-    checkConstructor(api.datastax.graph, 'Vertex');
-    checkConstructor(api.datastax.graph, 'VertexProperty');
+  it("should expose graph types constructor", function () {
+    checkConstructor(api.datastax.graph, "Edge");
+    checkConstructor(api.datastax.graph, "Element");
+    checkConstructor(api.datastax.graph, "Path");
+    checkConstructor(api.datastax.graph, "Property");
+    checkConstructor(api.datastax.graph, "Vertex");
+    checkConstructor(api.datastax.graph, "VertexProperty");
   });
 
-  it('should expose graph wrappers', () => {
-    [
-      'asUdt',
-      'asInt',
-      'asFloat',
-      'asDouble',
-      'asTimestamp'
-    ].forEach(functionName => {
-      assert.isFunction(api.datastax.graph[functionName]);
-    });
+  it("should expose graph wrappers", () => {
+    ["asUdt", "asInt", "asFloat", "asDouble", "asTimestamp"].forEach(
+      (functionName) => {
+        assert.isFunction(api.datastax.graph[functionName]);
+      },
+    );
 
-    checkConstructor(api.datastax.graph, 'UdtGraphWrapper');
-    checkConstructor(api.datastax.graph, 'GraphTypeWrapper');
+    checkConstructor(api.datastax.graph, "UdtGraphWrapper");
+    checkConstructor(api.datastax.graph, "GraphTypeWrapper");
   });
 
-  it('should expose the custom type serializers', () => {
+  it("should expose the custom type serializers", () => {
     assert.isObject(api.datastax.graph.getCustomTypeSerializers());
-    assert.isObject(api.datastax.graph.getCustomTypeSerializers()['dse:UDT']);
-    assert.isObject(api.datastax.graph.getCustomTypeSerializers()['dse:Tuple']);
+    assert.isObject(api.datastax.graph.getCustomTypeSerializers()["dse:UDT"]);
+    assert.isObject(api.datastax.graph.getCustomTypeSerializers()["dse:Tuple"]);
   });
 
-  it('should expose graph tokens', () => {
-    [
-      'id',
-      'key',
-      'label',
-      'value'
-    ].forEach(name => {
+  it("should expose graph tokens", () => {
+    ["id", "key", "label", "value"].forEach((name) => {
       assert.isObject(api.datastax.graph.t[name]);
       assert.equal(api.datastax.graph.t[name].toString(), name);
     });
 
-    [
-      'in',
-      'out',
-      'both'
-    ].forEach(name => {
+    ["in", "out", "both"].forEach((name) => {
       assert.isObject(api.datastax.graph.direction[name]);
-      assert.equal(api.datastax.graph.direction[name].toString().toLowerCase(), name);
+      assert.equal(
+        api.datastax.graph.direction[name].toString().toLowerCase(),
+        name,
+      );
     });
 
-    assert.equal(api.datastax.graph.direction['in_'].toString(), 'IN');
+    assert.equal(api.datastax.graph.direction["in_"].toString(), "IN");
 
-    checkConstructor(api.datastax.graph, 'UdtGraphWrapper');
-    checkConstructor(api.datastax.graph, 'GraphTypeWrapper');
+    checkConstructor(api.datastax.graph, "UdtGraphWrapper");
+    checkConstructor(api.datastax.graph, "GraphTypeWrapper");
   });
 
-  it('should expose cassandra driver modules', function () {
+  it("should expose cassandra driver modules", function () {
     assert.ok(api.errors);
     assert.ok(api.policies);
     assert.ok(api.policies.loadBalancing);
-    checkConstructor(api.policies.loadBalancing, 'AllowListPolicy');
+    checkConstructor(api.policies.loadBalancing, "AllowListPolicy");
     // For backward compatibility only
-    checkConstructor(api.policies.loadBalancing, 'WhiteListPolicy');
+    checkConstructor(api.policies.loadBalancing, "WhiteListPolicy");
     assert.ok(api.policies.retry);
     assert.ok(api.policies.reconnection);
     assert.ok(api.metadata);
     assert.ok(api.types);
-    checkConstructor(api.types, 'BigDecimal');
-    checkConstructor(api.types, 'Integer');
-    checkConstructor(api.types, 'InetAddress');
-    checkConstructor(api.types, 'Uuid');
-    checkConstructor(api.types, 'TimeUuid');
+    checkConstructor(api.types, "BigDecimal");
+    checkConstructor(api.types, "Integer");
+    checkConstructor(api.types, "InetAddress");
+    checkConstructor(api.types, "Uuid");
+    checkConstructor(api.types, "TimeUuid");
   });
 });
 
 function checkConstructor(module, constructorName) {
-  assert.strictEqual(typeof module[constructorName], 'function');
+  assert.strictEqual(typeof module[constructorName], "function");
   // use Function.name
   assert.strictEqual(module[constructorName].name, constructorName);
 }

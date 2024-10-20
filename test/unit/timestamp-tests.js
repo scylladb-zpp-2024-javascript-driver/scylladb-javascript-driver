@@ -1,21 +1,22 @@
-'use strict';
+"use strict";
 
-const assert = require('assert');
-const MonotonicTimestampGenerator = require('../../lib/policies/timestamp-generation').MonotonicTimestampGenerator;
-const Long = require('../../lib/types').Long;
-const helper = require('../test-helper');
+const assert = require("assert");
+const MonotonicTimestampGenerator =
+  require("../../lib/policies/timestamp-generation").MonotonicTimestampGenerator;
+const Long = require("../../lib/types").Long;
+const helper = require("../test-helper");
 
-describe('MonotonicTimestampGenerator', function () {
-  describe('#next()', function () {
-    it('should return a Number when the current date is before Jun 06 2255', function () {
+describe("MonotonicTimestampGenerator", function () {
+  describe("#next()", function () {
+    it("should return a Number when the current date is before Jun 06 2255", function () {
       const g = new MonotonicTimestampGenerator();
       g.getDate = function () {
         return 9007199254739;
       };
       const value = g.next();
-      assert.strictEqual(typeof value, 'number');
+      assert.strictEqual(typeof value, "number");
     });
-    it('should return a Long when the current date is after Jun 06 2255', function () {
+    it("should return a Long when the current date is after Jun 06 2255", function () {
       const g = new MonotonicTimestampGenerator();
       g.getDate = function () {
         return 9007199254740;
@@ -23,7 +24,7 @@ describe('MonotonicTimestampGenerator', function () {
       const value = g.next();
       helper.assertInstanceOf(value, Long);
     });
-    it('should log a warning once when it drifted into the future', function (done) {
+    it("should log a warning once when it drifted into the future", function (done) {
       const g = new MonotonicTimestampGenerator(null, 50);
       let counter = 0;
       g.getDate = function () {
@@ -36,24 +37,24 @@ describe('MonotonicTimestampGenerator', function () {
       const client = {
         log: function (level, message) {
           logs.push({ level: level, message: message });
-        }
+        },
       };
       for (let i = 0; i < 200; i++) {
         const value = g.next(client);
         assert.strictEqual(value, 1000000 + i);
       }
       assert.strictEqual(logs.length, 1);
-      assert.strictEqual(logs[0].level, 'warning');
-      assert.strictEqual(logs[0].message.indexOf('Timestamp generated'), 0);
+      assert.strictEqual(logs[0].level, "warning");
+      assert.strictEqual(logs[0].message.indexOf("Timestamp generated"), 0);
       setTimeout(function () {
         // A second warning should be issued
         assert.strictEqual(g.next(client), 1000200);
         assert.strictEqual(logs.length, 2);
-        assert.strictEqual(logs[1].level, 'warning');
+        assert.strictEqual(logs[1].level, "warning");
         done();
       }, 100);
     });
-    it('should use the current date', function () {
+    it("should use the current date", function () {
       const g = new MonotonicTimestampGenerator();
       const longThousand = Long.fromInt(1000);
       const startDate = Long.fromNumber(Date.now()).multiply(longThousand);
@@ -63,7 +64,7 @@ describe('MonotonicTimestampGenerator', function () {
       assert.ok(longValue.greaterThanOrEqual(startDate));
       assert.ok(longValue.lessThanOrEqual(endDate));
     });
-    it('should increment the microseconds portion for the same date', function () {
+    it("should increment the microseconds portion for the same date", function () {
       const g = new MonotonicTimestampGenerator();
       g.getDate = function () {
         // Use a fixed date

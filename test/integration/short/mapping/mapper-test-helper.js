@@ -1,23 +1,29 @@
-'use strict';
+"use strict";
 
-const assert = require('assert');
-const types = require('../../../../lib/types');
+const assert = require("assert");
+const types = require("../../../../lib/types");
 const Uuid = types.Uuid;
-const helper = require('../../../test-helper');
-const tableMappingsModule = require('../../../../lib/mapping/table-mappings');
-const UnderscoreCqlToCamelCaseMappings = tableMappingsModule.UnderscoreCqlToCamelCaseMappings;
-const Mapper = require('../../../../lib/mapping/mapper');
-const Client = require('../../../../lib/client');
-const utils = require('../../../../lib/utils');
+const helper = require("../../../test-helper");
+const tableMappingsModule = require("../../../../lib/mapping/table-mappings");
+const UnderscoreCqlToCamelCaseMappings =
+  tableMappingsModule.UnderscoreCqlToCamelCaseMappings;
+const Mapper = require("../../../../lib/mapping/mapper");
+const Client = require("../../../../lib/client");
+const utils = require("../../../../lib/utils");
 
-const videoColumnsToProperties = new Map([ ['videoid', 'id'], ['userid', 'userId'], ['added_date', 'addedDate'],
-  ['location_type', 'locationType'], ['preview_image_location', 'preview'], ['preview_thumbnails', 'thumbnails']]);
+const videoColumnsToProperties = new Map([
+  ["videoid", "id"],
+  ["userid", "userId"],
+  ["added_date", "addedDate"],
+  ["location_type", "locationType"],
+  ["preview_image_location", "preview"],
+  ["preview_thumbnails", "thumbnails"],
+]);
 
 let hasBeenSetup = false;
 
-const mapperHelper = module.exports = {
+const mapperHelper = (module.exports = {
   setupOnce: function (testInstance) {
-
     testInstance.timeout(60000);
 
     if (hasBeenSetup) {
@@ -60,16 +66,20 @@ const mapperHelper = module.exports = {
       `INSERT INTO table_clustering1 (id1, id2, id3, value) VALUES ('a', 'b', 'c', 'value_abc_table1')`,
       `INSERT INTO table_clustering1 (id1, id2, id3, value) VALUES ('a', 'z', 'z', 'value_azz_table1')`,
       `INSERT INTO table_clustering2 (id1, id2, id3, value) VALUES ('a', 'b', 'c', 'value_abc_table2')`,
-      `INSERT INTO table_clustering2 (id1, id2, id3, value) VALUES ('a', 'z', 'z', 'value_azz_table2')`
+      `INSERT INTO table_clustering2 (id1, id2, id3, value) VALUES ('a', 'z', 'z', 'value_azz_table2')`,
     ];
 
-    helper.setup(1, { queries, keyspace: mapperHelper.keyspace, removeClusterAfter: false });
+    helper.setup(1, {
+      queries,
+      keyspace: mapperHelper.keyspace,
+      removeClusterAfter: false,
+    });
   },
-  videoIds: [ Uuid.fromString('99051fe9-6a9c-46c2-b949-38ef78858dd0') ],
-  userIds: [ Uuid.fromString('d0f60aa8-54a9-4840-b70c-fe562b68842b') ],
-  addedDates: [ new Date('2012-06-01T06:00:00Z') ],
-  yyyymmddBuckets: ['2012-06-01'],
-  keyspace: 'ks_mapper_killrvideo',
+  videoIds: [Uuid.fromString("99051fe9-6a9c-46c2-b949-38ef78858dd0")],
+  userIds: [Uuid.fromString("d0f60aa8-54a9-4840-b70c-fe562b68842b")],
+  addedDates: [new Date("2012-06-01T06:00:00Z")],
+  yyyymmddBuckets: ["2012-06-01"],
+  keyspace: "ks_mapper_killrvideo",
 
   /**
    * Gets the rows matching the doc
@@ -79,42 +89,52 @@ const mapperHelper = module.exports = {
    * @returns {Promise<Array<Row>>}
    */
   getVideoRows: function (client, doc, columns) {
-    columns = columns || '*';
+    columns = columns || "*";
 
     const queries = [
-      [`SELECT ${columns} FROM videos WHERE videoid = ?`, [doc.id]]
+      [`SELECT ${columns} FROM videos WHERE videoid = ?`, [doc.id]],
     ];
 
     if (doc.userId && doc.addedDate) {
-      queries.push([`SELECT ${columns} FROM user_videos WHERE userid = ? AND added_date = ? AND videoid = ?`,
-        [doc.userId, doc.addedDate, doc.id]]);
+      queries.push([
+        `SELECT ${columns} FROM user_videos WHERE userid = ? AND added_date = ? AND videoid = ?`,
+        [doc.userId, doc.addedDate, doc.id],
+      ]);
     }
 
     if (doc.yyyymmdd && doc.addedDate) {
-      queries.push([`SELECT ${columns} FROM latest_videos WHERE yyyymmdd = ? AND added_date = ? AND videoid = ?`,
-        [doc.yyyymmdd, doc.addedDate, doc.id]]);
+      queries.push([
+        `SELECT ${columns} FROM latest_videos WHERE yyyymmdd = ? AND added_date = ? AND videoid = ?`,
+        [doc.yyyymmdd, doc.addedDate, doc.id],
+      ]);
     }
 
-    return Promise.all(queries.map(q => client.execute(q[0], q[1], {prepare: true})))
-      .then(results => results.map(rs => rs.first()));
+    return Promise.all(
+      queries.map((q) => client.execute(q[0], q[1], { prepare: true })),
+    ).then((results) => results.map((rs) => rs.first()));
   },
   insertVideoRows: function (client, doc) {
-    const queries = [{
-      query: 'INSERT INTO videos (videoid, userid, added_date, name, description) VALUES (?, ?, ?, ?, ?)',
-      params: [doc.id, doc.userId, doc.addedDate, doc.name, doc.description ]
-    }];
+    const queries = [
+      {
+        query:
+          "INSERT INTO videos (videoid, userid, added_date, name, description) VALUES (?, ?, ?, ?, ?)",
+        params: [doc.id, doc.userId, doc.addedDate, doc.name, doc.description],
+      },
+    ];
 
     if (doc.addedDate && doc.userId) {
       queries.push({
-        query: 'INSERT INTO user_videos (videoid, userid, added_date, name) VALUES (?, ?, ?, ?)',
-        params: [doc.id, doc.userId, doc.addedDate, doc.name]
+        query:
+          "INSERT INTO user_videos (videoid, userid, added_date, name) VALUES (?, ?, ?, ?)",
+        params: [doc.id, doc.userId, doc.addedDate, doc.name],
       });
     }
 
     if (doc.yyyymmdd) {
       queries.push({
-        query: 'INSERT INTO latest_videos (yyyymmdd, videoid, added_date, name) VALUES (?, ?, ?, ?)',
-        params: [doc.yyyymmdd, doc.id, doc.addedDate, doc.name]
+        query:
+          "INSERT INTO latest_videos (yyyymmdd, videoid, added_date, name) VALUES (?, ?, ?, ?)",
+        params: [doc.yyyymmdd, doc.id, doc.addedDate, doc.name],
       });
     }
 
@@ -128,39 +148,42 @@ const mapperHelper = module.exports = {
     after(() => client.shutdown());
 
     const videoColumns = {};
-    videoColumnsToProperties.forEach((v, k) => videoColumns[k] = v);
+    videoColumnsToProperties.forEach((v, k) => (videoColumns[k] = v));
 
-    return new Mapper(client, options || {
-      models: {
-        'Video': {
-          tables: [
-            { name: 'videos', isView: false },
-            { name: 'user_videos', isView: false },
-            { name: 'latest_videos', isView: false }
-          ],
-          columns: videoColumns
-        },
-        'User': {
-          tables: [{ name: 'users', isView: false }],
-          columns: {
-            'userid': 'id',
-            'firstname': 'firstName',
-            'lastname': 'lastName'
+    return new Mapper(
+      client,
+      options || {
+        models: {
+          Video: {
+            tables: [
+              { name: "videos", isView: false },
+              { name: "user_videos", isView: false },
+              { name: "latest_videos", isView: false },
+            ],
+            columns: videoColumns,
           },
-          mappings: new UnderscoreCqlToCamelCaseMappings()
-        },
-        'VideoRating': {
-          tables: ['video_rating'],
-          columns: {
-            'videoid': 'id'
+          User: {
+            tables: [{ name: "users", isView: false }],
+            columns: {
+              userid: "id",
+              firstname: "firstName",
+              lastname: "lastName",
+            },
+            mappings: new UnderscoreCqlToCamelCaseMappings(),
           },
-          mappings: new UnderscoreCqlToCamelCaseMappings()
+          VideoRating: {
+            tables: ["video_rating"],
+            columns: {
+              videoid: "id",
+            },
+            mappings: new UnderscoreCqlToCamelCaseMappings(),
+          },
+          Clustering: { tables: ["table_clustering1", "table_clustering2"] },
+          Static: { tables: ["table_static1"] },
+          Static2: { tables: ["table_static2"] },
         },
-        'Clustering': { tables: ['table_clustering1', 'table_clustering2'] },
-        'Static': { tables: ['table_static1'] },
-        'Static2': { tables: ['table_static2'] }
-      }
-    });
+      },
+    );
   },
 
   getPropertyName: function (columnName) {
@@ -170,8 +193,11 @@ const mapperHelper = module.exports = {
 
   assertRowMatchesDoc: function (row, doc) {
     assert.ok(row);
-    Object.keys(row).forEach(columnName => {
-      assert.deepEqual(row[columnName], doc[mapperHelper.getPropertyName(columnName)]);
+    Object.keys(row).forEach((columnName) => {
+      assert.deepEqual(
+        row[columnName],
+        doc[mapperHelper.getPropertyName(columnName)],
+      );
     });
-  }
-};
+  },
+});

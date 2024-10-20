@@ -13,7 +13,6 @@ export namespace geometry {
     toJSON(): string;
 
     toString(): string;
-
   }
 
   class Point {
@@ -30,7 +29,6 @@ export namespace geometry {
     toJSON(): string;
 
     toString(): string;
-
   }
 
   class Polygon {

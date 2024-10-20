@@ -1,23 +1,28 @@
-'use strict';
-const { assert } = require('chai');
-const sinon = require('sinon');
-const utils = require('../../lib/utils');
-const helper = require('../test-helper');
+"use strict";
+const { assert } = require("chai");
+const sinon = require("sinon");
+const utils = require("../../lib/utils");
+const helper = require("../test-helper");
 const AddressResolver = utils.AddressResolver;
 
-describe('utils', function () {
-  describe('timesLimit()', function () {
-    it('should handle sync and async functions', function (done) {
-      utils.timesLimit(5, 10, function (i, next) {
-        if (i === 0) {
-          return setImmediate(next);
-        }
-        next();
-      }, done);
+describe("utils", function () {
+  describe("timesLimit()", function () {
+    it("should handle sync and async functions", function (done) {
+      utils.timesLimit(
+        5,
+        10,
+        function (i, next) {
+          if (i === 0) {
+            return setImmediate(next);
+          }
+          next();
+        },
+        done,
+      );
     });
   });
-  describe('allocBuffer', function () {
-    it('should return a buffer filled with zeros', function () {
+  describe("allocBuffer", function () {
+    it("should return a buffer filled with zeros", function () {
       const b = utils.allocBuffer(256);
       helper.assertInstanceOf(b, Buffer);
       assert.strictEqual(b.length, 256);
@@ -26,16 +31,16 @@ describe('utils', function () {
       }
     });
   });
-  describe('allocBufferUnsafe', function () {
-    it('should return a Buffer with the correct length', function () {
+  describe("allocBufferUnsafe", function () {
+    it("should return a Buffer with the correct length", function () {
       const b = utils.allocBuffer(256);
       helper.assertInstanceOf(b, Buffer);
       assert.strictEqual(b.length, 256);
     });
   });
-  describe('allocBufferFromString', function () {
-    it('should throw TypeError when the first parameter is not a string', function () {
-      if (typeof Buffer.from === 'undefined') {
+  describe("allocBufferFromString", function () {
+    it("should throw TypeError when the first parameter is not a string", function () {
+      if (typeof Buffer.from === "undefined") {
         // Our method validates for a string
         assert.throws(function () {
           utils.allocBufferFromString([]);
@@ -51,19 +56,19 @@ describe('utils', function () {
         utils.allocBufferFromString(100);
       }, TypeError);
     });
-    it('should return a Buffer representing the string value', function () {
-      const text = 'Hello safe buffer';
+    it("should return a Buffer representing the string value", function () {
+      const text = "Hello safe buffer";
       const b = utils.allocBufferFromString(text);
       helper.assertInstanceOf(b, Buffer);
       assert.strictEqual(b.toString(), text);
     });
   });
-  describe('allocBufferFromArray', function () {
-    it('should throw TypeError when the first parameter is not a string', function () {
-      if (typeof Buffer.from === 'undefined') {
+  describe("allocBufferFromArray", function () {
+    it("should throw TypeError when the first parameter is not a string", function () {
+      if (typeof Buffer.from === "undefined") {
         // Our method validates for an Array instance
         assert.throws(function () {
-          utils.allocBufferFromArray('hello');
+          utils.allocBufferFromArray("hello");
         }, TypeError);
       }
       assert.throws(function () {
@@ -76,8 +81,8 @@ describe('utils', function () {
         utils.allocBufferFromArray(100);
       }, TypeError);
     });
-    it('should return a Buffer representing the string value', function () {
-      const arr = [ 0xff, 0, 0x1a ];
+    it("should return a Buffer representing the string value", function () {
+      const arr = [0xff, 0, 0x1a];
       const b = utils.allocBufferFromArray(arr);
       helper.assertInstanceOf(b, Buffer);
       assert.strictEqual(b.length, arr.length);
@@ -87,13 +92,14 @@ describe('utils', function () {
     });
   });
 
-  describe('AddressResolver', () => {
-
-    describe('#getIp()', () => {
-
-      it('should return the resolved addresses in a round-robin fashion', async () => {
-        const addresses = ['10.10.10.1', '10.10.10.2'];
-        const resolver = new AddressResolver({ nameOrIp: 'dummy-host', dns: getDnsMock(addresses) });
+  describe("AddressResolver", () => {
+    describe("#getIp()", () => {
+      it("should return the resolved addresses in a round-robin fashion", async () => {
+        const addresses = ["10.10.10.1", "10.10.10.2"];
+        const resolver = new AddressResolver({
+          nameOrIp: "dummy-host",
+          dns: getDnsMock(addresses),
+        });
 
         await resolver.init();
 
@@ -110,11 +116,13 @@ describe('utils', function () {
       });
     });
 
-    describe('#init()', () => {
-
-      it('should callback in error when resolution fails', async () => {
-        const error = new Error('dummy error');
-        const resolver = new AddressResolver({ nameOrIp: 'dummy-host', dns: getDnsMock(error) });
+    describe("#init()", () => {
+      it("should callback in error when resolution fails", async () => {
+        const error = new Error("dummy error");
+        const resolver = new AddressResolver({
+          nameOrIp: "dummy-host",
+          dns: getDnsMock(error),
+        });
 
         let err;
 
@@ -127,8 +135,11 @@ describe('utils', function () {
         assert.strictEqual(err, error);
       });
 
-      it('should callback in error when resolution returns empty', async () => {
-        const resolver = new AddressResolver({ nameOrIp: 'dummy-host', dns: getDnsMock([]) });
+      it("should callback in error when resolution returns empty", async () => {
+        const resolver = new AddressResolver({
+          nameOrIp: "dummy-host",
+          dns: getDnsMock([]),
+        });
 
         let err;
 
@@ -139,12 +150,15 @@ describe('utils', function () {
         }
 
         helper.assertInstanceOf(err, Error);
-        helper.assertContains(err.message, 'could not be resolved');
+        helper.assertContains(err.message, "could not be resolved");
       });
 
-      it('should support a IP address as parameter', async () => {
-        const address = '10.10.10.255';
-        const resolver = new AddressResolver({ nameOrIp: address, dns: getDnsMock(new Error('ip must be used')) });
+      it("should support a IP address as parameter", async () => {
+        const address = "10.10.10.255";
+        const resolver = new AddressResolver({
+          nameOrIp: address,
+          dns: getDnsMock(new Error("ip must be used")),
+        });
 
         await resolver.init();
 
@@ -154,23 +168,25 @@ describe('utils', function () {
       });
     });
 
-    describe('#refresh()', () => {
-
-      it('should ignore failures', async () => {
+    describe("#refresh()", () => {
+      it("should ignore failures", async () => {
         let initialized = false;
-        const address = '10.10.10.1';
+        const address = "10.10.10.1";
 
         const dnsMock = {
           resolve4: (name, cb) => {
             if (!initialized) {
-              cb(null, [ address ]);
+              cb(null, [address]);
             } else {
-              cb(new Error('this error should be ignored'));
+              cb(new Error("this error should be ignored"));
             }
-          }
+          },
         };
 
-        const resolver = new AddressResolver({ nameOrIp: 'dummy-host', dns: dnsMock });
+        const resolver = new AddressResolver({
+          nameOrIp: "dummy-host",
+          dns: dnsMock,
+        });
 
         await resolver.init();
 
@@ -183,16 +199,19 @@ describe('utils', function () {
         assert.strictEqual(resolver.getIp(), address);
       });
 
-      it('should update the ips returned by getIp() methods', async () => {
-        const addresses = ['10.10.10.1'];
-        const resolver = new AddressResolver({ nameOrIp: 'dummy-host', dns: getDnsMock(addresses) });
+      it("should update the ips returned by getIp() methods", async () => {
+        const addresses = ["10.10.10.1"];
+        const resolver = new AddressResolver({
+          nameOrIp: "dummy-host",
+          dns: getDnsMock(addresses),
+        });
 
         await resolver.init();
 
         // Update the addresses that are going to be resolved
         const initialAddresses = addresses.slice(0);
         addresses.splice(0, 1);
-        addresses.push('10.10.10.1', '10.10.10.2');
+        addresses.push("10.10.10.1", "10.10.10.2");
 
         // Validate that get ip uses a cached value
         for (let i = 0; i < 10; i++) {
@@ -214,23 +233,30 @@ describe('utils', function () {
         assert.strictEqual(result.get(addresses[1]), 5);
       });
 
-      it('should resolve once when called in parallel', async () => {
-        const address = '10.10.10.1';
+      it("should resolve once when called in parallel", async () => {
+        const address = "10.10.10.1";
 
         const dnsMock = {
           resolve4: sinon.fake((name, cb) => {
-            cb(null, [ address ]);
-          })
+            cb(null, [address]);
+          }),
         };
 
-        const resolver = new AddressResolver({ nameOrIp: 'dummy-host', dns: dnsMock });
+        const resolver = new AddressResolver({
+          nameOrIp: "dummy-host",
+          dns: dnsMock,
+        });
 
         await resolver.init();
 
         assert.strictEqual(resolver.getIp(), address);
         assert.isTrue(dnsMock.resolve4.calledOnce);
 
-        await Promise.all(Array(10).fill(0).map(() => resolver.refresh()));
+        await Promise.all(
+          Array(10)
+            .fill(0)
+            .map(() => resolver.refresh()),
+        );
 
         assert.strictEqual(dnsMock.resolve4.callCount, 2);
       });
@@ -247,6 +273,6 @@ function getDnsMock(addressesOrErr) {
       } else {
         process.nextTick(() => cb(addressesOrErr));
       }
-    }
+    },
   };
 }

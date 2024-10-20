@@ -1,4 +1,4 @@
-import { types } from '../../types';
+import { types } from "../../types";
 
 export namespace graph {
   interface Edge extends Element {
@@ -32,18 +32,18 @@ export namespace graph {
   }
 
   interface Property {
-    value: any
-    key: any
+    value: any;
+    key: any;
   }
 
   interface Vertex extends Element {
-    properties?: { [key: string]: any[] }
+    properties?: { [key: string]: any[] };
   }
 
   interface VertexProperty extends Element {
-    value: any
-    key: string
-    properties?: any
+    value: any;
+    key: string;
+    properties?: any;
   }
 
   function asDouble(value: number): object;
@@ -57,7 +57,7 @@ export namespace graph {
   function asUdt(value: object): object;
 
   interface EnumValue {
-    toString(): string
+    toString(): string;
   }
 
   namespace t {

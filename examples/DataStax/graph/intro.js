@@ -1,6 +1,6 @@
-'use strict';
-const cassandra = require('scylladb-javascript-driver');
-const async = require('async');
+"use strict";
+const cassandra = require("scylladb-javascript-driver");
+const async = require("async");
 
 /**
  * Example using async library for avoiding nested callbacks
@@ -10,13 +10,13 @@ const async = require('async');
  */
 
 const client = new cassandra.Client({
-  contactPoints: ['127.0.0.1'],
+  contactPoints: ["127.0.0.1"],
   profiles: [
     // Set the graph name in the default execution profile
-    new cassandra.ExecutionProfile('default', {
-      graphOptions: { name: 'example_graph' }
-    })
-  ]
+    new cassandra.ExecutionProfile("default", {
+      graphOptions: { name: "example_graph" },
+    }),
+  ],
 });
 
 const modernSchema =
@@ -32,36 +32,39 @@ const modernGraph =
   'Vertex vadas = graph.addVertex(label, "person", "name", "vadas", "age", 27);\n' +
   'marko.addEdge("knows", vadas, "relationship_weight", 0.5f);\n';
 
-async.series([
-  function connect(next) {
-    client.connect(next);
+async.series(
+  [
+    function connect(next) {
+      client.connect(next);
+    },
+    function createGraph(next) {
+      const query = 'system.graph("example_graph").ifNotExists().create();';
+      // As the graph "example_graph" does not exist yet and
+      // it is a system query, we need to set the graph name to `null`
+      client.executeGraph(query, null, { graphName: null }, next);
+    },
+    function createSchema(next) {
+      client.executeGraph(modernSchema, next);
+    },
+    function createVerticesAndEdges(next) {
+      client.executeGraph(modernGraph, next);
+    },
+    function retrieveVertices(next) {
+      client.executeGraph("g.V()", function (err, result) {
+        if (err) {
+          return next(err);
+        }
+        const vertex = result.first();
+        console.log("First vertex: ", vertex);
+        next();
+      });
+    },
+  ],
+  function (err) {
+    if (err) {
+      console.error("There was an error", err.message, err.stack);
+    }
+    console.log("Shutting down");
+    client.shutdown();
   },
-  function createGraph(next) {
-    const query = 'system.graph("example_graph").ifNotExists().create();';
-    // As the graph "example_graph" does not exist yet and
-    // it is a system query, we need to set the graph name to `null`
-    client.executeGraph(query, null, { graphName: null }, next);
-  },
-  function createSchema(next) {
-    client.executeGraph(modernSchema, next);
-  },
-  function createVerticesAndEdges(next) {
-    client.executeGraph(modernGraph, next);
-  },
-  function retrieveVertices(next) {
-    client.executeGraph('g.V()', function (err, result) {
-      if (err) {
-        return next(err);
-      }
-      const vertex = result.first();
-      console.log('First vertex: ', vertex);
-      next();
-    });
-  }
-], function (err) {
-  if (err) {
-    console.error('There was an error', err.message, err.stack);
-  }
-  console.log('Shutting down');
-  client.shutdown();
-});
+);
