@@ -1,11 +1,5 @@
 "use strict";
-// Exposing test functions of our code
-exports.rust = require("./index");
-exports.funny = function () {
-  console.log("Hello");
-};
 
-// The rest of DataStax driver
 const clientOptions = require("./lib/client-options");
 exports.Client = require("./lib/client");
 exports.ExecutionProfile = require("./lib/execution-profile").ExecutionProfile;
