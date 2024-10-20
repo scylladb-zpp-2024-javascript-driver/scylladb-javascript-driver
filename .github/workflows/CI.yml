@@ -79,3 +79,5 @@ jobs:
       - name: Cargo fmt and clippy
         run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
           -D warnings
+      - name: Prettier for JS
+        run: npx prettier . --check
