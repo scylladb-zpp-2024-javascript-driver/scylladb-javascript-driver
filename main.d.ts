@@ -1,25 +1,25 @@
 // Im not sure this works: ToDo test the typescript part
-export * from './index'
+export * from "./index";
 
 // The rest of the dataStax driver
-import * as events from 'events';
-import * as tls from 'tls';
-import { URL } from 'url';
-import { auth } from './lib/auth';
-import { policies } from './lib/policies';
-import { types } from './lib/types';
-import { metrics } from './lib/metrics';
-import { tracker } from './lib/tracker';
-import { metadata } from './lib/metadata';
-import { datastax } from './lib/datastax/';
+import * as events from "events";
+import * as tls from "tls";
+import { URL } from "url";
+import { auth } from "./lib/auth";
+import { policies } from "./lib/policies";
+import { types } from "./lib/types";
+import { metrics } from "./lib/metrics";
+import { tracker } from "./lib/tracker";
+import { metadata } from "./lib/metadata";
+import { datastax } from "./lib/datastax/";
 import Long = types.Long;
 import Uuid = types.Uuid;
 import graph = datastax.graph;
 
 // Export imported submodules
-export { concurrent } from './lib/concurrent';
-export { mapping } from './lib/mapping';
-export { geometry } from './lib/geometry';
+export { concurrent } from "./lib/concurrent";
+export { mapping } from "./lib/mapping";
+export { geometry } from "./lib/geometry";
 export { auth, datastax, metadata, metrics, policies, tracker, types };
 
 export const version: number;
@@ -28,7 +28,7 @@ export function defaultOptions(): ClientOptions;
 
 export type ValueCallback<T> = (err: Error, val: T) => void;
 export type EmptyCallback = (err: Error) => void;
-export type ArrayOrObject = any[]|{[key: string]: any};
+export type ArrayOrObject = any[] | { [key: string]: any };
 
 export class Client extends events.EventEmitter {
   hosts: HostMap;
@@ -42,11 +42,24 @@ export class Client extends events.EventEmitter {
 
   connect(callback: EmptyCallback): void;
 
-  execute(query: string, params?: ArrayOrObject, options?: QueryOptions): Promise<types.ResultSet>;
+  execute(
+    query: string,
+    params?: ArrayOrObject,
+    options?: QueryOptions,
+  ): Promise<types.ResultSet>;
 
-  execute(query: string, params: ArrayOrObject, options: QueryOptions, callback: ValueCallback<types.ResultSet>): void;
+  execute(
+    query: string,
+    params: ArrayOrObject,
+    options: QueryOptions,
+    callback: ValueCallback<types.ResultSet>,
+  ): void;
 
-  execute(query: string, params: ArrayOrObject, callback: ValueCallback<types.ResultSet>): void;
+  execute(
+    query: string,
+    params: ArrayOrObject,
+    callback: ValueCallback<types.ResultSet>,
+  ): void;
 
   execute(query: string, callback: ValueCallback<types.ResultSet>): void;
 
@@ -54,48 +67,68 @@ export class Client extends events.EventEmitter {
     traversal: string,
     parameters: { [name: string]: any } | undefined,
     options: GraphQueryOptions,
-    callback: ValueCallback<graph.GraphResultSet>): void;
+    callback: ValueCallback<graph.GraphResultSet>,
+  ): void;
 
   executeGraph(
     traversal: string,
     parameters: { [name: string]: any } | undefined,
-    callback: ValueCallback<graph.GraphResultSet>): void;
+    callback: ValueCallback<graph.GraphResultSet>,
+  ): void;
 
-  executeGraph(traversal: string, callback: ValueCallback<graph.GraphResultSet>): void;
+  executeGraph(
+    traversal: string,
+    callback: ValueCallback<graph.GraphResultSet>,
+  ): void;
 
   executeGraph(
     traversal: string,
     parameters?: { [name: string]: any },
-    options?: GraphQueryOptions): Promise<graph.GraphResultSet>;
+    options?: GraphQueryOptions,
+  ): Promise<graph.GraphResultSet>;
 
-  eachRow(query: string,
-          params: ArrayOrObject,
-          options: QueryOptions,
-          rowCallback: (n: number, row: types.Row) => void,
-          callback?: ValueCallback<types.ResultSet>): void;
-
-  eachRow(query: string,
-          params: ArrayOrObject,
-          rowCallback: (n: number, row: types.Row) => void,
-          callback?: ValueCallback<types.ResultSet>): void;
-
-  eachRow(query: string,
-          rowCallback: (n: number, row: types.Row) => void): void;
-
-  stream(query: string, params?: ArrayOrObject, options?: QueryOptions, callback?: EmptyCallback): events.EventEmitter;
-
-  batch(
-    queries: Array<string|{query: string, params?: ArrayOrObject}>,
-    options?: QueryOptions): Promise<types.ResultSet>;
-
-  batch(
-    queries: Array<string|{query: string, params?: ArrayOrObject}>,
+  eachRow(
+    query: string,
+    params: ArrayOrObject,
     options: QueryOptions,
-    callback: ValueCallback<types.ResultSet>): void;
+    rowCallback: (n: number, row: types.Row) => void,
+    callback?: ValueCallback<types.ResultSet>,
+  ): void;
+
+  eachRow(
+    query: string,
+    params: ArrayOrObject,
+    rowCallback: (n: number, row: types.Row) => void,
+    callback?: ValueCallback<types.ResultSet>,
+  ): void;
+
+  eachRow(
+    query: string,
+    rowCallback: (n: number, row: types.Row) => void,
+  ): void;
+
+  stream(
+    query: string,
+    params?: ArrayOrObject,
+    options?: QueryOptions,
+    callback?: EmptyCallback,
+  ): events.EventEmitter;
 
   batch(
-    queries: Array<string|{query: string, params?: ArrayOrObject}>,
-    callback: ValueCallback<types.ResultSet>): void;
+    queries: Array<string | { query: string; params?: ArrayOrObject }>,
+    options?: QueryOptions,
+  ): Promise<types.ResultSet>;
+
+  batch(
+    queries: Array<string | { query: string; params?: ArrayOrObject }>,
+    options: QueryOptions,
+    callback: ValueCallback<types.ResultSet>,
+  ): void;
+
+  batch(
+    queries: Array<string | { query: string; params?: ArrayOrObject }>,
+    callback: ValueCallback<types.ResultSet>,
+  ): void;
 
   shutdown(): Promise<void>;
 
@@ -187,7 +220,7 @@ export interface ClientOptions {
   credentials?: {
     username: string;
     password: string;
-  }
+  };
 
   cloud?: {
     secureConnectBundle: string | URL;
@@ -213,7 +246,7 @@ export interface ClientOptions {
     timestampGeneration?: policies.timestampGeneration.TimestampGenerator;
   };
   pooling?: {
-    coreConnectionsPerHost?: { [key: number]: number; };
+    coreConnectionsPerHost?: { [key: number]: number };
     heartBeatInterval?: number;
     maxRequestsPerConnection?: number;
     warmup?: boolean;
@@ -226,7 +259,9 @@ export interface ClientOptions {
     noCompact?: boolean;
     port?: number;
   };
-  promiseFactory?: (handler: (callback: (err: Error, result?: any) => void) => void) => Promise<any>;
+  promiseFactory?: (
+    handler: (callback: (err: Error, result?: any) => void) => void,
+  ) => Promise<any>;
   queryOptions?: QueryOptions;
   refreshSchemaDelay?: number;
   rePrepareOnUp?: boolean;
@@ -308,20 +343,23 @@ export class ExecutionProfile {
     writeConsistency?: types.consistencies;
   };
 
-  constructor(name: string, options: {
-    consistency?: types.consistencies;
-    loadBalancing?: policies.loadBalancing.LoadBalancingPolicy;
-    readTimeout?: number;
-    retry?: policies.retry.RetryPolicy;
-    serialConsistency?: types.consistencies;
-    graphOptions?: {
-      name?: string;
-      language?: string;
-      source?: string;
-      readConsistency?: types.consistencies;
-      writeConsistency?: types.consistencies;
-    };
-  });
+  constructor(
+    name: string,
+    options: {
+      consistency?: types.consistencies;
+      loadBalancing?: policies.loadBalancing.LoadBalancingPolicy;
+      readTimeout?: number;
+      retry?: policies.retry.RetryPolicy;
+      serialConsistency?: types.consistencies;
+      graphOptions?: {
+        name?: string;
+        language?: string;
+        source?: string;
+        readConsistency?: types.consistencies;
+        writeConsistency?: types.consistencies;
+      };
+    },
+  );
 }
 
 export namespace errors {
@@ -334,7 +372,11 @@ export namespace errors {
   }
 
   class BusyConnectionError extends DriverError {
-    constructor(address: string, maxRequestsPerConnection: number, connectionLength: number);
+    constructor(
+      address: string,
+      maxRequestsPerConnection: number,
+      connectionLength: number,
+    );
   }
 
   abstract class DriverError extends Error {
@@ -376,7 +418,7 @@ export namespace token {
 
     equals(other: Token): boolean;
 
-    getType(): { code: types.dataTypes, info: any };
+    getType(): { code: types.dataTypes; info: any };
 
     getValue(): any;
   }

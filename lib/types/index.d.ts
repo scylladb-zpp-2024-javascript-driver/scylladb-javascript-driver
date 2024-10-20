@@ -1,11 +1,9 @@
-import _Long = require('long');
-import * as stream from 'stream';
-import { ValueCallback } from '../../';
+import _Long = require("long");
+import * as stream from "stream";
+import { ValueCallback } from "../../";
 
 export namespace types {
-  class Long extends _Long {
-
-  }
+  class Long extends _Long {}
 
   enum consistencies {
     any = 0x00,
@@ -18,7 +16,7 @@ export namespace types {
     eachQuorum = 0x07,
     serial = 0x08,
     localSerial = 0x09,
-    localOne = 0x0a
+    localOne = 0x0a,
   }
 
   enum dataTypes {
@@ -54,12 +52,12 @@ export namespace types {
   enum distance {
     local = 0,
     remote,
-    ignored
+    ignored,
   }
 
   enum responseErrorCodes {
     serverError = 0x0000,
-    protocolError = 0x000A,
+    protocolError = 0x000a,
     badCredentials = 0x0100,
     unavailableException = 0x1000,
     overloaded = 0x1001,
@@ -76,7 +74,7 @@ export namespace types {
     configError = 0x2300,
     alreadyExists = 0x2400,
     unprepared = 0x2500,
-    clientWriteFailure = 0x8000
+    clientWriteFailure = 0x8000,
   }
 
   enum protocolVersion {
@@ -89,7 +87,7 @@ export namespace types {
     dseV1 = 0x41,
     dseV2 = 0x42,
     maxSupported = dseV2,
-    minSupported = v1
+    minSupported = v1,
   }
 
   namespace protocolVersion {
@@ -283,7 +281,10 @@ export namespace types {
 
     static fromDate(date: Date, nanoseconds: number): LocalTime;
 
-    static fromMilliseconds(milliseconds: number, nanoseconds?: number): LocalTime;
+    static fromMilliseconds(
+      milliseconds: number,
+      nanoseconds?: number,
+    ): LocalTime;
 
     static fromString(value: string): LocalTime;
 
@@ -306,16 +307,16 @@ export namespace types {
 
   interface ResultSet extends Iterable<Row>, AsyncIterable<Row> {
     info: {
-      queriedHost: string,
-      triedHosts: { [key: string]: any; },
-      speculativeExecutions: number,
-      achievedConsistency: consistencies,
-      traceId: Uuid,
-      warnings: string[],
-      customPayload: any
+      queriedHost: string;
+      triedHosts: { [key: string]: any };
+      speculativeExecutions: number;
+      achievedConsistency: consistencies;
+      traceId: Uuid;
+      warnings: string[];
+      customPayload: any;
     };
 
-    columns: Array<{ name: string, type: { code: dataTypes, info: any } }>;
+    columns: Array<{ name: string; type: { code: dataTypes; info: any } }>;
     nextPage: (() => void) | null;
     pageState: string;
     rowLength: number;
@@ -350,18 +351,28 @@ export namespace types {
 
     static now(nodeId: string | Buffer, clockId?: string | Buffer): TimeUuid;
 
-    static now(nodeId: string | Buffer, clockId: string | Buffer, callback: ValueCallback<TimeUuid>): void;
+    static now(
+      nodeId: string | Buffer,
+      clockId: string | Buffer,
+      callback: ValueCallback<TimeUuid>,
+    ): void;
 
     static now(callback: ValueCallback<TimeUuid>): void;
 
-    static fromDate(date: Date, ticks?: number, nodeId?: string | Buffer, clockId?: string | Buffer): TimeUuid;
+    static fromDate(
+      date: Date,
+      ticks?: number,
+      nodeId?: string | Buffer,
+      clockId?: string | Buffer,
+    ): TimeUuid;
 
     static fromDate(
       date: Date,
       ticks: number,
       nodeId: string | Buffer,
       clockId: string | Buffer,
-      callback: ValueCallback<TimeUuid>): void;
+      callback: ValueCallback<TimeUuid>,
+    ): void;
 
     static fromString(value: string): TimeUuid;
 
@@ -369,7 +380,7 @@ export namespace types {
 
     static min(date: Date, ticks: number): TimeUuid;
 
-    getDatePrecision(): { date: Date, ticks: number };
+    getDatePrecision(): { date: Date; ticks: number };
 
     getDate(): Date;
   }

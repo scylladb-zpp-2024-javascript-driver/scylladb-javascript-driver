@@ -1,4 +1,10 @@
-import { auth, Client, ExecutionProfile, policies, types } from "../../../index";
+import {
+  auth,
+  Client,
+  ExecutionProfile,
+  policies,
+  types,
+} from "../../../index";
 
 /*
  * TypeScript definitions compilation tests for Client class.
@@ -6,10 +12,10 @@ import { auth, Client, ExecutionProfile, policies, types } from "../../../index"
 
 async function myTest(): Promise<any> {
   const client = new Client({
-    contactPoints: ['h1', 'h2'],
-    localDataCenter: 'dc1',
-    keyspace: 'ks1',
-    authProvider: new auth.PlainTextAuthProvider('a', 'b')
+    contactPoints: ["h1", "h2"],
+    localDataCenter: "dc1",
+    keyspace: "ks1",
+    authProvider: new auth.PlainTextAuthProvider("a", "b"),
   });
 
   let promise: Promise<void>;
@@ -17,10 +23,10 @@ async function myTest(): Promise<any> {
   let error: Error;
 
   promise = client.connect();
-  client.connect(err => error = err);
+  client.connect((err) => (error = err));
 
-  const query = 'SELECT * FROM test';
-  const params1 = [ 1 ];
+  const query = "SELECT * FROM test";
+  const params1 = [1];
   const params2 = { val: 1 };
 
   // Promise-based execution
@@ -36,13 +42,18 @@ async function myTest(): Promise<any> {
   client.execute(
     query,
     params2,
-    { prepare: true, isIdempotent: false, consistency: types.consistencies.localOne },
-    useResult);
+    {
+      prepare: true,
+      isIdempotent: false,
+      consistency: types.consistencies.localOne,
+    },
+    useResult,
+  );
 
   const queries1 = [
-    'INSERT something',
-    { query: 'UPDATE something', params: params1 },
-    { query: 'INSERT something else', params: params2 }
+    "INSERT something",
+    { query: "UPDATE something", params: params1 },
+    { query: "INSERT something else", params: params2 },
   ];
 
   // Promise-based execution
@@ -51,48 +62,61 @@ async function myTest(): Promise<any> {
 
   // Callback-based execution
   client.batch(queries1, useResult);
-  client.batch(queries1, { prepare: true, logged: true, counter: false, executionProfile: 'ep1' }, useResult);
+  client.batch(
+    queries1,
+    { prepare: true, logged: true, counter: false, executionProfile: "ep1" },
+    useResult,
+  );
 
   // EventEmitter methods
-  client.stream(query, params1, { prepare: true, executionProfile: 'ep1' })
-    .on('data', () => {})
-    .on('error', err => console.error(err));
+  client
+    .stream(query, params1, { prepare: true, executionProfile: "ep1" })
+    .on("data", () => {})
+    .on("error", (err) => console.error(err));
 
   promise = client.shutdown();
-  client.shutdown(err => error = err);
+  client.shutdown((err) => (error = err));
 
   let otherClient: Client;
 
   otherClient = new Client({
-    contactPoints: ['10.0.0.100', '10.0.0.101'],
-    localDataCenter: 'datacenter1',
-    credentials: { username: 'user1', password: 'p@ssword1' }
+    contactPoints: ["10.0.0.100", "10.0.0.101"],
+    localDataCenter: "datacenter1",
+    credentials: { username: "user1", password: "p@ssword1" },
   });
 
   otherClient = new Client({
-    contactPoints: ['h1', 'h2'],
-    localDataCenter: 'dc1',
+    contactPoints: ["h1", "h2"],
+    localDataCenter: "dc1",
     id: types.Uuid.random(),
-    applicationName: 'My app',
-    applicationVersion: '3.1.2',
-    graphOptions: { name: 'graph1', readConsistency: types.consistencies.localQuorum }
+    applicationName: "My app",
+    applicationVersion: "3.1.2",
+    graphOptions: {
+      name: "graph1",
+      readConsistency: types.consistencies.localQuorum,
+    },
   });
 
   otherClient = new Client({
-    cloud: { secureConnectBundle: 'path/to/bundle' }
+    cloud: { secureConnectBundle: "path/to/bundle" },
   });
 
   otherClient = new Client({
-    cloud: { secureConnectBundle: 'path/to/bundle' },
-    credentials: { username: 'a', password: 'b' }
+    cloud: { secureConnectBundle: "path/to/bundle" },
+    credentials: { username: "a", password: "b" },
   });
 
-  let ep1: ExecutionProfile = new ExecutionProfile('oltp1', { consistency: types.consistencies.localOne });
+  let ep1: ExecutionProfile = new ExecutionProfile("oltp1", {
+    consistency: types.consistencies.localOne,
+  });
 
-  ep1 = new ExecutionProfile('oltp2', {
+  ep1 = new ExecutionProfile("oltp2", {
     consistency: types.consistencies.localOne,
     serialConsistency: types.consistencies.localSerial,
-    loadBalancing: new policies.loadBalancing.AllowListPolicy(new policies.loadBalancing.RoundRobinPolicy(), ['host1'])
+    loadBalancing: new policies.loadBalancing.AllowListPolicy(
+      new policies.loadBalancing.RoundRobinPolicy(),
+      ["host1"],
+    ),
   });
 }
 

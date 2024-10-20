@@ -6,7 +6,7 @@ export namespace search {
     hour,
     minute,
     second,
-    millisecond
+    millisecond,
   }
 
   class DateRange {

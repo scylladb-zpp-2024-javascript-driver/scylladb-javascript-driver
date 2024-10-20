@@ -1,5 +1,5 @@
-import * as graphModule from './graph';
-import * as searchModule from './search';
+import * as graphModule from "./graph";
+import * as searchModule from "./search";
 
 export namespace datastax {
   export import graph = graphModule.graph;

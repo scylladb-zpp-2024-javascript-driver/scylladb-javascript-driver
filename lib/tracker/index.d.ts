@@ -1,24 +1,26 @@
-import { ExecutionOptions, Host } from '../../';
+import { ExecutionOptions, Host } from "../../";
 
 export namespace tracker {
   interface RequestTracker {
     onError(
       host: Host,
-      query: string | Array<{ query: string, params?: any }>,
+      query: string | Array<{ query: string; params?: any }>,
       parameters: any[] | { [key: string]: any } | null,
       executionOptions: ExecutionOptions,
       requestLength: number,
       err: Error,
-      latency: number[]): void;
+      latency: number[],
+    ): void;
 
     onSuccess(
       host: Host,
-      query: string | Array<{ query: string, params?: any }>,
+      query: string | Array<{ query: string; params?: any }>,
       parameters: any[] | { [key: string]: any } | null,
       executionOptions: ExecutionOptions,
       requestLength: number,
       responseLength: number,
-      latency: number[]): void;
+      latency: number[],
+    ): void;
 
     shutdown(): void;
   }
@@ -33,9 +35,25 @@ export namespace tracker {
       messageMaxErrorStackTraceLength?: number;
     });
 
-    onError(host: Host, query: string | Array<{ query: string; params?: any }>, parameters: any[] | { [p: string]: any } | null, executionOptions: ExecutionOptions, requestLength: number, err: Error, latency: number[]): void;
+    onError(
+      host: Host,
+      query: string | Array<{ query: string; params?: any }>,
+      parameters: any[] | { [p: string]: any } | null,
+      executionOptions: ExecutionOptions,
+      requestLength: number,
+      err: Error,
+      latency: number[],
+    ): void;
 
-    onSuccess(host: Host, query: string | Array<{ query: string; params?: any }>, parameters: any[] | { [p: string]: any } | null, executionOptions: ExecutionOptions, requestLength: number, responseLength: number, latency: number[]): void;
+    onSuccess(
+      host: Host,
+      query: string | Array<{ query: string; params?: any }>,
+      parameters: any[] | { [p: string]: any } | null,
+      executionOptions: ExecutionOptions,
+      requestLength: number,
+      responseLength: number,
+      latency: number[],
+    ): void;
 
     shutdown(): void;
   }

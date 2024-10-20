@@ -12,19 +12,19 @@ import addressResolution = policies.addressResolution;
  */
 
 function myTest(): void {
-  let lbp:LoadBalancingPolicy;
-  let rp:ReconnectionPolicy;
-  let retryPolicy:RetryPolicy;
+  let lbp: LoadBalancingPolicy;
+  let rp: ReconnectionPolicy;
+  let retryPolicy: RetryPolicy;
 
-  lbp = new policies.loadBalancing.DCAwareRoundRobinPolicy('dc1');
-  lbp = new policies.loadBalancing.AllowListPolicy(lbp, [ 'a', 'b', 'c' ]);
+  lbp = new policies.loadBalancing.DCAwareRoundRobinPolicy("dc1");
+  lbp = new policies.loadBalancing.AllowListPolicy(lbp, ["a", "b", "c"]);
   // For backward compatibility only
-  lbp = new policies.loadBalancing.WhiteListPolicy(lbp, [ 'a', 'b', 'c' ]);
+  lbp = new policies.loadBalancing.WhiteListPolicy(lbp, ["a", "b", "c"]);
   lbp = new TokenAwarePolicy(lbp);
   lbp.getOptions();
 
   // defaultLoadBalancingPolicy method should have an optional string parameter
-  lbp = policies.defaultLoadBalancingPolicy('dc1');
+  lbp = policies.defaultLoadBalancingPolicy("dc1");
   lbp = policies.defaultLoadBalancingPolicy();
 
   rp = new ConstantReconnectionPolicy(10);
@@ -33,5 +33,6 @@ function myTest(): void {
 
   retryPolicy = new RetryPolicy();
 
-  let ar: addressResolution.AddressTranslator = new addressResolution.EC2MultiRegionTranslator();
+  let ar: addressResolution.AddressTranslator =
+    new addressResolution.EC2MultiRegionTranslator();
 }

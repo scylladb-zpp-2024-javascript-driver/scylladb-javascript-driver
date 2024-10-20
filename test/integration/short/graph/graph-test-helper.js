@@ -1,19 +1,23 @@
-'use strict';
+"use strict";
 
-const utils = require('../../../../lib/utils');
+const utils = require("../../../../lib/utils");
 
 module.exports = {
-
   /**
    * Creates the modern schema and graph
    * @param {Client} client
    * @param {Function} callback
    */
   createModernGraph: function (client, callback) {
-    utils.series([
-      next => client.executeGraph(modernSchema, null, {graphName: "name1"}, next),
-      next => client.executeGraph(modernGraph, null, {graphName: "name1"}, next)
-    ], callback);
+    utils.series(
+      [
+        (next) =>
+          client.executeGraph(modernSchema, null, { graphName: "name1" }, next),
+        (next) =>
+          client.executeGraph(modernGraph, null, { graphName: "name1" }, next),
+      ],
+      callback,
+    );
   },
 
   /**
@@ -21,7 +25,7 @@ module.exports = {
    * @param {Client} client
    */
   makeStrict: function (client) {
-    return client.executeGraph(makeStrictQuery, null, { graphName: 'name1'});
+    return client.executeGraph(makeStrictQuery, null, { graphName: "name1" });
   },
 
   /**
@@ -29,18 +33,21 @@ module.exports = {
    * @param {Client} client
    */
   allowScans: function (client) {
-    return client.executeGraph(allowScansQuery, null, { graphName: 'name1'});
-  }
+    return client.executeGraph(allowScansQuery, null, { graphName: "name1" });
+  },
 };
 
+const makeStrictQuery =
+  'schema.config().option("graph.schema_mode").set("production")';
 
-const makeStrictQuery = 'schema.config().option("graph.schema_mode").set("production")';
-
-const allowScansQuery = 'schema.config().option("graph.allow_scan").set("true")';
+const allowScansQuery =
+  'schema.config().option("graph.allow_scan").set("true")';
 
 const modernSchema =
-  makeStrictQuery + '\n' +
-  allowScansQuery + '\n' +
+  makeStrictQuery +
+  "\n" +
+  allowScansQuery +
+  "\n" +
   'schema.propertyKey("name").Text().ifNotExists().create();\n' +
   'schema.propertyKey("age").Int().ifNotExists().create();\n' +
   'schema.propertyKey("lang").Text().ifNotExists().create();\n' +

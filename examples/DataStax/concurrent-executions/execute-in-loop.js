@@ -1,5 +1,6 @@
 "use strict";
-const cassandra = require('scylladb-javascript-driver');
+const cassandra = require("scylladb-javascript-driver");
+const { getClientArgs } = require("../util");
 const Uuid = cassandra.types.Uuid;
 
 const client = new cassandra.Client({ contactPoints: ['127.0.0.1'], localDataCenter: 'dc1' });
@@ -20,7 +21,9 @@ async function example() {
   await client.execute(`CREATE KEYSPACE IF NOT EXISTS examples
                         WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1' }`);
   await client.execute(`USE examples`);
-  await client.execute(`CREATE TABLE IF NOT EXISTS tbl_sample_kv (id uuid, value text, PRIMARY KEY (id))`);
+  await client.execute(
+    `CREATE TABLE IF NOT EXISTS tbl_sample_kv (id uuid, value text, PRIMARY KEY (id))`,
+  );
 
   // The maximum amount of async executions that are going to be launched in parallel
   // at any given time
@@ -29,7 +32,7 @@ async function example() {
 
   const info = {
     totalLength: 10000,
-    counter: 0
+    counter: 0,
   };
 
   // Launch in parallel n async operations (n being the concurrency level)
@@ -41,19 +44,20 @@ async function example() {
     // The n promises are going to be resolved when all the executions are completed.
     await Promise.all(promises);
 
-    console.log(`Finished executing ${info.totalLength} queries with a concurrency level of ${concurrencyLevel}.`);
-
+    console.log(
+      `Finished executing ${info.totalLength} queries with a concurrency level of ${concurrencyLevel}.`,
+    );
   } finally {
     await client.shutdown();
   }
 }
 
 async function executeOneAtATime(info) {
-  const query = 'INSERT INTO tbl_sample_kv (id, value) VALUES (?, ?)';
+  const query = "INSERT INTO tbl_sample_kv (id, value) VALUES (?, ?)";
   const options = { prepare: true, isIdempotent: true };
 
   while (info.counter++ < info.totalLength) {
-    const params = [ Uuid.random(), `Value for ${info.counter}`];
+    const params = [Uuid.random(), `Value for ${info.counter}`];
     await client.execute(query, params, options);
   }
 }
@@ -61,4 +65,6 @@ async function executeOneAtATime(info) {
 example();
 
 // Exit on unhandledRejection
-process.on('unhandledRejection', (reason) => { throw reason; });
+process.on("unhandledRejection", (reason) => {
+  throw reason;
+});

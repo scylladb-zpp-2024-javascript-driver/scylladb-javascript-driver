@@ -1,15 +1,16 @@
-'use strict';
+"use strict";
 
-const assert = require('assert');
+const assert = require("assert");
 
-const clientOptions = require('../../lib/client-options');
-const ExecutionProfile = require('../../lib/execution-profile').ExecutionProfile;
-const ProfileManager = require('../../lib/execution-profile').ProfileManager;
-const types = require('../../lib/types');
+const clientOptions = require("../../lib/client-options");
+const ExecutionProfile =
+  require("../../lib/execution-profile").ExecutionProfile;
+const ProfileManager = require("../../lib/execution-profile").ProfileManager;
+const types = require("../../lib/types");
 
-describe('ProfileManager', function () {
-  describe('constructor', function () {
-    it('should set the default profile based on the client options', function () {
+describe("ProfileManager", function () {
+  describe("constructor", function () {
+    it("should set the default profile based on the client options", function () {
       const options = clientOptions.defaultOptions();
       const manager = new ProfileManager(options);
       const profile = manager.getDefault();
@@ -17,11 +18,9 @@ describe('ProfileManager', function () {
       assert.strictEqual(profile.loadBalancing, options.policies.loadBalancing);
       assert.strictEqual(profile.retry, options.policies.retry);
     });
-    it('should set the default profile required options', function () {
+    it("should set the default profile required options", function () {
       const options = clientOptions.defaultOptions();
-      options.profiles = [
-        new ExecutionProfile('default')
-      ];
+      options.profiles = [new ExecutionProfile("default")];
       const manager = new ProfileManager(options);
       const profile = manager.getDefault();
       assert.ok(profile);
@@ -30,33 +29,35 @@ describe('ProfileManager', function () {
       assert.strictEqual(profile.retry, options.policies.retry);
     });
   });
-  describe('#getProfile()', function () {
-    it('should get the profile by name', function () {
+  describe("#getProfile()", function () {
+    it("should get the profile by name", function () {
       const options = clientOptions.defaultOptions();
       options.profiles = [
-        new ExecutionProfile('metrics', { consistency: types.consistencies.localQuorum })
+        new ExecutionProfile("metrics", {
+          consistency: types.consistencies.localQuorum,
+        }),
       ];
       const manager = new ProfileManager(options);
-      const profile = manager.getProfile('metrics');
+      const profile = manager.getProfile("metrics");
       assert.ok(profile);
       assert.strictEqual(profile, options.profiles[0]);
       assert.strictEqual(profile.consistency, types.consistencies.localQuorum);
       assert.ok(manager.getDefault());
       assert.notStrictEqual(manager.getDefault(), profile);
-      assert.strictEqual(manager.getProfile('metrics'), profile);
+      assert.strictEqual(manager.getProfile("metrics"), profile);
     });
-    it('should get the default profile when name is undefined', function () {
+    it("should get the default profile when name is undefined", function () {
       const options = clientOptions.defaultOptions();
       const manager = new ProfileManager(options);
       const profile = manager.getProfile(undefined);
       assert.ok(profile);
       assert.strictEqual(manager.getDefault(), profile);
     });
-    it('should return same the execution profile if provided', function () {
+    it("should return same the execution profile if provided", function () {
       const options = clientOptions.defaultOptions();
       const manager = new ProfileManager(options);
-      const metricsProfile = new ExecutionProfile('metrics');
-      options.profiles = [ metricsProfile ];
+      const metricsProfile = new ExecutionProfile("metrics");
+      options.profiles = [metricsProfile];
       const profile = manager.getProfile(metricsProfile);
       assert.ok(profile);
       assert.strictEqual(profile, metricsProfile);
