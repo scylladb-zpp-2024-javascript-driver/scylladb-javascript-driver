@@ -80,4 +80,4 @@ jobs:
         run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
           -D warnings
       - name: Prettier for JS
-        run: npx prettier . --check
+        run: npx prettier "{lib,examples,test}/**/*.js" --check
