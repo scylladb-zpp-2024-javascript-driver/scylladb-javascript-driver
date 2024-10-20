@@ -96,5 +96,5 @@ jobs:
         run: docker compose -f .github/docker-compose.yml logs
       - name: Remove cluster
         run: docker compose -f .github/docker-compose.yml down
-
-        
+      - name: Prettier for JS
+        run: npx prettier . --check
