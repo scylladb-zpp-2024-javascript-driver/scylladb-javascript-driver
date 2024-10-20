@@ -2,16 +2,14 @@ use napi::{bindgen_prelude::BigInt, Error, Status};
 use scylla::frame::value::CqlDuration;
 
 #[napi]
-// Will PartialEq or Eq be exposed to napi?
-#[derive(Clone, Debug, Copy, PartialEq, Eq)]
-pub struct Duration {
+pub struct DurationWrapper {
   pub months: i32,
   pub days: i32,
   pub nanoseconds: i64,
 }
 
 #[napi]
-impl Duration {
+impl DurationWrapper {
   #[napi]
   pub fn new(months: i32, days: i32, ns_bigint: BigInt) -> napi::Result<Self> {
     let ns = ns_bigint.get_i64();
@@ -27,7 +25,7 @@ impl Duration {
       } else {
         1
       };
-    Ok(Duration {
+    Ok(DurationWrapper {
       months,
       days,
       nanoseconds,
@@ -43,12 +41,19 @@ impl Duration {
   }
 }
 
-impl Duration {
+impl DurationWrapper {
   pub fn from_cql_duration(duration: CqlDuration) -> Self {
-    Duration {
+    DurationWrapper {
       months: duration.months,
       days: duration.days,
       nanoseconds: duration.nanoseconds,
+    }
+  }
+  pub fn get_cql_duration(&self) -> CqlDuration {
+    CqlDuration {
+      months: self.months,
+      days: self.days,
+      nanoseconds: self.nanoseconds,
     }
   }
 }

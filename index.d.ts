@@ -32,14 +32,6 @@ export const enum CqlTypes {
   Uuid = 24,
   Varint = 25
 }
-
-export declare class Duration {
-  months: number
-  days: number
-  nanoseconds: number
-  static new(months: number, days: number, nsBigint: bigint): Duration
-  getNanoseconds(): bigint
-}
 export declare class PlainTextAuthProvider {
   id: number
   static new(): PlainTextAuthProvider
@@ -60,6 +52,7 @@ export declare class CqlValueWrapper {
   getBlob(): Buffer
   getCounter(): bigint
   getDouble(): number
+  getDuration(): DurationWrapper
   getFloat(): number
   getInt(): number
   getText(): string
@@ -74,4 +67,11 @@ export declare class SessionOptions {
 export declare class SessionWrapper {
   static createSession(options: SessionOptions): Promise<SessionWrapper>
   queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
+}
+export declare class DurationWrapper {
+  months: number
+  days: number
+  nanoseconds: number
+  static new(months: number, days: number, nsBigint: bigint): DurationWrapper
+  getNanoseconds(): bigint
 }
