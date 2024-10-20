@@ -1,6 +1,8 @@
 use napi::{bindgen_prelude::Buffer, Error, Status};
 use scylla::{frame::response::result::CqlValue, QueryResult};
 
+use crate::types::duration::DurationWrapper;
+
 #[napi]
 pub struct QueryResultWrapper {
   internal: QueryResult,
@@ -177,6 +179,14 @@ impl CqlValueWrapper {
   pub fn get_double(&self) -> napi::Result<f64> {
     match self.internal.as_double() {
       Some(r) => Ok(r),
+      None => Err(Error::new(Status::GenericFailure, "Error")),
+    }
+  }
+
+  #[napi]
+  pub fn get_duration(&self) -> napi::Result<DurationWrapper> {
+    match self.internal.as_cql_duration() {
+      Some(r) => Ok(DurationWrapper::from_cql_duration(r)),
       None => Err(Error::new(Status::GenericFailure, "Error")),
     }
   }
