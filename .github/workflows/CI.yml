@@ -74,10 +74,10 @@ jobs:
         run: ${{ matrix.settings.build }}
         if: ${{ !matrix.settings.docker }}
         shell: bash
-      - name: Run tests
-        run: npm test
       - name: Cargo fmt and clippy
         run: cargo fmt --check &&  cargo clippy --all-targets --all-features --
           -D warnings
       - name: Prettier for JS
         run: npx prettier "{lib,examples,test}/**/*.js" --check
+      - name: Run tests
+        run: npm test
