@@ -35,6 +35,10 @@ jobs:
       OPENSSL_STATIC: ${{ steps.install_openssl.outputs.OPENSSL_STATIC }}
     steps:
       - uses: actions/checkout@v4
+      - name: Setup 3-node Scylla cluster
+        run: |
+          sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
+          docker compose -f .github/docker-compose.yml up -d --wait
       - name: Setup node
         uses: actions/setup-node@v4
         if: ${{ !matrix.settings.docker }}
@@ -79,5 +83,18 @@ jobs:
           -D warnings
       - name: Prettier for JS
         run: npx prettier "{lib,examples,test}/**/*.js" --check
+      - name: Run examples
+        run: |
+          cd examples/DataStax
+          npm i
+          SCYLLA_URI=172.42.0.2:9042 node runner.js
       - name: Run tests
         run: npm test
+      - name: Stop the cluster
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml stop
+      - name: Print the cluster logs
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml logs
+      - name: Remove cluster
+        run: docker compose -f .github/docker-compose.yml down

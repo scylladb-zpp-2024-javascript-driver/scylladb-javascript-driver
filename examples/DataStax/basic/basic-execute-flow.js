@@ -1,12 +1,10 @@
 "use strict";
 const cassandra = require("scylladb-javascript-driver");
+const { getClientArgs } = require("../util");
 const async = require("async");
 const assert = require("assert");
 
-const client = new cassandra.Client({
-  contactPoints: ["127.0.0.1"],
-  localDataCenter: "dc1",
-});
+const client = new cassandra.Client(getClientArgs());
 
 /**
  * Example using async library for avoiding nested callbacks
