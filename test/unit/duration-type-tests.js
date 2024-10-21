@@ -43,6 +43,10 @@ const values = [
         new Duration(0, 0, Long.fromString("9223372036854775807")),
         "0000fffffffffffffffffe",
     ],
+    [
+        new Duration(0, 0, Long.fromString("-9223372036854775")),
+        "0000fe4189374bc6a7ed",
+    ],
 ];
 
 describe("Duration", function () {
@@ -121,6 +125,37 @@ describe("Duration", function () {
                     return;
                 }
                 assert.strictEqual(item[0].toString(), item[2]);
+            });
+        });
+    });
+    describe("constructor type validation", function () {
+        it("should create duration type correctly", function () {
+            let keys = [0, Long.ZERO, 123, BigInt(0)];
+            keys.forEach(function (item) {
+                new Duration(0, 0, item);
+            });
+            new Duration(0, 0, 0);
+        });
+    });
+    describe("constructor type validation (invalid types)", function () {
+        it("should throw error when creating from invalid types", function () {
+            let ns_keys = [
+                "0",
+                0xfffffffffffffffff,
+                { _: 1 },
+                [0],
+                BigInt("213769213769213769213769"),
+            ];
+            ns_keys.forEach(function (item) {
+                assert.throws(() => {
+                    new Duration(0, 0, item);
+                }, Error);
+            });
+            let days_keys = ["0", Long.ZERO, BigInt(0), { _: 1 }, [0]];
+            days_keys.forEach(function (item) {
+                assert.throws(() => {
+                    new Duration(0, item, 0);
+                }, Error);
             });
         });
     });
