@@ -12,7 +12,7 @@ pub struct DurationWrapper {
 impl DurationWrapper {
   #[napi]
   pub fn new(months: i32, days: i32, ns_bigint: BigInt) -> napi::Result<Self> {
-    let (ns_value,is_lossless) = ns_bigint.get_i64();
+    let (ns_value, is_lossless) = ns_bigint.get_i64();
     if !is_lossless {
       return Err(Error::new(
         Status::GenericFailure,
