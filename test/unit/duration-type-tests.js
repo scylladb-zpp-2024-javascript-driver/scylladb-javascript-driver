@@ -43,6 +43,10 @@ const values = [
     new Duration(0, 0, Long.fromString("9223372036854775807")),
     "0000fffffffffffffffffe",
   ],
+  [
+    new Duration(0, 0, Long.fromString("-9223372036854775")),
+    "0000fe4189374bc6a7ed",
+  ],
 ];
 
 describe("Duration", function () {
