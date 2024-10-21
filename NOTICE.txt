@@ -1,0 +1,8 @@
+This driver is based on and uses parts of the following repositories:
+https://github.com/datastax/nodejs-driver
+under the Apache License 2.0.
+Copyright (c) DataStax, Inc.
+
+https://github.com/scylladb/scylla-rust-driver
+under the Apache License 2.0 / MIT.
+Copyright (c) 2024 ScyllaDB.
