@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use scylla::SessionBuilder;
 
 #[macro_use]
@@ -9,7 +7,6 @@ extern crate napi_derive;
 // Will return "Success" only if connects to running scylla database
 #[napi]
 pub async fn test_connection(uri: String) -> String {
-
   println!("Connecting to {} ...", uri);
 
   match SessionBuilder::new().known_node(uri).build().await {

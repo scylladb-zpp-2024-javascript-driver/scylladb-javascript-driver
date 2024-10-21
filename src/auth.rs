@@ -5,13 +5,12 @@ pub struct PlainTextAuthProvider {
   // If we use pub, given attribute is accessible in JS:
   pub id: u32,
   // Not all attributes can be public:
-  /* pub <- CE */ internal: scylla::SessionBuilder, 
-
+  /* pub <- CE */
+  internal: scylla::SessionBuilder,
   /* If a given object can't be translated into js, it can still be
   in a class exposed to JS, but cannot be public. It's also not visible in the
   definition in ts file. This **suggests** if we crete an object of this class,
   and pass it to JS, it's treated as a pointer to this object in rust*/
-
   // !!!It's best to test it a bit more before assuming it's true!!!
 }
 
@@ -38,5 +37,11 @@ impl PlainTextAuthProvider {
       self.internal.config.disallow_shard_aware_port
     );
     1
+  }
+}
+
+impl Default for PlainTextAuthProvider {
+  fn default() -> Self {
+    Self::new()
   }
 }
