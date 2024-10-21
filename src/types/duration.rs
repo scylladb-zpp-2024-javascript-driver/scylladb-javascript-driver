@@ -12,15 +12,15 @@ pub struct DurationWrapper {
 impl DurationWrapper {
   #[napi]
   pub fn new(months: i32, days: i32, ns_bigint: BigInt) -> napi::Result<Self> {
-    let ns = ns_bigint.get_i64();
-    if !ns.1 {
+    let (ns_value,is_lossless) = ns_bigint.get_i64();
+    if !is_lossless {
       return Err(Error::new(
         Status::GenericFailure,
-        "Invalid use: Should not happen?",
+        "Nanoseconds cannot overflow i64",
       ));
     }
-    let nanoseconds: i64 = ns.0
-      * if ns_bigint.sign_bit && ns.0 > 0 {
+    let nanoseconds: i64 = ns_value
+      * if ns_bigint.sign_bit && ns_value > 0 {
         -1
       } else {
         1
