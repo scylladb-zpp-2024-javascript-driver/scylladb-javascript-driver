@@ -124,6 +124,31 @@ describe("Duration", function () {
       });
     });
   });
+  describe(" constructor type validation", function () {
+    it("should create duration type correctly", function () {
+      let keys = [0, Long.ZERO, 123];
+      keys.forEach(function (item) {
+        new Duration(0, 0, item);
+      });
+      new Duration(0, 0, 0);
+    });
+  });
+  describe(" constructor type validation (invalid types)", function () {
+    it("should throw error when creating from invalid types", function () {
+      let ns_keys = ["0", 0xfffffffffffffffff, BigInt(0), { _: 1 }, [0]];
+      ns_keys.forEach(function (item) {
+        assert.throws(() => {
+          new Duration(0, 0, item);
+        }, Error);
+      });
+      let days_keys = ["0", Long.ZERO, BigInt(0), { _: 1 }, [0]];
+      days_keys.forEach(function (item) {
+        assert.throws(() => {
+          new Duration(0, item, 0);
+        }, Error);
+      });
+    });
+  });
 });
 
 /**

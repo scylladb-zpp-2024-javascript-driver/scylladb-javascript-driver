@@ -16,7 +16,7 @@ impl DurationWrapper {
     if !is_lossless {
       return Err(Error::new(
         Status::GenericFailure,
-        "Nanoseconds cannot overflow i64",
+        "Nanoseconds must not overflow i64",
       ));
     }
     let nanoseconds: i64 = ns_value
