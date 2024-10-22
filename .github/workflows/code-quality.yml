@@ -6,7 +6,6 @@ env:
   push:
     branches:
       - "**"
-  pull_request: null
 jobs:
   check-code-quality:
     runs-on: ubuntu-latest

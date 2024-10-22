@@ -1,6 +1,6 @@
 # DataStax Node.js Driver usage samples
 
-This examples are from the [datastax driver repository](https://github.com/datastax/nodejs-driver/tree/master).
+These examples are from the [datastax driver repository](https://github.com/datastax/nodejs-driver/tree/master).
 This folder contains examples on how to use some features of the DataStax Node.js Driver.
 
 They assume you have a running a ScyllaDB / Cassandra instance.
@@ -20,10 +20,7 @@ You should also visit the [Documentation][doc-index] and [FAQ][faq].
   - [Get hosts information](metadata/metadata-hosts.js)
   - [Get keyspaces information](metadata/metadata-keyspaces.js)
   - [Get table information](metadata/metadata-table.js)
-- Graph
-  - [Working with DSE Graph](graph/intro.js)
 - Data types
-  - [Working with geospatial types](geotypes/intro.js)
   - [Working with user-defined types (UDT)](udt/udt-insert-select.js)
   - [Working with tuples](tuple/tuple-insert-select.js)
 - Query tracing
