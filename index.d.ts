@@ -67,3 +67,9 @@ export declare class SessionWrapper {
   static createSession(options: SessionOptions): Promise<SessionWrapper>
   queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
 }
+export declare class InetAddress {
+  length: number
+  version: number
+  static new(buffer: Buffer): InetAddress
+  toString(): string
+}
