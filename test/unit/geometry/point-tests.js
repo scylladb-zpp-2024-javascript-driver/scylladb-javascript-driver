@@ -1,8 +1,6 @@
 "use strict";
 const assert = require("assert");
-const helper = require("../../test-helper");
-const moduleName = "../../../lib/geometry/point";
-const Point = require(moduleName);
+const Point = require("../../../lib/geometry/point");
 
 describe("Point", function () {
   it("tests not supported error", function () {
