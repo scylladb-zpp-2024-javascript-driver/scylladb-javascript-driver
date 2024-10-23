@@ -1,4 +1,5 @@
 use napi::{bindgen_prelude::Buffer, Error, Status};
+use scylla::frame::response::result::CqlValue;
 
 #[napi]
 pub struct InetAddress {
