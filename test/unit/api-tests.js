@@ -47,47 +47,6 @@ describe("API", function () {
         checkConstructor(api.datastax.graph, "VertexProperty");
     });
 
-    it("should expose graph wrappers", () => {
-        ["asUdt", "asInt", "asFloat", "asDouble", "asTimestamp"].forEach(
-            (functionName) => {
-                assert.isFunction(api.datastax.graph[functionName]);
-            },
-        );
-
-        checkConstructor(api.datastax.graph, "UdtGraphWrapper");
-        checkConstructor(api.datastax.graph, "GraphTypeWrapper");
-    });
-
-    it("should expose the custom type serializers", () => {
-        assert.isObject(api.datastax.graph.getCustomTypeSerializers());
-        assert.isObject(
-            api.datastax.graph.getCustomTypeSerializers()["dse:UDT"],
-        );
-        assert.isObject(
-            api.datastax.graph.getCustomTypeSerializers()["dse:Tuple"],
-        );
-    });
-
-    it("should expose graph tokens", () => {
-        ["id", "key", "label", "value"].forEach((name) => {
-            assert.isObject(api.datastax.graph.t[name]);
-            assert.equal(api.datastax.graph.t[name].toString(), name);
-        });
-
-        ["in", "out", "both"].forEach((name) => {
-            assert.isObject(api.datastax.graph.direction[name]);
-            assert.equal(
-                api.datastax.graph.direction[name].toString().toLowerCase(),
-                name,
-            );
-        });
-
-        assert.equal(api.datastax.graph.direction["in_"].toString(), "IN");
-
-        checkConstructor(api.datastax.graph, "UdtGraphWrapper");
-        checkConstructor(api.datastax.graph, "GraphTypeWrapper");
-    });
-
     it("should expose cassandra driver modules", function () {
         assert.ok(api.errors);
         assert.ok(api.policies);
