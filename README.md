@@ -1,6 +1,6 @@
 ![Static Badge](https://img.shields.io/badge/API%20coverage-0%25-red)
-![test workflow](https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/workflows/tests.yml/badge.svg)
-![quality workflow](https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/workflows/code-quality.yml/badge.svg)
+![test workflow](https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/workflows/tests.yml/badge.svg?branch=main)
+![quality workflow](https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/workflows/code-quality.yml/badge.svg?branch=main)
 # ScyllaDB JS Driver
 
 ## Instalation and build process
