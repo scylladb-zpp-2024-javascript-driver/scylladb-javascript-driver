@@ -1,6 +1,8 @@
 use napi::{bindgen_prelude::Buffer, Error, Status};
 use scylla::{frame::response::result::CqlValue, QueryResult};
 
+use crate::types::duration::DurationWrapper;
+
 #[napi]
 pub struct QueryResultWrapper {
   internal: QueryResult,
@@ -139,12 +141,22 @@ impl CqlValueWrapper {
     }
   }
 
+  fn generic_error(expected_type: &str) -> Error<Status> {
+    Error::new(
+      Status::GenericFailure,
+      format!(
+        "Could not get value of type {} from CqlValueWrapper",
+        expected_type
+      ),
+    )
+  }
+
   #[napi]
   pub fn get_ascii(&self) -> napi::Result<String> {
     // We want to fore napi to use big num
     match self.internal.as_ascii() {
       Some(r) => Ok(r.clone()),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("ascii")),
     }
   }
 
@@ -152,7 +164,7 @@ impl CqlValueWrapper {
   pub fn get_boolean(&self) -> napi::Result<bool> {
     match self.internal.as_boolean() {
       Some(r) => Ok(r),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("boolean")),
     }
   }
 
@@ -160,7 +172,7 @@ impl CqlValueWrapper {
   pub fn get_blob(&self) -> napi::Result<Buffer> {
     match self.internal.as_blob() {
       Some(r) => Ok(r.clone().into()),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("blob")),
     }
   }
 
@@ -169,7 +181,7 @@ impl CqlValueWrapper {
     // Is this correct?
     match self.internal.as_counter() {
       Some(r) => Ok(r.0.into()),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("counter")),
     }
   }
 
@@ -177,7 +189,15 @@ impl CqlValueWrapper {
   pub fn get_double(&self) -> napi::Result<f64> {
     match self.internal.as_double() {
       Some(r) => Ok(r),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("double")),
+    }
+  }
+
+  #[napi]
+  pub fn get_duration(&self) -> napi::Result<DurationWrapper> {
+    match self.internal.as_cql_duration() {
+      Some(r) => Ok(DurationWrapper::from_cql_duration(r)),
+      None => Err(Self::generic_error("ascii")),
     }
   }
 
@@ -185,7 +205,7 @@ impl CqlValueWrapper {
   pub fn get_float(&self) -> napi::Result<f32> {
     match self.internal.as_float() {
       Some(r) => Ok(r),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("float")),
     }
   }
 
@@ -193,7 +213,7 @@ impl CqlValueWrapper {
   pub fn get_int(&self) -> napi::Result<i32> {
     match self.internal.as_int() {
       Some(r) => Ok(r),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("int")),
     }
   }
 
@@ -201,7 +221,7 @@ impl CqlValueWrapper {
   pub fn get_text(&self) -> napi::Result<String> {
     match self.internal.as_text() {
       Some(r) => Ok(r.clone()),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("text")),
     }
   }
 
@@ -215,14 +235,14 @@ impl CqlValueWrapper {
           })
           .collect(),
       ),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("set")),
     }
   }
   #[napi]
   pub fn get_small_int(&self) -> napi::Result<i16> {
     match self.internal.as_smallint() {
       Some(r) => Ok(r),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("small_int")),
     }
   }
 
@@ -230,7 +250,7 @@ impl CqlValueWrapper {
   pub fn get_tiny_int(&self) -> napi::Result<i8> {
     match self.internal.as_tinyint() {
       Some(r) => Ok(r),
-      None => Err(Error::new(Status::GenericFailure, "Error")),
+      None => Err(Self::generic_error("tiny_int")),
     }
   }
 }
