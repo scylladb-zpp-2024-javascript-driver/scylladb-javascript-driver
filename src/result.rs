@@ -24,6 +24,14 @@ pub struct CqlValueWrapper {
 }
 
 #[napi]
+pub struct MetaColumnWrapper {
+    pub ksname: String,
+    pub tablename: String,
+    pub name: String,
+    pub type_code: CqlType,
+}
+
+#[napi]
 pub enum CqlType {
     Ascii,
     Boolean,
