@@ -5,41 +5,45 @@
 
 export declare function testConnection(uri: string): Promise<string>
 export const enum CqlTypes {
-  Ascii = 0,
-  Boolean = 1,
-  Blob = 2,
-  Counter = 3,
-  Decimal = 4,
-  Date = 5,
-  Double = 6,
-  Duration = 7,
-  Empty = 8,
-  Float = 9,
-  Int = 10,
-  BigInt = 11,
-  Text = 12,
-  Timestamp = 13,
-  Inet = 14,
-  List = 15,
-  Map = 16,
-  Set = 17,
-  UserDefinedType = 18,
+  Custom = 0,
+  Ascii = 1,
+  BigInt = 2,
+  Boolean = 3,
+  Blob = 4,
+  Counter = 5,
+  Decimal = 6,
+  Double = 7,
+  Float = 8,
+  Int = 9,
+  Timestamp = 11,
+  Uuid = 12,
+  Text = 13,
+  Varint = 14,
+  Timeuuid = 15,
+  Inet = 16,
+  Date = 17,
+  Time = 18,
   SmallInt = 19,
   TinyInt = 20,
-  Time = 21,
-  Timeuuid = 22,
-  Tuple = 23,
-  Uuid = 24,
-  Varint = 25
+  Duration = 21,
+  List = 32,
+  Map = 33,
+  Set = 34,
+  UserDefinedType = 48,
+  Tuple = 49,
+  Empty = 50
 }
 export declare class PlainTextAuthProvider {
   id: number
   static new(): PlainTextAuthProvider
-  static test(): number
+  test(): number
 }
 export declare class QueryResultWrapper {
-  getRows(): Array<RowWrapper>
+  getRows(): Array<RowWrapper> | null
   getColumnsNames(): Array<string>
+  getColumnsSpecs(): Array<MetaColumnsWrapper>
+  getWarnings(): Array<string>
+  getTraceId(): string | null
 }
 export declare class RowWrapper {
   getColumns(): Array<CqlValueWrapper>
@@ -58,6 +62,12 @@ export declare class CqlValueWrapper {
   getSet(): Array<CqlValueWrapper>
   getSmallInt(): number
   getTinyInt(): number
+}
+export declare class MetaColumnsWrapper {
+  ksname: string
+  tablename: string
+  name: string
+  typeCode: CqlTypes
 }
 export declare class SessionOptions {
   connectPoints: Array<string>

@@ -1,5 +1,8 @@
 use napi::{bindgen_prelude::Buffer, Error, Status};
-use scylla::{frame::response::result::CqlValue, QueryResult};
+use scylla::{
+  frame::response::result::{ColumnType, CqlValue},
+  QueryResult,
+};
 
 #[napi]
 pub struct QueryResultWrapper {
@@ -17,33 +20,42 @@ pub struct CqlValueWrapper {
 }
 
 #[napi]
+pub struct MetaColumnsWrapper {
+  pub ksname: String,
+  pub tablename: String,
+  pub name: String,
+  pub type_code: CqlTypes,
+}
+
+#[napi]
 pub enum CqlTypes {
-  Ascii,
-  Boolean,
-  Blob,
-  Counter,
-  Decimal,
-  Date,
-  Double,
-  Duration,
+  Custom = 0x0,
+  Ascii = 0x1,
+  BigInt = 0x2,
+  Boolean = 0x3,
+  Blob = 0x4,
+  Counter = 0x5,
+  Decimal = 0x6,
+  Double = 0x7,
+  Float = 0x8,
+  Int = 0x9,
+  Timestamp = 0xB,
+  Uuid = 0xC,
+  Text = 0xD,
+  Varint = 0xE,
+  Timeuuid = 0xF,
+  Inet = 0x10,
+  Date = 0x11,
+  Time = 0x12,
+  SmallInt = 0x13,
+  TinyInt = 0x14,
+  Duration = 0x15,
+  List = 0x20,
+  Map = 0x21,
+  Set = 0x22,
+  UserDefinedType = 0x30,
+  Tuple = 0x31,
   Empty,
-  Float,
-  Int,
-  BigInt,
-  Text,
-  Timestamp,
-  Inet,
-  List,
-  Map,
-  Set,
-  UserDefinedType,
-  SmallInt,
-  TinyInt,
-  Time,
-  Timeuuid,
-  Tuple,
-  Uuid,
-  Varint,
 }
 
 #[napi]
@@ -54,15 +66,15 @@ impl QueryResultWrapper {
   }
 
   #[napi]
-  pub fn get_rows(&self) -> napi::Result<Vec<RowWrapper>> {
+  pub fn get_rows(&self) -> Option<Vec<RowWrapper>> {
     let rows = match &self.internal.rows {
       Some(r) => r,
       None => {
-        return Err(Error::new(Status::GenericFailure, "No rows"));
+        return None;
       }
     };
 
-    Ok(
+    Some(
       rows
         .iter()
         .map(|f| RowWrapper {
@@ -80,6 +92,35 @@ impl QueryResultWrapper {
       .iter()
       .map(|f| f.name.clone())
       .collect()
+  }
+
+  #[napi]
+  pub fn get_columns_specs(&self) -> Vec<MetaColumnsWrapper> {
+    self
+      .internal
+      .col_specs()
+      .iter()
+      .map(|f| {
+        MetaColumnsWrapper {
+          // ToDo: Check if rust provides such information
+          ksname: "unknown?".to_string(),
+          tablename: f.table_spec.table_name().to_string(),
+          name: f.name.clone(),
+          type_code: map_column_type_to_cql_value(&f.typ),
+        }
+      })
+      .collect()
+  }
+
+  #[napi]
+  pub fn get_warnings(&self) -> Vec<String> {
+    self.internal.warnings.clone()
+  }
+
+  #[napi]
+  // As we don't have UUID type, we temporary use string
+  pub fn get_trace_id(&self) -> Option<String> {
+    self.internal.tracing_id.map(|f| f.to_string())
   }
 }
 
@@ -232,5 +273,36 @@ impl CqlValueWrapper {
       Some(r) => Ok(r),
       None => Err(Error::new(Status::GenericFailure, "Error")),
     }
+  }
+}
+
+fn map_column_type_to_cql_value(typ: &ColumnType) -> CqlTypes {
+  match typ {
+    ColumnType::Custom(_) => CqlTypes::Custom,
+    ColumnType::Ascii => CqlTypes::Ascii,
+    ColumnType::Boolean => CqlTypes::Boolean,
+    ColumnType::Blob => CqlTypes::Blob,
+    ColumnType::Counter => CqlTypes::Counter,
+    ColumnType::Date => CqlTypes::Date,
+    ColumnType::Decimal => CqlTypes::Decimal,
+    ColumnType::Double => CqlTypes::Double,
+    ColumnType::Duration => CqlTypes::Duration,
+    ColumnType::Float => CqlTypes::Float,
+    ColumnType::Int => CqlTypes::Int,
+    ColumnType::BigInt => CqlTypes::BigInt,
+    ColumnType::Text => CqlTypes::Text,
+    ColumnType::Timestamp => CqlTypes::Timestamp,
+    ColumnType::Inet => CqlTypes::Inet,
+    ColumnType::List(_) => CqlTypes::List,
+    ColumnType::Map(_, _) => CqlTypes::Map,
+    ColumnType::Set(_) => CqlTypes::Set,
+    ColumnType::UserDefinedType { .. } => CqlTypes::UserDefinedType,
+    ColumnType::SmallInt => CqlTypes::SmallInt,
+    ColumnType::TinyInt => CqlTypes::TinyInt,
+    ColumnType::Time => CqlTypes::Time,
+    ColumnType::Timeuuid => CqlTypes::Timeuuid,
+    ColumnType::Tuple(_) => CqlTypes::Tuple,
+    ColumnType::Uuid => CqlTypes::Uuid,
+    ColumnType::Varint => CqlTypes::Varint,
   }
 }
