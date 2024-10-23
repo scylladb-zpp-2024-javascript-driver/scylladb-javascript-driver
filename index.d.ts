@@ -5,6 +5,7 @@
 
 export declare function testConnection(uri: string): Promise<string>
 export const enum CqlTypes {
+  Custom = 0,
   Ascii = 1,
   BigInt = 2,
   Boolean = 3,
@@ -38,7 +39,7 @@ export declare class PlainTextAuthProvider {
   test(): number
 }
 export declare class QueryResultWrapper {
-  getRows(): Array<RowWrapper>
+  getRows(): Array<RowWrapper> | null
   getColumnsNames(): Array<string>
   getColumnsSpecs(): Array<MetaColumnsWrapper>
   getWarnings(): Array<string>

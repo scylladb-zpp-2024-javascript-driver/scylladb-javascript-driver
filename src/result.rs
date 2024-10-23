@@ -1,5 +1,8 @@
 use napi::{bindgen_prelude::Buffer, Error, Status};
-use scylla::{frame::response::result::CqlValue, QueryResult};
+use scylla::{
+  frame::response::result::{ColumnType, CqlValue},
+  QueryResult,
+};
 
 #[napi]
 pub struct QueryResultWrapper {
@@ -26,6 +29,7 @@ pub struct MetaColumnsWrapper {
 
 #[napi]
 pub enum CqlTypes {
+  Custom = 0x0,
   Ascii = 0x1,
   BigInt = 0x2,
   Boolean = 0x3,
@@ -62,15 +66,15 @@ impl QueryResultWrapper {
   }
 
   #[napi]
-  pub fn get_rows(&self) -> napi::Result<Vec<RowWrapper>> {
+  pub fn get_rows(&self) -> Option<Vec<RowWrapper>> {
     let rows = match &self.internal.rows {
       Some(r) => r,
       None => {
-        return Err(Error::new(Status::GenericFailure, "No rows"));
+        return None;
       }
     };
 
-    Ok(
+    Some(
       rows
         .iter()
         .map(|f| RowWrapper {
@@ -102,7 +106,7 @@ impl QueryResultWrapper {
           ksname: "unknown?".to_string(),
           tablename: f.table_spec.table_name().to_string(),
           name: f.name.clone(),
-          type_code: CqlTypes::Ascii,
+          type_code: map_column_type_to_cql_value(&f.typ),
         }
       })
       .collect()
@@ -269,5 +273,36 @@ impl CqlValueWrapper {
       Some(r) => Ok(r),
       None => Err(Error::new(Status::GenericFailure, "Error")),
     }
+  }
+}
+
+fn map_column_type_to_cql_value(typ: &ColumnType) -> CqlTypes {
+  match typ {
+    ColumnType::Custom(_) => CqlTypes::Custom,
+    ColumnType::Ascii => CqlTypes::Ascii,
+    ColumnType::Boolean => CqlTypes::Boolean,
+    ColumnType::Blob => CqlTypes::Blob,
+    ColumnType::Counter => CqlTypes::Counter,
+    ColumnType::Date => CqlTypes::Date,
+    ColumnType::Decimal => CqlTypes::Decimal,
+    ColumnType::Double => CqlTypes::Double,
+    ColumnType::Duration => CqlTypes::Duration,
+    ColumnType::Float => CqlTypes::Float,
+    ColumnType::Int => CqlTypes::Int,
+    ColumnType::BigInt => CqlTypes::BigInt,
+    ColumnType::Text => CqlTypes::Text,
+    ColumnType::Timestamp => CqlTypes::Timestamp,
+    ColumnType::Inet => CqlTypes::Inet,
+    ColumnType::List(_) => CqlTypes::List,
+    ColumnType::Map(_, _) => CqlTypes::Map,
+    ColumnType::Set(_) => CqlTypes::Set,
+    ColumnType::UserDefinedType { .. } => CqlTypes::UserDefinedType,
+    ColumnType::SmallInt => CqlTypes::SmallInt,
+    ColumnType::TinyInt => CqlTypes::TinyInt,
+    ColumnType::Time => CqlTypes::Time,
+    ColumnType::Timeuuid => CqlTypes::Timeuuid,
+    ColumnType::Tuple(_) => CqlTypes::Tuple,
+    ColumnType::Uuid => CqlTypes::Uuid,
+    ColumnType::Varint => CqlTypes::Varint,
   }
 }
