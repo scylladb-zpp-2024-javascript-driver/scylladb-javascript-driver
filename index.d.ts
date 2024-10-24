@@ -38,6 +38,17 @@ export declare class PlainTextAuthProvider {
   static new(): PlainTextAuthProvider
   test(): number
 }
+export declare class QueryParameterWrapper {
+  static fromAscii(val: string): QueryParameterWrapper
+  static fromBoolean(val: boolean): QueryParameterWrapper
+  static fromBlob(val: Buffer): QueryParameterWrapper
+  static fromCounter(val: bigint): QueryParameterWrapper
+  static fromDouble(val: number): QueryParameterWrapper
+  static fromFloat(val: number): QueryParameterWrapper
+  static fromInt(val: number): QueryParameterWrapper
+  static fromSmallInt(val: number): QueryParameterWrapper
+  static fromTinyInt(val: number): QueryParameterWrapper
+}
 export declare class QueryResultWrapper {
   getRows(): Array<RowWrapper> | null
   getColumnsNames(): Array<string>
