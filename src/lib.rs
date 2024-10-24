@@ -7,15 +7,15 @@ extern crate napi_derive;
 // Will return "Success" only if connects to running scylla database
 #[napi]
 pub async fn test_connection(uri: String) -> String {
-  println!("Connecting to {} ...", uri);
+    println!("Connecting to {} ...", uri);
 
-  match SessionBuilder::new().known_node(uri).build().await {
-    Ok(data) => data,
-    Err(_) => {
-      return "Error".to_string();
-    }
-  };
-  "Success".to_string()
+    match SessionBuilder::new().known_node(uri).build().await {
+        Ok(data) => data,
+        Err(_) => {
+            return "Error".to_string();
+        }
+    };
+    "Success".to_string()
 }
 
 // Link other file
