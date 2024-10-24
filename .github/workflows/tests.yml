@@ -1,0 +1,71 @@
+name: Tests
+env:
+  DEBUG: napi:*
+  APP_NAME: scylladb-javascript-driver
+"on":
+  push:
+    branches:
+      - "**"
+jobs:
+  build-and-run-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: npm run build -- --target x86_64-unknown-linux-gnu
+    name: Build and run tests - ${{ matrix.settings.target }} - node@20
+    runs-on: ${{ matrix.settings.host }}
+    outputs:
+      OPENSSL_DIR: ${{ steps.install_openssl.outputs.OPENSSL_DIR }}
+      OPENSSL_STATIC: ${{ steps.install_openssl.outputs.OPENSSL_STATIC }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup 3-node Scylla cluster
+        run: |
+          sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
+          docker compose -f .github/docker-compose.yml up -d --wait
+      - name: Setup node
+        uses: actions/setup-node@v4
+        if: ${{ !matrix.settings.docker }}
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        uses: dtolnay/rust-toolchain@stable
+        if: ${{ !matrix.settings.docker }}
+        with:
+          toolchain: stable
+          targets: ${{ matrix.settings.target }}
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.napi-rs
+            .cargo-cache
+            target/
+          key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
+      - name: Install dependencies
+        run: npm i
+      - name: Build
+        run: ${{ matrix.settings.build }}
+        shell: bash
+      - name: Run examples
+        run: |
+          cd examples/DataStax
+          npm i
+          SCYLLA_URI=172.42.0.2:9042 node runner.js
+      - name: Run tests
+        run: npm test
+      - name: Stop the cluster
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml stop
+      - name: Print the cluster logs
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml logs
+      - name: Remove cluster
+        run: docker compose -f .github/docker-compose.yml down
