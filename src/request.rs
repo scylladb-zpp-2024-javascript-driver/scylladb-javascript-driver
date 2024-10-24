@@ -9,7 +9,7 @@ use scylla::{
 
 use crate::{
     result::{map_column_type_to_cql_type, CqlType},
-    types::uuid::UuidWrapper,
+    types::{duration::DurationWrapper, uuid::UuidWrapper},
     utils::{bigint_to_i64, js_error},
 };
 
@@ -60,6 +60,13 @@ impl QueryParameterWrapper {
     pub fn from_double(val: f64) -> QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Double(val),
+        }
+    }
+
+    #[napi]
+    pub fn from_duration(val: &DurationWrapper) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Duration(val.get_cql_duration()),
         }
     }
 
