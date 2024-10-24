@@ -1,7 +1,8 @@
-use scylla::{transport::SelfIdentity, Session, SessionBuilder};
+use scylla::{frame::response::result::CqlValue, transport::SelfIdentity, Session, SessionBuilder};
 
 use crate::{
-    options::{self},
+    options,
+    request::{PreparedStatementWrapper, QueryParameterWrapper},
     result::QueryResultWrapper,
     utils::err_to_napi,
 };
@@ -51,6 +52,46 @@ impl SessionWrapper {
             .await
             .map_err(err_to_napi)?;
         Ok(QueryResultWrapper::from_query(query_result))
+    }
+
+    /// Prepares a statement through rust driver for a given session
+    /// Return PreparedStatementWrapper that wraps object returned by the rust driver
+    #[napi]
+    pub async fn prepare_statement(
+        &self,
+        statement: String,
+    ) -> napi::Result<PreparedStatementWrapper> {
+        Ok(PreparedStatementWrapper {
+            prepared: self
+                .internal
+                .prepare(statement)
+                .await
+                .map_err(err_to_napi)?,
+        })
+    }
+
+    /// Query a database with a given prepared query and provided parameters.
+    ///
+    /// Returns a wrapper of the value provided by the rust driver
+    ///
+    /// All parameters need to be wrapped into QueryParameterWrapper keeping CqlValue of correct type
+    /// Creating Prepared statement may help to determine required types
+    ///
+    /// Currently `execute_unpaged` from rust driver is used, so no pagin is done
+    /// and there is no support for any query options
+    #[napi]
+    pub async fn execute_prepared(
+        &self,
+        query: &PreparedStatementWrapper,
+        params: Vec<&QueryParameterWrapper>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<CqlValue> = params.iter().map(|e| e.parameter.clone()).collect();
+        Ok(QueryResultWrapper::from_query(
+            self.internal
+                .execute_unpaged(&query.prepared, params_vec)
+                .await
+                .map_err(err_to_napi)?,
+        ))
     }
 }
 
