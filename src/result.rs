@@ -3,7 +3,10 @@ use napi::{
     bindgen_prelude::{BigInt, Buffer},
     Error, Status,
 };
-use scylla::{frame::response::result::CqlValue, QueryResult};
+use scylla::{
+    frame::response::result::{ColumnType, CqlValue},
+    QueryResult,
+};
 
 use crate::types::duration::DurationWrapper;
 use crate::utils::js_error;
@@ -51,6 +54,7 @@ pub enum CqlType {
     Tuple,
     Uuid,
     Varint,
+    Custom,
 }
 
 #[napi]
@@ -262,5 +266,36 @@ impl CqlValueWrapper {
             Some(r) => Ok(TimeUuidWrapper::from_cql_time_uuid(r)),
             None => Err(Self::generic_error("time_uuid")),
         }
+    }
+}
+
+pub fn map_column_type_to_cql_value(typ: &ColumnType) -> CqlType {
+    match typ {
+        ColumnType::Custom(_) => CqlType::Custom,
+        ColumnType::Ascii => CqlType::Ascii,
+        ColumnType::Boolean => CqlType::Boolean,
+        ColumnType::Blob => CqlType::Blob,
+        ColumnType::Counter => CqlType::Counter,
+        ColumnType::Date => CqlType::Date,
+        ColumnType::Decimal => CqlType::Decimal,
+        ColumnType::Double => CqlType::Double,
+        ColumnType::Duration => CqlType::Duration,
+        ColumnType::Float => CqlType::Float,
+        ColumnType::Int => CqlType::Int,
+        ColumnType::BigInt => CqlType::BigInt,
+        ColumnType::Text => CqlType::Text,
+        ColumnType::Timestamp => CqlType::Timestamp,
+        ColumnType::Inet => CqlType::Inet,
+        ColumnType::List(_) => CqlType::List,
+        ColumnType::Map(_, _) => CqlType::Map,
+        ColumnType::Set(_) => CqlType::Set,
+        ColumnType::UserDefinedType { .. } => CqlType::UserDefinedType,
+        ColumnType::SmallInt => CqlType::SmallInt,
+        ColumnType::TinyInt => CqlType::TinyInt,
+        ColumnType::Time => CqlType::Time,
+        ColumnType::Timeuuid => CqlType::Timeuuid,
+        ColumnType::Tuple(_) => CqlType::Tuple,
+        ColumnType::Uuid => CqlType::Uuid,
+        ColumnType::Varint => CqlType::Varint,
     }
 }

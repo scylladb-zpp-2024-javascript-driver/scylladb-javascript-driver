@@ -30,7 +30,8 @@ export const enum CqlType {
   Timeuuid = 22,
   Tuple = 23,
   Uuid = 24,
-  Varint = 25
+  Varint = 25,
+  Custom = 26
 }
 /** Test function returning sample CqlValueWrapper with Ascii type */
 export declare function testsGetCqlWrapperAscii(): CqlValueWrapper
@@ -81,6 +82,9 @@ export declare class QueryParameterWrapper {
   static fromUuid(val: UuidWrapper): QueryParameterWrapper
   static fromTimeUuid(val: UuidWrapper): QueryParameterWrapper
 }
+export declare class PreparedStatementWrapper {
+  getExpectedTypes(): Array<CqlType>
+}
 export declare class QueryResultWrapper {
   getRows(): Array<RowWrapper> | null
   /** Get the names of the columns in order */
@@ -117,6 +121,8 @@ export declare class SessionOptions {
 export declare class SessionWrapper {
   static createSession(options: SessionOptions): Promise<SessionWrapper>
   queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
+  prepareStatement(statement: string): Promise<PreparedStatementWrapper>
+  querySimple(query: PreparedStatementWrapper, params: Array<QueryParameterWrapper>): Promise<QueryResultWrapper>
 }
 export declare class DurationWrapper {
   months: number
