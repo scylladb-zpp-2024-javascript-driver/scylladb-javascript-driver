@@ -38,6 +38,22 @@ export declare class PlainTextAuthProvider {
   static new(): PlainTextAuthProvider
   test(): number
 }
+export declare class QueryParameterWrapper {
+  static fromAscii(val: string): QueryParameterWrapper
+  static fromBoolean(val: boolean): QueryParameterWrapper
+  static fromBlob(val: Buffer): QueryParameterWrapper
+  static fromCounter(val: bigint): QueryParameterWrapper
+  static fromDouble(val: number): QueryParameterWrapper
+  static fromFloat(val: number): QueryParameterWrapper
+  static fromInt(val: number): QueryParameterWrapper
+  static fromText(val: string): QueryParameterWrapper
+  static fromSet(val: Array<QueryParameterWrapper>): QueryParameterWrapper
+  static fromSmallInt(val: number): QueryParameterWrapper
+  static fromTinyInt(val: number): QueryParameterWrapper
+}
+export declare class PreparedStatementWrapper {
+  getExpectedTypes(): Array<CqlTypes>
+}
 export declare class QueryResultWrapper {
   getRows(): Array<RowWrapper> | null
   getColumnsNames(): Array<string>
@@ -76,4 +92,6 @@ export declare class SessionOptions {
 export declare class SessionWrapper {
   static createSession(options: SessionOptions): Promise<SessionWrapper>
   queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
+  prepareStatement(statement: string): Promise<PreparedStatementWrapper>
+  querySimple(query: PreparedStatementWrapper, params: Array<QueryParameterWrapper>): Promise<QueryResultWrapper>
 }

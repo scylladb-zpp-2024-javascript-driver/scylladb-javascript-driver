@@ -276,7 +276,7 @@ impl CqlValueWrapper {
   }
 }
 
-fn map_column_type_to_cql_value(typ: &ColumnType) -> CqlTypes {
+pub fn map_column_type_to_cql_value(typ: &ColumnType) -> CqlTypes {
   match typ {
     ColumnType::Custom(_) => CqlTypes::Custom,
     ColumnType::Ascii => CqlTypes::Ascii,
