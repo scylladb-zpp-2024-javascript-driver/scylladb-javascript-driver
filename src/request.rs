@@ -4,7 +4,10 @@ use scylla::{
   prepared_statement::PreparedStatement,
 };
 
-use crate::{result::CqlTypes, utils::js_generic_err};
+use crate::{
+  result::{map_column_type_to_cql_value, CqlTypes},
+  utils::js_generic_err,
+};
 
 #[napi]
 pub struct QueryParameterWrapper {
@@ -68,13 +71,15 @@ impl QueryParameterWrapper {
     }
   }
 
+  #[napi]
   pub fn from_text(val: String) -> QueryParameterWrapper {
     QueryParameterWrapper {
       parameter: CqlValue::Ascii(val),
     }
   }
 
-  pub fn from_set(val: Vec<QueryParameterWrapper>) -> QueryParameterWrapper {
+  #[napi]
+  pub fn from_set(val: Vec<&QueryParameterWrapper>) -> QueryParameterWrapper {
     QueryParameterWrapper {
       parameter: CqlValue::Set(val.iter().map(|f| f.parameter.clone()).collect()),
     }
@@ -105,12 +110,13 @@ impl QueryParameterWrapper {
 
 #[napi]
 impl PreparedStatementWrapper {
+  #[napi]
   pub fn get_expected_types(&self) -> Vec<CqlTypes> {
     self
       .query
       .get_variable_col_specs()
       .iter()
-      .map(|_| CqlTypes::Ascii)
+      .map(|e| map_column_type_to_cql_value(&e.typ))
       .collect()
   }
 }

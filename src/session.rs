@@ -49,7 +49,10 @@ impl SessionWrapper {
   }
 
   #[napi]
-  pub async fn create(&self, statement: String) -> napi::Result<PreparedStatementWrapper> {
+  pub async fn prepare_statement(
+    &self,
+    statement: String,
+  ) -> napi::Result<PreparedStatementWrapper> {
     Ok(PreparedStatementWrapper {
       query: self
         .internal
