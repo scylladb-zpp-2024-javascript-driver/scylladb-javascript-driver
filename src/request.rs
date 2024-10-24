@@ -1,11 +1,19 @@
 use napi::bindgen_prelude::{BigInt, Buffer};
-use scylla::frame::{response::result::CqlValue, value::Counter};
+use scylla::{
+  frame::{response::result::CqlValue, value::Counter},
+  prepared_statement::PreparedStatement,
+};
 
-use crate::utils::js_generic_err;
+use crate::{result::CqlTypes, utils::js_generic_err};
 
 #[napi]
 pub struct QueryParameterWrapper {
-  parameter: CqlValue,
+  pub(crate) parameter: CqlValue,
+}
+
+#[napi]
+pub struct PreparedStatementWrapper {
+  pub(crate) query: PreparedStatement,
 }
 
 #[napi]
@@ -92,5 +100,17 @@ impl QueryParameterWrapper {
           .map_err(|_| js_generic_err("Value must fit in i16 type to be small int"))?,
       ),
     })
+  }
+}
+
+#[napi]
+impl PreparedStatementWrapper {
+  pub fn get_expected_types(&self) -> Vec<CqlTypes> {
+    self
+      .query
+      .get_variable_col_specs()
+      .iter()
+      .map(|_| CqlTypes::Ascii)
+      .collect()
   }
 }

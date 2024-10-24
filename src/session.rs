@@ -1,7 +1,10 @@
-use napi::{Error, Status};
-use scylla::{Session, SessionBuilder};
+use scylla::{frame::response::result::CqlValue, Session, SessionBuilder};
 
-use crate::result::QueryResultWrapper;
+use crate::{
+  request::{PreparedStatementWrapper, QueryParameterWrapper},
+  result::QueryResultWrapper,
+  utils::js_generic_err,
+};
 
 #[napi]
 pub struct SessionOptions {
@@ -10,7 +13,7 @@ pub struct SessionOptions {
 
 #[napi]
 pub struct SessionWrapper {
-  internal_session: Session,
+  internal: Session,
 }
 
 #[napi]
@@ -31,19 +34,44 @@ impl SessionWrapper {
       .known_node(options.connect_points[0].clone())
       .build()
       .await
-      .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
-    Ok(SessionWrapper {
-      internal_session: sb,
-    })
+      .map_err(js_generic_err)?;
+    Ok(SessionWrapper { internal: sb })
   }
 
   #[napi]
   pub async fn query_unpaged_no_values(&self, query: String) -> napi::Result<QueryResultWrapper> {
     let query = self
-      .internal_session
+      .internal
       .query_unpaged(query, &[])
       .await
-      .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
+      .map_err(js_generic_err)?;
     Ok(QueryResultWrapper::from_query(query))
+  }
+
+  #[napi]
+  pub async fn create(&self, statement: String) -> napi::Result<PreparedStatementWrapper> {
+    Ok(PreparedStatementWrapper {
+      query: self
+        .internal
+        .prepare(statement)
+        .await
+        .map_err(js_generic_err)?,
+    })
+  }
+
+  #[napi]
+  pub async fn query_simple(
+    &self,
+    query: &PreparedStatementWrapper,
+    params: Vec<&QueryParameterWrapper>,
+  ) -> napi::Result<QueryResultWrapper> {
+    let params_vec: Vec<CqlValue> = params.iter().map(|e| e.parameter.clone()).collect();
+    Ok(QueryResultWrapper::from_query(
+      self
+        .internal
+        .execute_unpaged(&query.query, params_vec)
+        .await
+        .map_err(js_generic_err)?,
+    ))
   }
 }
