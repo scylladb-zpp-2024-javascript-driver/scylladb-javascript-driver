@@ -1,17 +1,26 @@
 use napi::bindgen_prelude::{BigInt, Buffer};
-use scylla::frame::{
-    response::result::CqlValue,
-    value::{Counter, CqlTimeuuid},
+use scylla::{
+    frame::{
+        response::result::CqlValue,
+        value::{Counter, CqlTimeuuid},
+    },
+    prepared_statement::PreparedStatement,
 };
 
 use crate::{
+    result::{map_column_type_to_cql_type, CqlType},
     types::uuid::UuidWrapper,
     utils::{bigint_to_i64, js_error},
 };
 
 #[napi]
 pub struct QueryParameterWrapper {
-    parameter: CqlValue,
+    pub(crate) parameter: CqlValue,
+}
+
+#[napi]
+pub struct PreparedStatementWrapper {
+    pub(crate) query: PreparedStatement,
 }
 
 #[napi]
@@ -114,5 +123,17 @@ impl QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Timeuuid(CqlTimeuuid::from_bytes(val.get_cql_uuid().into_bytes())),
         }
+    }
+}
+
+#[napi]
+impl PreparedStatementWrapper {
+    #[napi]
+    pub fn get_expected_types(&self) -> Vec<CqlType> {
+        self.query
+            .get_variable_col_specs()
+            .iter()
+            .map(|e| map_column_type_to_cql_type(&e.typ))
+            .collect()
     }
 }

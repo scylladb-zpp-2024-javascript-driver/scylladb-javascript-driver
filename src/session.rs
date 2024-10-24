@@ -1,6 +1,10 @@
-use scylla::{Session, SessionBuilder};
+use scylla::{frame::response::result::CqlValue, Session, SessionBuilder};
 
-use crate::{result::QueryResultWrapper, utils::err_to_napi};
+use crate::{
+    request::{PreparedStatementWrapper, QueryParameterWrapper},
+    result::QueryResultWrapper,
+    utils::err_to_napi,
+};
 
 #[napi]
 pub struct SessionOptions {
@@ -9,7 +13,7 @@ pub struct SessionOptions {
 
 #[napi]
 pub struct SessionWrapper {
-    internal_session: Session,
+    internal: Session,
 }
 
 #[napi]
@@ -31,18 +35,45 @@ impl SessionWrapper {
             .build()
             .await
             .map_err(err_to_napi)?;
-        Ok(SessionWrapper {
-            internal_session: sb,
-        })
+        Ok(SessionWrapper { internal: sb })
     }
 
     #[napi]
     pub async fn query_unpaged_no_values(&self, query: String) -> napi::Result<QueryResultWrapper> {
         let query = self
-            .internal_session
+            .internal
             .query_unpaged(query, &[])
             .await
             .map_err(err_to_napi)?;
         Ok(QueryResultWrapper::from_query(query))
+    }
+
+    #[napi]
+    pub async fn prepare_statement(
+        &self,
+        statement: String,
+    ) -> napi::Result<PreparedStatementWrapper> {
+        Ok(PreparedStatementWrapper {
+            query: self
+                .internal
+                .prepare(statement)
+                .await
+                .map_err(err_to_napi)?,
+        })
+    }
+
+    #[napi]
+    pub async fn query_simple(
+        &self,
+        query: &PreparedStatementWrapper,
+        params: Vec<&QueryParameterWrapper>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<CqlValue> = params.iter().map(|e| e.parameter.clone()).collect();
+        Ok(QueryResultWrapper::from_query(
+            self.internal
+                .execute_unpaged(&query.query, params_vec)
+                .await
+                .map_err(err_to_napi)?,
+        ))
     }
 }
