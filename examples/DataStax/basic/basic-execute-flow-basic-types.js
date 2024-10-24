@@ -22,22 +22,22 @@ async.series(
     },
     function createKeyspace(next) {
       const query =
-        "CREATE KEYSPACE IF NOT EXISTS examples WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3' }";
+        "CREATE KEYSPACE IF NOT EXISTS examples2 WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1' }";
       client.execute(query, next);
     },
     function createTable2(next) {
       const query =
-        "CREATE TABLE IF NOT EXISTS examples.basic2 (id int, txt text, val int, PRIMARY KEY(id))";
+        "CREATE TABLE IF NOT EXISTS examples2.basic2 (id int, txt text, val int, PRIMARY KEY(id))";
       client.execute(query, next);
     },
     function insert(next) {
       const query =
-        "INSERT INTO examples.basic2 (id, txt, val) VALUES (?, ?, ?)";
+        "INSERT INTO examples2.basic2 (id, txt, val) VALUES (?, ?, ?)";
       client.execute(query, [12345, "Hello!", 100], { prepare: true }, next);
     },
     function select(next) {
-      const query = "SELECT id, txt, val FROM examples.basic WHERE id = ?";
-      client.execute(query, [id], { prepare: true }, function (err, result) {
+      const query = "SELECT id, txt, val FROM examples2.basic2 WHERE id = ?";
+      client.execute(query, [12345], { prepare: true }, function (err, result) {
         if (err) return next(err);
         const row = result.first();
         console.log("Obtained row: ", row);
