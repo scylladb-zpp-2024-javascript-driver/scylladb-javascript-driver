@@ -73,6 +73,7 @@ export declare class QueryParameterWrapper {
   static fromBlob(val: Buffer): QueryParameterWrapper
   static fromCounter(val: bigint): QueryParameterWrapper
   static fromDouble(val: number): QueryParameterWrapper
+  static fromDuration(val: DurationWrapper): QueryParameterWrapper
   static fromFloat(val: number): QueryParameterWrapper
   static fromInt(val: number): QueryParameterWrapper
   static fromText(val: string): QueryParameterWrapper
