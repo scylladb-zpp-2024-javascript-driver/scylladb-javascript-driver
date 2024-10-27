@@ -1,0 +1,46 @@
+# The goal of this workflow is to check if unit test run correctly
+# This includes both datastax unit tests and tests specific for this driver
+name: Unit tests
+env:
+  DEBUG: napi:*
+"on":
+  push:
+    branches:
+      - "**"
+jobs:
+  build-and-run-tests:
+    strategy:
+      fail-fast: false
+    name: Build and run unit tests - node@20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: x86_64-unknown-linux-gnu
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.napi-rs
+            .cargo-cache
+            target/
+          key: x86_64-unknown-linux-gnu-cargo-ubuntu-latest
+      - name: Install dependencies
+        run: npm i
+      - name: Build
+        run: npm run build -- --target x86_64-unknown-linux-gnu
+        shell: bash
+      - name: Run unit tests
+        run: npm test
+
