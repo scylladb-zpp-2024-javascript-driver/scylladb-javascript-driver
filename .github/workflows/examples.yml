@@ -1,4 +1,5 @@
-name: Tests
+# The goal of this workflow is to check if examples run without any errors
+name: Run examples
 env:
   DEBUG: napi:*
   APP_NAME: scylladb-javascript-driver
@@ -7,7 +8,7 @@ env:
     branches:
       - "**"
 jobs:
-  build-and-run-tests:
+  build-and-run-examples:
     strategy:
       fail-fast: false
       matrix:
@@ -15,26 +16,23 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             build: npm run build -- --target x86_64-unknown-linux-gnu
-    name: Build and run tests - ${{ matrix.settings.target }} - node@20
+        node: [ 16, 18, 20 ]
+    name: Build and run examples - ${{ matrix.settings.target }} - node@${{ matrix.node }}
     runs-on: ${{ matrix.settings.host }}
-    outputs:
-      OPENSSL_DIR: ${{ steps.install_openssl.outputs.OPENSSL_DIR }}
-      OPENSSL_STATIC: ${{ steps.install_openssl.outputs.OPENSSL_STATIC }}
     steps:
       - uses: actions/checkout@v4
+      # Scylla docker setup copied from https://github.com/scylladb/scylla-rust-driver/blob/main/.github/workflows/rust.yml
       - name: Setup 3-node Scylla cluster
         run: |
           sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
           docker compose -f .github/docker-compose.yml up -d --wait
       - name: Setup node
         uses: actions/setup-node@v4
-        if: ${{ !matrix.settings.docker }}
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
       - name: Install
         uses: dtolnay/rust-toolchain@stable
-        if: ${{ !matrix.settings.docker }}
         with:
           toolchain: stable
           targets: ${{ matrix.settings.target }}
@@ -54,13 +52,12 @@ jobs:
       - name: Build
         run: ${{ matrix.settings.build }}
         shell: bash
-      - name: Run examples
+      - name: Install examples dependencies
         run: |
           cd examples/DataStax
           npm i
-          SCYLLA_URI=172.42.0.2:9042 node runner.js
-      - name: Run tests
-        run: npm test
+      - name: Run all examples
+        run: SCYLLA_URI=172.42.0.2:9042 npm run examples
       - name: Stop the cluster
         if: ${{ always() }}
         run: docker compose -f .github/docker-compose.yml stop
