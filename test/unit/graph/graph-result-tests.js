@@ -16,8 +16,7 @@ describe("GraphResultSet", function () {
             },
             {
                 name: "ReferenceError",
-                message:
-                    "The class (GraphResultSet) is not supported by our driver",
+                message: "GraphResultSet is not supported by our driver",
             },
         );
     });

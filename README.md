@@ -61,19 +61,13 @@ function functionName()) {
 }
 ```
 
-And for functions or classes that will not be implemented:
+And for entities that will not be implemented:
 
 ```js
 /**
  * @deprecated Not supported by the driver. Usage will throw an error.
  */
-function functionName() {
-  throw new ReferenceError(`The function (functionName) is not supported by our driver`);
+function entityName() {
+  throw new ReferenceError(`entityName is not supported by our driver`);
 }
-
-/**
- * @deprecated Not supported by the driver. Usage will throw an error.
- */
-function ClassName() {
-  throw new ReferenceError(`The class (ClassName) is not supported by our driver`);
 ```
