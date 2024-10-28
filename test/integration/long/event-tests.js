@@ -77,7 +77,7 @@ describe("Client", function () {
                 done,
             );
         });
-        /* it("should emit hostAdd hostRemove", function (done) {
+        it("should emit hostAdd hostRemove", function (done) {
             const client = newInstance();
             const hostsAdded = [];
             const hostsRemoved = [];
@@ -126,7 +126,7 @@ describe("Client", function () {
                 ],
                 done,
             );
-        }); */
+        });
     });
 });
 

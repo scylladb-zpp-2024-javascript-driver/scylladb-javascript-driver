@@ -87,7 +87,7 @@ describe("Client", function () {
             });
         });
     });
-    /* describe("#getReplicas() with ByteOrderPartitioner", function () {
+    describe("#getReplicas() with ByteOrderPartitioner", function () {
         const ccmOptions = {
             vnodes: true,
             yaml: [
@@ -122,8 +122,8 @@ describe("Client", function () {
                 done();
             });
         });
-    }); */
-    /* describe("#getReplicas() with RandomPartitioner", function () {
+    });
+    describe("#getReplicas() with RandomPartitioner", function () {
         const ccmOptions = {
             vnodes: true,
             yaml: ["partitioner:org.apache.cassandra.dht.RandomPartitioner"],
@@ -158,10 +158,10 @@ describe("Client", function () {
                 );
             });
         });
-    }); */
+    });
     partitionerSuite("Murmur3Partitioner");
-    // partitionerSuite("RandomPartitioner");
-    // partitionerSuite("ByteOrderedPartitioner");
+    partitionerSuite("RandomPartitioner");
+    partitionerSuite("ByteOrderedPartitioner");
 
     context("with 1 stopped node", function () {
         const setupInfo = helper.setup(2, {
@@ -229,7 +229,7 @@ describe("Client", function () {
 
 function partitionerSuite(partitionerName) {
     return describe(partitionerName, () => {
-        [false /* , true */].forEach((vnodes) => {
+        [false, true].forEach((vnodes) => {
             describe(vnodes ? "with vnodes" : "with single token", () => {
                 const rangesPerNode = vnodes ? 256 : 1;
                 const expectedTokenRanges = 3 * rangesPerNode;

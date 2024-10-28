@@ -10,7 +10,7 @@ const utils = require("../../../lib/utils.js");
 const errors = require("../../../lib/errors.js");
 const vit = helper.vit;
 
-/* describe("Client", function () {
+describe("Client", function () {
     this.timeout(120000);
     describe("#eachRow(query, params, {prepare: 0})", function () {
         const setupInfo = helper.setup(1);
@@ -1026,7 +1026,7 @@ const vit = helper.vit;
             });
         });
     });
-}); */
+});
 
 /**
  * @returns {Client}

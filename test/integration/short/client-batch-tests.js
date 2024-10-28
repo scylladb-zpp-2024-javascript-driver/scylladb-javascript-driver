@@ -9,7 +9,7 @@ const utils = require("../../../lib/utils.js");
 const errors = require("../../../lib/errors.js");
 const vit = helper.vit;
 
-/* describe("Client @SERVER_API", function () {
+describe("Client @SERVER_API", function () {
     this.timeout(120000);
     describe("#batch(queries, {prepare: 0}, callback)", function () {
         const keyspace = helper.getRandomName("ks");
@@ -1058,7 +1058,7 @@ const vit = helper.vit;
         });
     });
 });
- */
+
 /**
  * @returns {Client}
  */
