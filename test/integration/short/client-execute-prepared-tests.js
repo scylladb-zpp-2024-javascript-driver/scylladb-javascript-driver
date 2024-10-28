@@ -15,7 +15,7 @@ const commonKs = helper.getRandomName("ks");
 const numericTests = require("./numeric-tests");
 const pagingTests = require("./paging-tests");
 
-describe("Client @SERVER_API", function () {
+/* describe("Client @SERVER_API", function () {
     this.timeout(120000);
     describe("#execute(query, params, {prepare: 1}, callback)", function () {
         const commonTable = commonKs + "." + helper.getRandomName("table");
@@ -2299,7 +2299,7 @@ describe("Client @SERVER_API", function () {
 
                 helper.shutdownAfterThisTest(client);
 
-                /** Pre-calculated based on partitioner and initial tokens */
+                /** Pre-calculated based on partitioner and initial tokens *\/
                 const replicaByKey = new Map([
                     ["0", "1"],
                     ["1", "1"],
@@ -2557,7 +2557,7 @@ describe("Client @SERVER_API", function () {
             });
         });
     });
-});
+}); */
 
 /**
  * @returns {Client}

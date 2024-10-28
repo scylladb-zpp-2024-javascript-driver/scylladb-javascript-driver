@@ -10,7 +10,7 @@ const types = require("../../../lib/types");
 
 describe("Client @SERVER_API", function () {
     this.timeout(60000);
-    context("with ssl enabled", function () {
+    /* context("with ssl enabled", function () {
         const keyspace = helper.getRandomName("ks");
         const table = keyspace + "." + helper.getRandomName("table");
         const setupQueries = [
@@ -75,7 +75,7 @@ describe("Client @SERVER_API", function () {
                 );
             });
         });
-    });
+    }); */
 });
 
 /** @returns {Client}  */

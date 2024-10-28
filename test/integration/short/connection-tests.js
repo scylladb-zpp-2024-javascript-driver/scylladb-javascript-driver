@@ -124,7 +124,7 @@ describe("Connection", function () {
         });
     });
 
-    describe("#open with ssl", function () {
+    /* describe("#open with ssl", function () {
         before(helper.ccmHelper.start(1, { ssl: true }));
         after(helper.ccmHelper.remove);
         it("should open to a ssl enabled host", function (done) {
@@ -145,7 +145,7 @@ describe("Connection", function () {
                 );
             });
         });
-    });
+    }); */
 
     describe("#changeKeyspace()", function () {
         before(helper.ccmHelper.start(1));

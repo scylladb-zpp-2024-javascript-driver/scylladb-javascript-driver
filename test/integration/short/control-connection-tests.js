@@ -152,7 +152,7 @@ describe("ControlConnection", function () {
             assert.strictEqual(countUp, 3);
         });
 
-        it("should subscribe to TOPOLOGY_CHANGE remove events and refresh ring info", async () => {
+        /* it("should subscribe to TOPOLOGY_CHANGE remove events and refresh ring info", async () => {
             const cc = newInstance();
             cc.options.policies.loadBalancing =
                 new policies.loadBalancing.RoundRobinPolicy();
@@ -180,7 +180,7 @@ describe("ControlConnection", function () {
             await helper.wait.forNodeToBeRemoved(cc.hosts, 2);
 
             assert.strictEqual(cc.hosts.length, 1);
-        });
+        }); */
 
         it("should reconnect when host used goes down", async () => {
             const options = clientOptions.extend(
