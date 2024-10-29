@@ -42,5 +42,5 @@ jobs:
         run: npm run build -- --target x86_64-unknown-linux-gnu
         shell: bash
       - name: Run unit tests
-        run: npm test
+        run: npm run unit
 
