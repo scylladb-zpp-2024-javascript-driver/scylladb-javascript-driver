@@ -29,7 +29,17 @@ jobs:
       - name: Cargo fmt
         run: cargo fmt --check
       - name: Cargo clippy
-        run: cargo clippy --all-targets --all-features --
-          -D warnings
+        run: cargo clippy --all-targets --all-features -- -D warnings
       - name: Prettier for JS
         run: npx prettier "{lib,examples,test}/**/*.js" --check
+      - name: Prepare index file verification
+        run: |
+          mv index.d.ts old_index.d.ts
+          mv index.js old_index.js
+      - name: Build
+        run: npm run build
+      - name: Check if got diffrent results
+        run: |
+          diff index.d.ts old_index.d.ts
+          diff index.js old_index.js
+      
