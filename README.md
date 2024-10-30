@@ -56,18 +56,18 @@ Files in .gitignore (auto-generated)
 For functions not yet implemented:
 
 ```js
-function function_name()) {
+function functionName()) {
     throw new Error(`TODO: Not implemented`);
 }
 ```
 
-And for functions that will be not implemented:
+And for entities that will not be implemented:
 
 ```js
 /**
- * @deprecated The method should not be used
+ * @deprecated Not supported by the driver. Usage will throw an error.
  */
-function function_name() {
-  throw new ReferenceError(`This function is not supported by our driver`);
+function entityName() {
+  throw new ReferenceError(`entityName is not supported by our driver`);
 }
 ```
