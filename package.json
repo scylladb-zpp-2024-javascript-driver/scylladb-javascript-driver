@@ -47,7 +47,7 @@
     "build": "napi build --platform --release",
     "test": "./node_modules/.bin/mocha test/unit -R spec -t 5000 --recursive",
     "unit": "./node_modules/.bin/mocha test/unit -R spec -t 5000 --recursive",
-    "examples": "node ./examples/DataStax/runner.js",
+    "examples": "node ./examples/runner.js",
     "prettier": "npx prettier \"{lib,examples,test}/**/*.js\" --write",
     "full-clippy": "cargo clippy --all-targets --all-features -- -D warnings",
     "pre-push": "npm run prettier && cargo fmt && npm run full-clippy && napi build --platform",

@@ -54,7 +54,7 @@ jobs:
         shell: bash
       - name: Install examples dependencies
         run: |
-          cd examples/DataStax
+          cd examples
           npm i
       - name: Run all examples
         run: SCYLLA_URI=172.42.0.2:9042 npm run examples
