@@ -1,11 +1,11 @@
 {
   "name": "scylladb-javascript-driver-examples",
-  "description": "Examples for the DataStax Node.js Driver for Apache Cassandra",
+  "description": "Example usage of the driver",
   "version": "0.0.1",
   "license": "Apache-2.0",
   "private": true,
   "dependencies": {
-    "scylladb-javascript-driver": "file:./../../",
+    "scylladb-javascript-driver": "file:./../",
     "async": "^1.5.2"
   }
 }
