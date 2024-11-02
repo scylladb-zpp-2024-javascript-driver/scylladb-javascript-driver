@@ -38,7 +38,7 @@ export declare class PlainTextAuthProvider {
   test(): number
 }
 export declare class QueryResultWrapper {
-  getRows(): Array<RowWrapper>
+  getRows(): Array<RowWrapper> | null
   getColumnsNames(): Array<string>
 }
 export declare class RowWrapper {
