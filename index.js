@@ -310,14 +310,14 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { testConnection, PlainTextAuthProvider, QueryResultWrapper, RowWrapper, CqlValueWrapper, CqlTypes, SessionOptions, SessionWrapper, testsBigintToI64 } = nativeBinding
+const { testConnection, PlainTextAuthProvider, QueryResultWrapper, RowWrapper, CqlValueWrapper, CqlType, SessionOptions, SessionWrapper, testsBigintToI64 } = nativeBinding
 
 module.exports.testConnection = testConnection
 module.exports.PlainTextAuthProvider = PlainTextAuthProvider
 module.exports.QueryResultWrapper = QueryResultWrapper
 module.exports.RowWrapper = RowWrapper
 module.exports.CqlValueWrapper = CqlValueWrapper
-module.exports.CqlTypes = CqlTypes
+module.exports.CqlType = CqlType
 module.exports.SessionOptions = SessionOptions
 module.exports.SessionWrapper = SessionWrapper
 module.exports.testsBigintToI64 = testsBigintToI64

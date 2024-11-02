@@ -1,4 +1,7 @@
-use napi::{bindgen_prelude::Buffer, Error, Status};
+use napi::{
+    bindgen_prelude::{BigInt, Buffer},
+    Error, Status,
+};
 use scylla::{frame::response::result::CqlValue, QueryResult};
 
 use crate::utils::js_error;
@@ -19,7 +22,7 @@ pub struct CqlValueWrapper {
 }
 
 #[napi]
-pub enum CqlTypes {
+pub enum CqlType {
     Ascii,
     Boolean,
     Blob,
@@ -101,39 +104,41 @@ impl RowWrapper {
 #[napi]
 impl CqlValueWrapper {
     #[napi]
+    /// This uses rust Debug to return string representation of underlying value
     pub fn stringify(&self) -> String {
         format!("{:?}", self.internal)
     }
 
     #[napi]
-    pub fn get_type(&self) -> CqlTypes {
+    /// Get type of value in this object
+    pub fn get_type(&self) -> CqlType {
         match self.internal {
-            CqlValue::Ascii(_) => CqlTypes::Ascii,
-            CqlValue::BigInt(_) => CqlTypes::BigInt, // NOI
-            CqlValue::Boolean(_) => CqlTypes::Boolean,
-            CqlValue::Blob(_) => CqlTypes::Blob,
-            CqlValue::Counter(_) => CqlTypes::Counter,
-            CqlValue::Decimal(_) => CqlTypes::Decimal, // NOI
-            CqlValue::Date(_) => CqlTypes::Date,       // NOI
-            CqlValue::Double(_) => CqlTypes::Double,
-            CqlValue::Duration(_) => CqlTypes::Duration, // NOI
-            CqlValue::Empty => CqlTypes::Empty,          // NOI: Not needed?
-            CqlValue::Float(_) => CqlTypes::Float,
-            CqlValue::Int(_) => CqlTypes::Int,
-            CqlValue::Text(_) => CqlTypes::Text,
-            CqlValue::Timestamp(_) => CqlTypes::Timestamp, // NOI
-            CqlValue::Inet(_) => CqlTypes::Inet,           // NOI
-            CqlValue::List(_) => CqlTypes::List,           // NOI
-            CqlValue::Map(_) => CqlTypes::Map,             // NOI
-            CqlValue::Set(_) => CqlTypes::Set,
-            CqlValue::UserDefinedType { .. } => CqlTypes::UserDefinedType, // NOI
-            CqlValue::SmallInt(_) => CqlTypes::SmallInt,
-            CqlValue::TinyInt(_) => CqlTypes::TinyInt,
-            CqlValue::Time(_) => CqlTypes::Time,         // NOI
-            CqlValue::Timeuuid(_) => CqlTypes::Timeuuid, // NOI
-            CqlValue::Tuple(_) => CqlTypes::Tuple,       // NOI
-            CqlValue::Uuid(_) => CqlTypes::Uuid,         // NOI
-            CqlValue::Varint(_) => CqlTypes::Varint,     // NOI
+            CqlValue::Ascii(_) => CqlType::Ascii,
+            CqlValue::BigInt(_) => CqlType::BigInt,
+            CqlValue::Boolean(_) => CqlType::Boolean,
+            CqlValue::Blob(_) => CqlType::Blob,
+            CqlValue::Counter(_) => CqlType::Counter,
+            CqlValue::Decimal(_) => CqlType::Decimal, // NOI
+            CqlValue::Date(_) => CqlType::Date,       // NOI
+            CqlValue::Double(_) => CqlType::Double,
+            CqlValue::Duration(_) => CqlType::Duration, // NOI
+            CqlValue::Empty => CqlType::Empty,
+            CqlValue::Float(_) => CqlType::Float,
+            CqlValue::Int(_) => CqlType::Int,
+            CqlValue::Text(_) => CqlType::Text,
+            CqlValue::Timestamp(_) => CqlType::Timestamp, // NOI
+            CqlValue::Inet(_) => CqlType::Inet,           // NOI
+            CqlValue::List(_) => CqlType::List,           // NOI
+            CqlValue::Map(_) => CqlType::Map,             // NOI
+            CqlValue::Set(_) => CqlType::Set,
+            CqlValue::UserDefinedType { .. } => CqlType::UserDefinedType, // NOI
+            CqlValue::SmallInt(_) => CqlType::SmallInt,
+            CqlValue::TinyInt(_) => CqlType::TinyInt,
+            CqlValue::Time(_) => CqlType::Time,         // NOI
+            CqlValue::Timeuuid(_) => CqlType::Timeuuid, // NOI
+            CqlValue::Tuple(_) => CqlType::Tuple,       // NOI
+            CqlValue::Uuid(_) => CqlType::Uuid,         // NOI
+            CqlValue::Varint(_) => CqlType::Varint,     // NOI
         }
     }
 
@@ -146,7 +151,6 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_ascii(&self) -> napi::Result<String> {
-        // We want to fore napi to use big num
         match self.internal.as_ascii() {
             Some(r) => Ok(r.clone()),
             None => Err(Self::generic_error("ascii")),
@@ -170,8 +174,7 @@ impl CqlValueWrapper {
     }
 
     #[napi]
-    pub fn get_counter(&self) -> napi::Result<i128> {
-        // Is this correct?
+    pub fn get_counter(&self) -> napi::Result<BigInt> {
         match self.internal.as_counter() {
             Some(r) => Ok(r.0.into()),
             None => Err(Self::generic_error("counter")),
