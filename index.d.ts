@@ -32,6 +32,28 @@ export const enum CqlType {
   Uuid = 24,
   Varint = 25
 }
+/** Test function returning sample CqlValueWrapper with Ascii type */
+export declare function testsGetCqlWrapperAscii(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Boolean type */
+export declare function testsGetCqlWrapperBoolean(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Blob type */
+export declare function testsGetCqlWrapperBlob(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Counter type */
+export declare function testsGetCqlWrapperCounter(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Double type */
+export declare function testsGetCqlWrapperDouble(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Float type */
+export declare function testsGetCqlWrapperFloat(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Int type */
+export declare function testsGetCqlWrapperInt(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Text type */
+export declare function testsGetCqlWrapperText(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Set type */
+export declare function testsGetCqlWrapperSet(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with SmallInt type */
+export declare function testsGetCqlWrapperSmallInt(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with TinyInt type */
+export declare function testsGetCqlWrapperTinyInt(): CqlValueWrapper
 export declare function testsBigintToI64(value: bigint, case?: number | undefined | null): void
 export declare class PlainTextAuthProvider {
   id: number
@@ -40,9 +62,11 @@ export declare class PlainTextAuthProvider {
 }
 export declare class QueryResultWrapper {
   getRows(): Array<RowWrapper> | null
+  /** Get the names of the columns in order */
   getColumnsNames(): Array<string>
 }
 export declare class RowWrapper {
+  /** Get the CQL value wrappers for each column in the given row */
   getColumns(): Array<CqlValueWrapper>
 }
 export declare class CqlValueWrapper {
