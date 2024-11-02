@@ -58,23 +58,25 @@ impl QueryResultWrapper {
     }
 
     #[napi]
-    pub fn get_rows(&self) -> napi::Result<Vec<RowWrapper>> {
+    pub fn get_rows(&self) -> Option<Vec<RowWrapper>> {
         let rows = match &self.internal.rows {
             Some(r) => r,
             None => {
-                return Err(Error::new(Status::GenericFailure, "No rows"));
+                return None;
             }
         };
 
-        Ok(rows
-            .iter()
-            .map(|f| RowWrapper {
-                internal: f.columns.clone(),
-            })
-            .collect())
+        Some(
+            rows.iter()
+                .map(|f| RowWrapper {
+                    internal: f.columns.clone(),
+                })
+                .collect(),
+        )
     }
 
     #[napi]
+    /// Get the names of the columns in order 
     pub fn get_columns_names(&self) -> Vec<String> {
         self.internal
             .col_specs()
@@ -87,6 +89,7 @@ impl QueryResultWrapper {
 #[napi]
 impl RowWrapper {
     #[napi]
+    /// Get the CQL value wrappers for each column in the given row
     pub fn get_columns(&self) -> napi::Result<Vec<CqlValueWrapper>> {
         let s: Vec<CqlValueWrapper> = self
             .internal
@@ -225,6 +228,7 @@ impl CqlValueWrapper {
             None => Err(Self::generic_error("set")),
         }
     }
+
     #[napi]
     pub fn get_small_int(&self) -> napi::Result<i16> {
         match self.internal.as_smallint() {
