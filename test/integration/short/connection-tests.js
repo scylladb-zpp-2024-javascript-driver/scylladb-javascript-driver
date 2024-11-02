@@ -390,22 +390,6 @@ function getProtocolVersion() {
 
     const serverInfo = helper.getServerInfo();
 
-    if (serverInfo.isDse) {
-        if (helper.isDseGreaterThan("6.0")) {
-            return protocolVersion.dseV2;
-        }
-
-        if (serverInfo.version.startsWith("5.1")) {
-            return protocolVersion.dseV1;
-        }
-
-        if (serverInfo.version.startsWith("4.8")) {
-            return protocolVersion.v3;
-        }
-
-        return protocolVersion.v4;
-    }
-
     if (serverInfo.version.startsWith("2.1")) {
         return protocolVersion.v3;
     }

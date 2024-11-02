@@ -38,71 +38,7 @@ describe("Client", function () {
                 jvmArgs: ["-Dcassandra.test.fail_writes_ks=" + failWritesKs],
             },
         });
-        vit(
-            "dse-6.0",
-            "should callback with readFailure error when tombstone overwhelmed on replica",
-            function (done) {
-                const client = setupInfo.client;
-                utils.series(
-                    [
-                        function generateTombstones(next) {
-                            utils.timesSeries(
-                                100,
-                                function (n, timesNext) {
-                                    const query =
-                                        "DELETE FROM read_fail_tbl WHERE pk = ? AND cc = ?";
-                                    client.execute(
-                                        query,
-                                        [1, n],
-                                        { prepare: true },
-                                        timesNext,
-                                    );
-                                },
-                                next,
-                            );
-                        },
-                        function (next) {
-                            client.execute(
-                                "SELECT * FROM read_fail_tbl WHERE pk = 1",
-                                function (err) {
-                                    helper.assertInstanceOf(
-                                        err,
-                                        errors.ResponseError,
-                                    );
-                                    assert.strictEqual(
-                                        err.code,
-                                        types.responseErrorCodes.readFailure,
-                                    );
-                                    if (
-                                        client.controlConnection
-                                            .protocolVersion >=
-                                        protocolVersion.v5
-                                    ) {
-                                        assert.strictEqual(
-                                            typeof err.reasons,
-                                            "object",
-                                        );
-                                        Object.keys(err.reasons).forEach(
-                                            function (key) {
-                                                assert.strictEqual(
-                                                    typeof err.reasons[key],
-                                                    "number",
-                                                );
-                                            },
-                                        );
-                                    } else {
-                                        assert.strictEqual(err.failures, 1);
-                                    }
-                                    assert.strictEqual(err.received, 0);
-                                    next();
-                                },
-                            );
-                        },
-                    ],
-                    done,
-                );
-            },
-        );
+
         it("should callback with writeFailure error when encountered", function (done) {
             const client = setupInfo.client;
             const query = util.format(
