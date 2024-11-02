@@ -16,7 +16,7 @@ pub struct RowWrapper {
 
 #[napi]
 pub struct CqlValueWrapper {
-    internal: CqlValue,
+    pub(crate) inner: CqlValue,
 }
 
 #[napi]
@@ -74,7 +74,7 @@ impl QueryResultWrapper {
     }
 
     #[napi]
-    /// Get the names of the columns in order 
+    /// Get the names of the columns in order
     pub fn get_columns_names(&self) -> Vec<String> {
         self.internal
             .col_specs()
@@ -92,11 +92,7 @@ impl RowWrapper {
         let s: Vec<CqlValueWrapper> = self
             .internal
             .iter()
-            .filter_map(|f| {
-                f.as_ref().map(|r| CqlValueWrapper {
-                    internal: r.clone(),
-                })
-            })
+            .filter_map(|f| f.as_ref().map(|r| CqlValueWrapper { inner: r.clone() }))
             .collect();
         Ok(s)
     }
@@ -107,13 +103,13 @@ impl CqlValueWrapper {
     #[napi]
     /// This uses rust Debug to return string representation of underlying value
     pub fn stringify(&self) -> String {
-        format!("{:?}", self.internal)
+        format!("{:?}", self.inner)
     }
 
     #[napi]
     /// Get type of value in this object
     pub fn get_type(&self) -> CqlType {
-        match self.internal {
+        match self.inner {
             CqlValue::Ascii(_) => CqlType::Ascii,
             CqlValue::BigInt(_) => CqlType::BigInt,
             CqlValue::Boolean(_) => CqlType::Boolean,
@@ -155,7 +151,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_ascii(&self) -> napi::Result<String> {
-        match self.internal.as_ascii() {
+        match self.inner.as_ascii() {
             Some(r) => Ok(r.clone()),
             None => Err(Self::generic_error("ascii")),
         }
@@ -163,7 +159,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_boolean(&self) -> napi::Result<bool> {
-        match self.internal.as_boolean() {
+        match self.inner.as_boolean() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("boolean")),
         }
@@ -171,7 +167,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_blob(&self) -> napi::Result<Buffer> {
-        match self.internal.as_blob() {
+        match self.inner.as_blob() {
             Some(r) => Ok(r.clone().into()),
             None => Err(Self::generic_error("blob")),
         }
@@ -179,7 +175,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_counter(&self) -> napi::Result<BigInt> {
-        match self.internal.as_counter() {
+        match self.inner.as_counter() {
             Some(r) => Ok(r.0.into()),
             None => Err(Self::generic_error("counter")),
         }
@@ -187,7 +183,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_double(&self) -> napi::Result<f64> {
-        match self.internal.as_double() {
+        match self.inner.as_double() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("double")),
         }
@@ -195,7 +191,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_float(&self) -> napi::Result<f32> {
-        match self.internal.as_float() {
+        match self.inner.as_float() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("float")),
         }
@@ -203,7 +199,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_int(&self) -> napi::Result<i32> {
-        match self.internal.as_int() {
+        match self.inner.as_int() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("int")),
         }
@@ -211,7 +207,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_text(&self) -> napi::Result<String> {
-        match self.internal.as_text() {
+        match self.inner.as_text() {
             Some(r) => Ok(r.clone()),
             None => Err(Self::generic_error("text")),
         }
@@ -219,12 +215,10 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_set(&self) -> napi::Result<Vec<CqlValueWrapper>> {
-        match self.internal.as_set() {
+        match self.inner.as_set() {
             Some(r) => Ok(r
                 .iter()
-                .map(|f| CqlValueWrapper {
-                    internal: f.clone(),
-                })
+                .map(|f| CqlValueWrapper { inner: f.clone() })
                 .collect()),
             None => Err(Self::generic_error("set")),
         }
@@ -232,7 +226,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_small_int(&self) -> napi::Result<i16> {
-        match self.internal.as_smallint() {
+        match self.inner.as_smallint() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("small_int")),
         }
@@ -240,7 +234,7 @@ impl CqlValueWrapper {
 
     #[napi]
     pub fn get_tiny_int(&self) -> napi::Result<i8> {
-        match self.internal.as_tinyint() {
+        match self.inner.as_tinyint() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("tiny_int")),
         }

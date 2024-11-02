@@ -1,0 +1,123 @@
+"use strict";
+const { assert } = require("chai");
+const rust = require("../../index");
+const { getCqlObject } = require("../../lib/types/results-wrapper");
+
+const maxI64 = BigInt("9223372036854775807");
+const maxI32 = Number(2147483647);
+
+describe("Cql value wrapper", function () {
+    it("should get ascii type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperAscii();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Ascii);
+        let value = getCqlObject(element);
+        /* Corresponding value:
+        let element = CqlValue::Ascii("test value".to_owned()); */
+        assert.strictEqual(value, "test value");
+    });
+
+    it("should get boolean type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperBoolean();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Boolean);
+        let value = getCqlObject(element);
+        /* Corresponding value:
+        let element = CqlValue::Boolean(false); */
+        assert.strictEqual(value, false);
+    });
+
+    it("should get blob type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperBlob();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Blob);
+        let value = getCqlObject(element);
+        /* Corresponding value:
+        let element = CqlValue::Blob((0..4).collect()); */
+        let expected = Buffer.from([0, 1, 2, 3]);
+        assert.deepEqual(value, expected);
+    });
+
+    it("should get counter type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperCounter();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Counter);
+        let value = getCqlObject(element);
+        /* Corresponding value:
+        let element = CqlValue::Counter(Counter(i64::MAX)); */
+        assert.strictEqual(value, maxI64);
+    });
+
+    it("should get double type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperDouble();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Double);
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Double(f64::MAX); */
+        assert.strictEqual(value, Number.MAX_VALUE);
+    });
+
+    it("should get float type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperFloat();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Float);
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Float(0_f32); */
+        assert.strictEqual(value, Number(0));
+    });
+
+    it("should get int type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperInt();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Int);
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Int(i32::MAX); */
+        assert.strictEqual(value, maxI32);
+    });
+
+    it("should get text type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperText();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Text);
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Text("".to_owned()); */
+        assert.strictEqual(value, "");
+    });
+
+    it("should get set type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperSet();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Set);
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Set(vec![
+            CqlValue::Text("some text".to_owned()),
+            CqlValue::Int(1),
+        ]); */
+        assert.deepEqual(value, ["some text", Number(1)]);
+    });
+
+    it("should get small int type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperSmallInt();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.SmallInt);
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::SmallInt(-1); */
+        assert.strictEqual(value, Number(-1));
+    });
+
+    it("should get tiny int type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperTinyInt();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.TinyInt);
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::TinyInt(3); */
+        assert.strictEqual(value, Number(3));
+    });
+});
