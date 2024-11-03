@@ -24,4 +24,5 @@ pub mod options;
 pub mod result;
 pub mod session;
 pub mod tests;
+pub mod types;
 pub mod utils;
