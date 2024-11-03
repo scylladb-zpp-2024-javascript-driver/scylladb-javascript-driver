@@ -2,6 +2,8 @@
 const { assert } = require("chai");
 const rust = require("../../index");
 const { getCqlObject } = require("../../lib/types/results-wrapper");
+const Uuid = require("../../lib/types/uuid");
+const TimeUuid = require("../../lib/types/time-uuid");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -119,5 +121,34 @@ describe("Cql value wrapper", function () {
         /* Corresponding value: 
         let element = CqlValue::TinyInt(3); */
         assert.strictEqual(value, Number(3));
+    });
+
+    it("should get uuid type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperUuid();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Uuid);
+        let value = getCqlObject(element);
+        assert.instanceOf(value, Uuid);
+        /* Corresponding value: 
+        let element = CqlValue::Uuid(uuid!("ffffffff-ffff-ffff-ffff-ffffffffffff")); */
+        let expectedUuid = Uuid.fromString(
+            "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        );
+        assert.equal(value.equals(expectedUuid), true);
+    });
+
+    it("should get time uuid type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperTimeUuid();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Timeuuid);
+        let value = getCqlObject(element);
+        assert.instanceOf(value, TimeUuid);
+        /* Corresponding value: 
+        let element =
+        CqlValue::Timeuuid(CqlTimeuuid::from_str("8e14e760-7fa8-11eb-bc66-000000000001").unwrap()); */
+        let expectedUuid = TimeUuid.fromString(
+            "8e14e760-7fa8-11eb-bc66-000000000001",
+        );
+        assert.equal(value.equals(expectedUuid), true);
     });
 });
