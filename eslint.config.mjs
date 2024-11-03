@@ -54,6 +54,9 @@ export default [
       // TODO: FIX
       "no-case-declarations": "off",
 
+      // TODO: FIX
+      "require-yield": "off",
+
       "no-constructor-return": "error",
       "no-duplicate-imports": "error",
       "default-case-last": "error",
