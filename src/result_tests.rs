@@ -1,6 +1,12 @@
-use scylla::frame::{response::result::CqlValue, value::Counter};
+use std::str::FromStr;
+
+use scylla::frame::{
+    response::result::CqlValue,
+    value::{Counter, CqlTimeuuid},
+};
 
 use crate::result::CqlValueWrapper;
+use uuid::uuid;
 
 #[napi]
 /// Test function returning sample CqlValueWrapper with Ascii type
@@ -79,5 +85,20 @@ pub fn tests_get_cql_wrapper_small_int() -> CqlValueWrapper {
 /// Test function returning sample CqlValueWrapper with TinyInt type
 pub fn tests_get_cql_wrapper_tiny_int() -> CqlValueWrapper {
     let element = CqlValue::TinyInt(3);
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with Uuid type
+pub fn tests_get_cql_wrapper_uuid() -> CqlValueWrapper {
+    let element = CqlValue::Uuid(uuid!("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with Timeuuid type
+pub fn tests_get_cql_wrapper_time_uuid() -> CqlValueWrapper {
+    let element =
+        CqlValue::Timeuuid(CqlTimeuuid::from_str("8e14e760-7fa8-11eb-bc66-000000000001").unwrap());
     CqlValueWrapper { inner: element }
 }

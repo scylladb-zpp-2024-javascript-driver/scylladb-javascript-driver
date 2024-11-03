@@ -3,6 +3,7 @@
 const assert = require("assert");
 const helper = require("../test-helper");
 const utils = require("../../lib/utils");
+const { fromString } = require("../../lib/types/uuid");
 const Uuid = require("../../lib/types").Uuid;
 const TimeUuid = require("../../lib/types").TimeUuid;
 
@@ -115,7 +116,7 @@ describe("Uuid", function () {
         });
     });
     describe("fromString()", function () {
-        it("should validate that the string", function () {
+        it("should validate the string", function () {
             assert.throws(function () {
                 Uuid.fromString("22");
             });
@@ -234,12 +235,29 @@ describe("Uuid", function () {
             );
         });
     });
+
+    describe("setter errors", function () {
+        it("should validate if setter throws an error", function () {
+            assert.throws(
+                function () {
+                    let uuid = Uuid.fromString(
+                        "ffffffff-ffff-ffff-ffff-ffffffffffff",
+                    );
+                    uuid.buffer = "00000000-0000-0000-0000-000000000000";
+                },
+                {
+                    name: "SyntaxError",
+                    message: "UUID buffer is read-only",
+                },
+            );
+        });
+    });
 });
 
 describe("TimeUuid", function () {
     describe("constructor()", function () {
         it("should generate based on the parameters", function () {
-            //Gregorian calendar epoch
+            // Gregorian calendar epoch
             let val = new TimeUuid(
                 new Date(-12219292800000),
                 0,
@@ -260,7 +278,7 @@ describe("TimeUuid", function () {
                 val.toString(),
                 "00989680-0000-1000-8000-000000000000",
             );
-            //unix  epoch
+            // unix  epoch
             val = new TimeUuid(
                 new Date(0),
                 0,
@@ -360,7 +378,7 @@ describe("TimeUuid", function () {
                 ] = true;
             }
             assert.strictEqual(Object.keys(values).length, length);
-            //next should collide
+            // next should collide
             assert.strictEqual(
                 values[
                     TimeUuid.fromDate(date, null, "host01", "AA").toString()
