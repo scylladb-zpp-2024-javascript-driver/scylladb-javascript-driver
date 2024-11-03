@@ -25,4 +25,5 @@ pub mod result;
 pub mod result_tests;
 pub mod session;
 pub mod tests;
+pub mod types;
 pub mod utils;
