@@ -1,3 +1,4 @@
+use crate::types::uuid::UuidWrapper;
 use napi::{
     bindgen_prelude::{BigInt, Buffer},
     Error, Status,
@@ -136,8 +137,8 @@ impl CqlValueWrapper {
             CqlValue::Time(_) => CqlType::Time,         // NOI
             CqlValue::Timeuuid(_) => CqlType::Timeuuid, // NOI
             CqlValue::Tuple(_) => CqlType::Tuple,       // NOI
-            CqlValue::Uuid(_) => CqlType::Uuid,         // NOI
-            CqlValue::Varint(_) => CqlType::Varint,     // NOI
+            CqlValue::Uuid(_) => CqlType::Uuid,
+            CqlValue::Varint(_) => CqlType::Varint, // NOI
         }
     }
 
@@ -236,6 +237,14 @@ impl CqlValueWrapper {
         match self.inner.as_tinyint() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("tiny_int")),
+        }
+    }
+
+    #[napi]
+    pub fn get_uuid(&self) -> napi::Result<UuidWrapper> {
+        match self.inner.as_uuid() {
+            Some(r) => Ok(UuidWrapper::from_cql_uuid(r)),
+            None => Err(Self::generic_error("uuid")),
         }
     }
 }
