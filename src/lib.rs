@@ -23,3 +23,4 @@ pub mod auth;
 pub mod result;
 pub mod result_tests;
 pub mod session;
+pub mod types;
