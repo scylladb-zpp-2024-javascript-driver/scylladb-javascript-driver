@@ -8,6 +8,7 @@ use scylla::{
     QueryResult,
 };
 
+use crate::types::inet::InetAddressWrapper;
 use crate::types::duration::DurationWrapper;
 use crate::types::local_time::LocalTimeWrapper;
 use crate::utils::js_error;
@@ -165,9 +166,9 @@ impl CqlValueWrapper {
             CqlValue::Int(_) => CqlType::Int,
             CqlValue::Text(_) => CqlType::Text,
             CqlValue::Timestamp(_) => CqlType::Timestamp, // NOI
-            CqlValue::Inet(_) => CqlType::Inet,           // NOI
-            CqlValue::List(_) => CqlType::List,           // NOI
-            CqlValue::Map(_) => CqlType::Map,             // NOI
+            CqlValue::Inet(_) => CqlType::Inet,
+            CqlValue::List(_) => CqlType::List, // NOI
+            CqlValue::Map(_) => CqlType::Map,   // NOI
             CqlValue::Set(_) => CqlType::Set,
             CqlValue::UserDefinedType { .. } => CqlType::UserDefinedType, // NOI
             CqlValue::SmallInt(_) => CqlType::SmallInt,
@@ -239,6 +240,14 @@ impl CqlValueWrapper {
         match self.inner.as_float() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("float")),
+        }
+    }
+
+    #[napi]
+    pub fn get_inet(&self) -> napi::Result<InetAddressWrapper> {
+        match self.inner.as_inet() {
+            Some(r) => Ok(InetAddressWrapper::from_ip_addr(r)),
+            None => Err(Error::new(Status::GenericFailure, "Error")),
         }
     }
 
