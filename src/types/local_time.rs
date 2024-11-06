@@ -1,3 +1,4 @@
+use core::fmt;
 use napi::bindgen_prelude::BigInt;
 use scylla::frame::value::CqlTime;
 
@@ -44,11 +45,51 @@ impl LocalTimeWrapper {
         Ok(Self::convert_to_object(ns_value))
     }
 
+    //format: hh:MM:ss.ns
+    #[napi(js_name = "toString")]
+    pub fn to_format(&self) -> String {
+        self.to_string()
+    }
+
     pub fn get_cql_time(&self) -> CqlTime {
         CqlTime(self.ns_value)
     }
 
     pub fn from_cql_time(time: CqlTime) -> Self {
         Self::convert_to_object(time.0)
+    }
+}
+
+impl fmt::Display for LocalTimeWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}:{}:{}{}",
+            if self.hour < 10 {
+                format!("0{}", self.hour)
+            } else {
+                self.hour.to_string()
+            },
+            if self.minute < 10 {
+                format!("0{}", self.minute)
+            } else {
+                self.minute.to_string()
+            },
+            if self.second < 10 {
+                format!("0{}", self.second)
+            } else {
+                self.second.to_string()
+            },
+            if self.nanosecond > 0 {
+                let zeros = 9 - self.nanosecond.to_string().chars().count();
+                let mut nanos = self.nanosecond;
+                while nanos % 10 == 0 {
+                    nanos /= 10;
+                }
+                format!(".{}{}", "0".repeat(zeros), nanos)
+            } else {
+                "".to_string()
+            }
+        )
     }
 }
