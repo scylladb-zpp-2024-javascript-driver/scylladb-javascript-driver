@@ -1,4 +1,4 @@
-use crate::types::uuid::UuidWrapper;
+use crate::types::{time_uuid::TimeUuidWrapper, uuid::UuidWrapper};
 use napi::{
     bindgen_prelude::{BigInt, Buffer},
     Error, Status,
@@ -134,9 +134,9 @@ impl CqlValueWrapper {
             CqlValue::UserDefinedType { .. } => CqlType::UserDefinedType, // NOI
             CqlValue::SmallInt(_) => CqlType::SmallInt,
             CqlValue::TinyInt(_) => CqlType::TinyInt,
-            CqlValue::Time(_) => CqlType::Time,         // NOI
-            CqlValue::Timeuuid(_) => CqlType::Timeuuid, // NOI
-            CqlValue::Tuple(_) => CqlType::Tuple,       // NOI
+            CqlValue::Time(_) => CqlType::Time, // NOI
+            CqlValue::Timeuuid(_) => CqlType::Timeuuid,
+            CqlValue::Tuple(_) => CqlType::Tuple, // NOI
             CqlValue::Uuid(_) => CqlType::Uuid,
             CqlValue::Varint(_) => CqlType::Varint, // NOI
         }
@@ -245,6 +245,14 @@ impl CqlValueWrapper {
         match self.inner.as_uuid() {
             Some(r) => Ok(UuidWrapper::from_cql_uuid(r)),
             None => Err(Self::generic_error("uuid")),
+        }
+    }
+
+    #[napi]
+    pub fn get_time_uuid(&self) -> napi::Result<TimeUuidWrapper> {
+        match self.inner.as_timeuuid() {
+            Some(r) => Ok(TimeUuidWrapper::from_cql_time_uuid(r)),
+            None => Err(Self::generic_error("time_uuid")),
         }
     }
 }
