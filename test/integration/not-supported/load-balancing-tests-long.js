@@ -113,6 +113,7 @@ describe("TokenAwarePolicy", function () {
             );
         });
         // Test failing due to internal driver error
+        // INVESTIGATE(@wprzytula)
         /* it("should use primary replica according to murmur multiple dc", function (done) {
             //Pre-calculated based on Murmur
             //This test can be improved using query tracing, consistency all and checking hops
@@ -166,6 +167,7 @@ describe("TokenAwarePolicy", function () {
         }); */
     });
     // Test failing due to internal driver error
+    // INVESTIGATE(@wprzytula)
     // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/runs/11576668228/job/32226195006?pr=43#step:12:90
     /* describe("with a 4:4 node topology", function () {
         const keyspace1 = "ks1";

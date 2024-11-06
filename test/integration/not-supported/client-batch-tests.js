@@ -559,6 +559,7 @@ describe("Client @SERVER_API", function () {
         });
     }); */
     // Test removed due to lack of consistency (occasional timeouts)
+    // INVESTIGATE(@wprzytula)
     // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/runs/11642649106/job/32422491018#step:11:727
     /*
     describe("#batch(queries, {prepare: 1}, callback)", function () {

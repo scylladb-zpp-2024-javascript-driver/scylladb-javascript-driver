@@ -64,8 +64,8 @@ jobs:
       - name: Build
         run: ${{ matrix.settings.build }}
         shell: bash
-      - name: Run integration short
-        run: npm run integration_short
-      - name: Run integration long
-        run: npm run integration_long
+      - name: Run integration tests
+        run: npm run integration
+      - name: Run integration not supported
+        run: npm run integration-not-supported
           

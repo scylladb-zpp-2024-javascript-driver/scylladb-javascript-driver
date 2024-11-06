@@ -586,6 +586,7 @@ describe("Client", function () {
     });
 
     // Test failing due to java / ccm error
+    // INVESTIGATE(@wprzytula)
     // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/runs/11573862581/job/32216863054?pr=43#step:11:782
     /* describe("#connect() with ipv6", function () {
         before(helper.ccmHelper.start(1, { ipFormat: "::%d" }));

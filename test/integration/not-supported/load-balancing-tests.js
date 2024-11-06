@@ -130,6 +130,7 @@ context("with a reusable 3 node cluster", function () {
     });
     vdescribe("2.0", "TokenAwarePolicy", function () {
         // Tests failing due to incorrect answer
+        // INVESTIGATE(@wprzytula)
         // Failed tests 4 - 12 in the CI
         // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/runs/11573862581/job/32216863054?pr=43#step:11:878
 

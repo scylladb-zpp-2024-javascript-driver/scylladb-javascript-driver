@@ -125,6 +125,7 @@ describe("Connection", function () {
     });
 
     // Test failing due to ccm error
+    // INVESTIGATE(@wprzytula)
     // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/runs/11573862581/job/32216863054?pr=43#step:11:844
     /* describe("#open with ssl", function () {
         before(helper.ccmHelper.start(1, { ssl: true }));
