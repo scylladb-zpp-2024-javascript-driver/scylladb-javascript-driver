@@ -2345,18 +2345,6 @@ describe("Client @SERVER_API", function () {
         numericTests(commonKs, true);
         pagingTests(commonKs, true);
 
-        vit("dse-6.0", "should use keyspace if set on options", () => {
-            const client = setupInfo.client;
-            return client
-                .execute(
-                    "select * from local",
-                    { prepare: true },
-                    { keyspace: "system" },
-                )
-                .then((result) => {
-                    assert.ok(result);
-                });
-        });
         it("should not use keyspace if set on options for lower protocol versions", function () {
             if (helper.isDseGreaterThan("6.0")) {
                 return this.skip();

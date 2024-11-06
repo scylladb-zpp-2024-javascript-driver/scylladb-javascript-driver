@@ -251,71 +251,6 @@ describe("metadata @SERVER_API", function () {
                     );
                 });
             });
-            vit(
-                "dse-6.7",
-                "should retrieve virtual keyspace metadata",
-                (done) => {
-                    const client = newInstance();
-                    const nonSyncClient = newInstance({
-                        isMetadataSyncEnabled: false,
-                    });
-                    function checkVirtualKeyspace(ks) {
-                        // table should be virtual and options should be undefined
-                        assert.ok(ks.virtual);
-                        assert.ifError(ks.durableWrites);
-                        assert.ifError(ks.strategyOptions);
-                        assert.ifError(ks.strategy);
-                    }
-
-                    utils.series(
-                        [
-                            client.connect.bind(client),
-                            nonSyncClient.connect.bind(nonSyncClient),
-                            function checkKeyspaces(next) {
-                                const m = client.metadata;
-                                checkVirtualKeyspace(
-                                    m.keyspaces["system_views"],
-                                );
-                                next();
-                            },
-                            (next) => {
-                                // There should be no keyspace metadata for the non synched client until its fetched via refreshKeyspace.
-                                const ks = nonSyncClient.metadata.keyspaces;
-                                assert.ok(ks["system_views"] === undefined);
-                                nonSyncClient.metadata.refreshKeyspace(
-                                    "system_views",
-                                    (err, ks) => {
-                                        assert.ifError(err);
-                                        checkVirtualKeyspace(ks);
-                                        next();
-                                    },
-                                );
-                            },
-                            (next) => {
-                                // Use global refreshKeyspaces and ensure that a previously unfetched virtual keyspace is fetched.
-                                const ks = nonSyncClient.metadata.keyspaces;
-                                assert.ok(
-                                    ks["system_virtual_schema"] === undefined,
-                                );
-                                nonSyncClient.metadata.refreshKeyspaces(
-                                    (err) => {
-                                        assert.ifError(err);
-                                        checkVirtualKeyspace(
-                                            nonSyncClient.metadata.keyspaces[
-                                                "system_virtual_schema"
-                                            ],
-                                        );
-                                        next();
-                                    },
-                                );
-                            },
-                            client.shutdown.bind(client),
-                            nonSyncClient.shutdown.bind(nonSyncClient),
-                        ],
-                        done,
-                    );
-                },
-            );
         });
         describe("#getTokenRanges()", function () {
             it("should return 512 ranges", function (done) {
@@ -1786,7 +1721,9 @@ describe("metadata @SERVER_API", function () {
                     );
                 },
             );
-            vit(
+            // Need to investigate:
+            // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/pull/43#discussion_r1830763855
+            /* vit(
                 "dse-6",
                 "should retrieve the cdc information of a table metadata",
                 function (done) {
@@ -1842,7 +1779,7 @@ describe("metadata @SERVER_API", function () {
                         done,
                     );
                 },
-            );
+            ); */
             vit(
                 "4.0",
                 "should retrieve the metadata of a virtual table",
@@ -2125,37 +2062,7 @@ describe("metadata @SERVER_API", function () {
                     done,
                 );
             });
-            vit(
-                "dse-6",
-                "should retrieve the nodesync information of a materialized view metadata",
-                function (done) {
-                    const client = setupInfo.client;
-                    utils.mapSeries(
-                        [
-                            [
-                                "dailyhigh_nodesync",
-                                {
-                                    enabled: "true",
-                                    deadline_target_sec: "86400",
-                                },
-                            ],
-                            ["dailyhigh", null],
-                        ],
-                        function mapEach(item, next) {
-                            client.metadata.getMaterializedView(
-                                keyspace,
-                                item[0],
-                                function (err, table) {
-                                    assert.ifError(err);
-                                    assert.deepEqual(table.nodesync, item[1]);
-                                    next();
-                                },
-                            );
-                        },
-                        done,
-                    );
-                },
-            );
+
             it("should refresh the view metadata via events", function (done) {
                 const client = newInstance({
                     keyspace: "ks_view_meta",

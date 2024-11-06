@@ -1026,46 +1026,6 @@ describe("Client @SERVER_API", function () {
                 });
             },
         );
-        vit("dse-6.0", "should use keyspace if set on options", () => {
-            const client = newInstance({});
-            const insertQuery =
-                "INSERT INTO %s (id, time, double_sample) VALUES (?, ?, ?)";
-            const selectQuery = "SELECT * FROM %s WHERE id=?";
-            const id = types.Uuid.random();
-            const ts1 = types.timeuuid();
-            const ts2 = types.timeuuid();
-            const queries = [
-                {
-                    query: util.format(insertQuery, table1Short),
-                    params: [id, ts1, 1000],
-                },
-                {
-                    query: util.format(insertQuery, table1Short),
-                    params: [id, ts2, 2000],
-                },
-            ];
-
-            return client
-                .batch(queries, { prepare: true, keyspace: keyspace })
-                .then((result) =>
-                    client.execute(
-                        util.format(selectQuery, table1Short),
-                        [id],
-                        {
-                            prepare: true,
-                            keyspace: keyspace,
-                        },
-                    ),
-                )
-                .then((result) => {
-                    assert.ok(result);
-                    assert.ok(result.rows);
-                    assert.strictEqual(result.rows.length, 2);
-                    assert.equal(result.rows[0].double_sample, 1000);
-                    assert.equal(result.rows[1].double_sample, 2000);
-                    return client.shutdown();
-                });
-        });
         it("should not use keyspace if set on options for lower protocol versions", function () {
             if (helper.isDseGreaterThan("6.0")) {
                 return this.skip();

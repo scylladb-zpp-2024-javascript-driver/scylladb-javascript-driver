@@ -188,7 +188,7 @@ const simulacronHelper = {
 
         return {
             cassandraVersion: helper.getSimulatedCassandraVersion(),
-            dseVersion: serverInfo.isDse ? serverInfo.version : "",
+            dseVersion: "",
             clusterName: "testCluster",
             activityLog: true,
             numTokens: 1,
