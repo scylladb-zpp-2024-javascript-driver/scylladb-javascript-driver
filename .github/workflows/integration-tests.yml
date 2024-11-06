@@ -1,0 +1,71 @@
+# The goal of this workflow is to check if integration tests work correctly
+# Currently it uses only datastax tests
+name: Run integration tests
+env:
+  DEBUG: napi:*
+  APP_NAME: scylladb-javascript-driver
+"on":
+  push:
+    branches:
+      - "**"
+jobs:
+  build-and-run-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: npm run build -- --target x86_64-unknown-linux-gnu
+    name: Build and run tests - ${{ matrix.settings.target }} - node@20
+    runs-on: ${{ matrix.settings.host }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '8'        
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.settings.target }}
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.napi-rs
+            .cargo-cache
+            target/
+          key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
+      - name: Install dependencies
+        run: npm i
+      - name: Install ccm and other requirements
+        # The tool used by unit tests to setup database https://github.com/riptano/ccm
+        run: |
+          wget https://github.com/datastax/simulacron/releases/download/0.12.0/simulacron-standalone-0.12.0.jar -O ~/simulacron.jar
+          pip install psutil
+          sudo pip install --upgrade psutil
+          git clone https://github.com/riptano/ccm.git --depth 1
+          cd ccm
+          sudo ./setup.py install
+      - name: Build
+        run: ${{ matrix.settings.build }}
+        shell: bash
+      - name: Run integration short
+        run: npm run integration_short
+      - name: Run integration long
+        run: npm run integration_long
+          

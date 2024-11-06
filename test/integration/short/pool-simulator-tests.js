@@ -8,7 +8,7 @@ const utils = require("../../../lib/utils");
 const types = require("../../../lib/types");
 const policies = require("../../../lib/policies");
 const promiseUtils = require("../../../lib/promise-utils");
-const { version } = require("../../../index");
+const { version } = require("../../../main");
 const { distance } = types;
 
 const Client = require("../../../lib/client");
