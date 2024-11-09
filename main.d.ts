@@ -304,7 +304,6 @@ export interface DseClientOptions extends ClientOptions {
   applicationName?: string;
   applicationVersion?: string;
   monitorReporting?: { enabled?: boolean };
-  graphOptions?: GraphOptions;
 }
 
 export interface GraphQueryOptions extends QueryOptions {
@@ -315,15 +314,6 @@ export interface GraphQueryOptions extends QueryOptions {
   graphWriteConsistency?: types.consistencies;
 }
 
-export type GraphOptions = {
-  language?: string;
-  name?: string;
-  readConsistency?: types.consistencies;
-  readTimeout?: number;
-  source?: string;
-  writeConsistency?: types.consistencies;
-};
-
 export class ExecutionProfile {
   consistency?: types.consistencies;
   loadBalancing?: policies.loadBalancing.LoadBalancingPolicy;
@@ -331,13 +321,6 @@ export class ExecutionProfile {
   readTimeout?: number;
   retry?: policies.retry.RetryPolicy;
   serialConsistency?: types.consistencies;
-  graphOptions?: {
-    name?: string;
-    language?: string;
-    source?: string;
-    readConsistency?: types.consistencies;
-    writeConsistency?: types.consistencies;
-  };
 
   constructor(
     name: string,
@@ -347,13 +330,6 @@ export class ExecutionProfile {
       readTimeout?: number;
       retry?: policies.retry.RetryPolicy;
       serialConsistency?: types.consistencies;
-      graphOptions?: {
-        name?: string;
-        language?: string;
-        source?: string;
-        readConsistency?: types.consistencies;
-        writeConsistency?: types.consistencies;
-      };
     },
   );
 }

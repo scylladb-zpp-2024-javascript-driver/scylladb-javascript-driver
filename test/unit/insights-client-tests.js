@@ -317,7 +317,7 @@ describe("InsightsClient", function () {
                     .filter(
                         (prop) =>
                             !prop.startsWith("_") &&
-                            ["name", "graphOptions"].indexOf(prop) === -1 &&
+                            ["name"].indexOf(prop) === -1 &&
                             expected[prop] !== undefined,
                     )
                     .concat(["speculativeExecution"]);
@@ -351,7 +351,6 @@ describe("InsightsClient", function () {
                         readTimeout: 15000,
                         consistency: types.consistencies.localQuorum,
                         serialConsistency: types.consistencies.localSerial,
-                        graphOptions: { name: "myGraph" },
                     }),
                     new ExecutionProfile("default", {
                         consistency: types.consistencies.localOne,
@@ -372,7 +371,6 @@ describe("InsightsClient", function () {
                 // Should output only the ones that differ from the default profile
                 assert.deepStrictEqual(Object.keys(timeSeriesProfile), [
                     "consistency",
-                    "graphOptions",
                 ]);
             });
         });

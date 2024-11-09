@@ -4,7 +4,7 @@ import {
   ExecutionProfile,
   policies,
   types,
-} from "../../../index";
+} from "../../../main";
 
 /*
  * TypeScript definitions compilation tests for Client class.
@@ -91,10 +91,6 @@ async function myTest(): Promise<any> {
     id: types.Uuid.random(),
     applicationName: "My app",
     applicationVersion: "3.1.2",
-    graphOptions: {
-      name: "graph1",
-      readConsistency: types.consistencies.localQuorum,
-    },
   });
 
   otherClient = new Client({
