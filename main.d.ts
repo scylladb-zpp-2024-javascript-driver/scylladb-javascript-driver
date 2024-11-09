@@ -10,12 +10,10 @@ import { metadata } from "./lib/metadata";
 import { datastax } from "./lib/datastax/";
 import Long = types.Long;
 import Uuid = types.Uuid;
-import graph = datastax.graph;
 
 // Export imported submodules
 export { concurrent } from "./lib/concurrent";
 export { mapping } from "./lib/mapping";
-export { geometry } from "./lib/geometry";
 export { auth, datastax, metadata, metrics, policies, tracker, types };
 
 export const version: number;
@@ -58,30 +56,6 @@ export class Client extends events.EventEmitter {
   ): void;
 
   execute(query: string, callback: ValueCallback<types.ResultSet>): void;
-
-  executeGraph(
-    traversal: string,
-    parameters: { [name: string]: any } | undefined,
-    options: GraphQueryOptions,
-    callback: ValueCallback<graph.GraphResultSet>,
-  ): void;
-
-  executeGraph(
-    traversal: string,
-    parameters: { [name: string]: any } | undefined,
-    callback: ValueCallback<graph.GraphResultSet>,
-  ): void;
-
-  executeGraph(
-    traversal: string,
-    callback: ValueCallback<graph.GraphResultSet>,
-  ): void;
-
-  executeGraph(
-    traversal: string,
-    parameters?: { [name: string]: any },
-    options?: GraphQueryOptions,
-  ): Promise<graph.GraphResultSet>;
 
   eachRow(
     query: string,
@@ -304,14 +278,6 @@ export interface DseClientOptions extends ClientOptions {
   applicationName?: string;
   applicationVersion?: string;
   monitorReporting?: { enabled?: boolean };
-}
-
-export interface GraphQueryOptions extends QueryOptions {
-  graphLanguage?: string;
-  graphName?: string;
-  graphReadConsistency?: types.consistencies;
-  graphSource?: string;
-  graphWriteConsistency?: types.consistencies;
 }
 
 export class ExecutionProfile {
