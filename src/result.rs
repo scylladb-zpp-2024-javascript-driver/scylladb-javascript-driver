@@ -129,11 +129,16 @@ impl QueryResultWrapper {
 impl RowWrapper {
     #[napi]
     /// Get the CQL value wrappers for each column in the given row
-    pub fn get_columns(&self) -> napi::Result<Vec<CqlValueWrapper>> {
-        let s: Vec<CqlValueWrapper> = self
+    pub fn get_columns(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
+        let s: Vec<Option<CqlValueWrapper>> = self
             .internal
             .iter()
-            .filter_map(|f| f.as_ref().map(|r| CqlValueWrapper { inner: r.clone() }))
+            .map(|f| {
+                if f.is_none() {
+                    return None;
+                }
+                f.as_ref().map(|r| CqlValueWrapper { inner: r.clone() })
+            })
             .collect();
         Ok(s)
     }
