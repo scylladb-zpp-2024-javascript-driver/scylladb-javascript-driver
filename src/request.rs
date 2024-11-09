@@ -135,6 +135,17 @@ impl QueryParameterWrapper {
     }
 }
 
+impl QueryParameterWrapper {
+    /// Takes vector of QueryParameterWrapper references and turns it into vector of CqlValue
+    pub(crate) fn extract_parameters(
+        row: Vec<Option<&QueryParameterWrapper>>,
+    ) -> Vec<Option<CqlValue>> {
+        row.iter()
+            .map(|e| e.as_ref().map(|v| v.parameter.clone()))
+            .collect()
+    }
+}
+
 #[napi]
 impl PreparedStatementWrapper {
     /// Get array of expected types for this prepared statement.
