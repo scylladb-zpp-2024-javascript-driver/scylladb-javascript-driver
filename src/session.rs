@@ -1,4 +1,7 @@
-use scylla::{frame::response::result::CqlValue, transport::SelfIdentity, Session, SessionBuilder};
+use scylla::{
+    batch::Batch, frame::response::result::CqlValue, transport::SelfIdentity, Session,
+    SessionBuilder,
+};
 
 use crate::{
     options,
@@ -12,6 +15,11 @@ pub struct SessionOptions {
     pub connect_points: Vec<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
+}
+
+#[napi]
+pub struct BatchWrapper {
+    inner: Batch,
 }
 
 #[napi]
@@ -85,10 +93,7 @@ impl SessionWrapper {
         query: &PreparedStatementWrapper,
         params: Vec<Option<&QueryParameterWrapper>>,
     ) -> napi::Result<QueryResultWrapper> {
-        let params_vec: Vec<Option<CqlValue>> = params
-            .iter()
-            .map(|e| e.as_ref().map(|v| v.parameter.clone()))
-            .collect();
+        let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
         Ok(QueryResultWrapper::from_query(
             self.internal
                 .execute_unpaged(&query.prepared, params_vec)
@@ -96,6 +101,33 @@ impl SessionWrapper {
                 .map_err(err_to_napi)?,
         ))
     }
+
+    #[napi]
+    pub async fn query_batch(
+        &self,
+        batch: &BatchWrapper,
+        params: Vec<Vec<Option<&QueryParameterWrapper>>>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<Vec<Option<CqlValue>>> = params
+            .into_iter()
+            .map(QueryParameterWrapper::extract_parameters)
+            .collect();
+        Ok(QueryResultWrapper::from_query(
+            self.internal
+                .batch(&batch.inner, params_vec)
+                .await
+                .map_err(err_to_napi)?,
+        ))
+    }
+}
+
+#[napi]
+pub fn create_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
+    let mut batch: Batch = Default::default();
+    queries
+        .iter()
+        .for_each(|q| batch.append_statement(q.prepared.clone()));
+    BatchWrapper { inner: batch }
 }
 
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
