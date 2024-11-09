@@ -94,7 +94,7 @@ export declare class QueryResultWrapper {
 }
 export declare class RowWrapper {
   /** Get the CQL value wrappers for each column in the given row */
-  getColumns(): Array<CqlValueWrapper>
+  getColumns(): Array<CqlValueWrapper | undefined | null>
 }
 export declare class CqlValueWrapper {
   /** This uses rust Debug to return string representation of underlying value */
