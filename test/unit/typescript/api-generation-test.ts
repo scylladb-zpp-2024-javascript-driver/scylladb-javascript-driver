@@ -3,17 +3,15 @@ import {
   concurrent,
   errors,
   datastax,
-  geometry,
   mapping,
   metadata,
   metrics,
   policies,
   tracker,
   types,
-} from "../../../index";
-import * as root from "../../../index";
+} from "../../../main";
+import * as root from "../../../main";
 
-import graph = datastax.graph;
 
 let counter: number = 0;
 
@@ -29,10 +27,8 @@ export function generate(): void {
   console.log(`  
 'use strict';
   
-import { auth, concurrent, errors, datastax, mapping, geometry, metadata, metrics, policies, tracker, types } from "../../../index";
+import { auth, concurrent, errors, datastax, mapping, metadata, metrics, policies, tracker, types } from "../../../index";
 import * as root from "../../../index";
-
-import graph = datastax.graph;
 
 export async function generatedFn() {
   let n:number;
@@ -51,12 +47,6 @@ export async function generatedFn() {
   printClasses(metadata, "metadata");
   printClasses(metrics, "metrics");
   printClasses(tracker, "tracker");
-  printClasses(geometry, "geometry", new Set(["Geometry"]));
-  printClasses(
-    graph,
-    "graph",
-    new Set(["UdtGraphWrapper", "GraphTypeWrapper"]),
-  );
 
   // types
   printEnum(types.dataTypes, "types.dataTypes");
