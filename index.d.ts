@@ -42,6 +42,8 @@ export declare function testsGetCqlWrapperBlob(): CqlValueWrapper
 export declare function testsGetCqlWrapperCounter(): CqlValueWrapper
 /** Test function returning sample CqlValueWrapper with Double type */
 export declare function testsGetCqlWrapperDouble(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Duration type */
+export declare function testsGetCqlWrapperDuration(): CqlValueWrapper
 /** Test function returning sample CqlValueWrapper with Float type */
 export declare function testsGetCqlWrapperFloat(): CqlValueWrapper
 /** Test function returning sample CqlValueWrapper with Int type */
