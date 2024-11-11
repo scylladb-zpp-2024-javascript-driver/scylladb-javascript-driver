@@ -190,4 +190,20 @@ describe("InetAddress", function () {
             }, TypeError);
         });
     });
+    describe("setters", function () {
+        it("should throw errors when trying to set a value", function () {
+            const val = new InetAddress(
+                utils.allocBufferFromArray([127, 0, 0, 1]),
+            );
+            assert.throws(function () {
+                val.buffer = utils.allocBufferFromArray([127, 0, 0, 1]);
+            }, Error);
+            assert.throws(function () {
+                val.version = 6;
+            }, Error);
+            assert.throws(function () {
+                val.length = 4;
+            }, Error);
+        });
+    });
 });
