@@ -4,6 +4,7 @@ const rust = require("../../index");
 const { getCqlObject } = require("../../lib/types/results-wrapper");
 const Uuid = require("../../lib/types/uuid");
 const TimeUuid = require("../../lib/types/time-uuid");
+const Duration = require("../../lib/types/duration");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -58,6 +59,22 @@ describe("Cql value wrapper", function () {
         /* Corresponding value: 
         let element = CqlValue::Double(f64::MAX); */
         assert.strictEqual(value, Number.MAX_VALUE);
+    });
+
+    it("should get duration type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperDuration();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Duration);
+        let value = getCqlObject(element);
+        assert.instanceOf(value, Duration);
+        /* Corresponding value: 
+        let element = CqlValue::Duration(CqlDuration {
+            months: 1,
+            days: 2,
+            nanoseconds: 3,
+        }); */
+        let expected_duration = new Duration(1, 2, 3);
+        assert.equal(expected_duration.equals(value), true);
     });
 
     it("should get float type correctly from napi", function () {
