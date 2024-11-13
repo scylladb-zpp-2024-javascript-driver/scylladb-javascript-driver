@@ -5,7 +5,8 @@ use napi::{
 };
 use scylla::{
     frame::response::result::{ColumnType, CqlValue},
-    QueryResult,
+    transport::legacy_query_result::IntoLegacyQueryResultError,
+    LegacyQueryResult, QueryResult,
 };
 
 use crate::types::duration::DurationWrapper;
@@ -14,7 +15,7 @@ use crate::utils::js_error;
 
 #[napi]
 pub struct QueryResultWrapper {
-    internal: QueryResult,
+    internal: LegacyQueryResult,
 }
 
 #[napi]
@@ -68,8 +69,12 @@ pub enum CqlType {
 
 #[napi]
 impl QueryResultWrapper {
-    pub fn from_query(internal: QueryResult) -> QueryResultWrapper {
-        QueryResultWrapper { internal }
+    pub fn from_query(
+        internal: QueryResult,
+    ) -> Result<QueryResultWrapper, IntoLegacyQueryResultError> {
+        Ok(QueryResultWrapper {
+            internal: internal.into_legacy_result()?,
+        })
     }
 
     #[napi]
@@ -96,7 +101,7 @@ impl QueryResultWrapper {
         self.internal
             .col_specs()
             .iter()
-            .map(|f| f.name.clone())
+            .map(|f| f.name().to_owned())
             .collect()
     }
 
@@ -106,10 +111,10 @@ impl QueryResultWrapper {
             .col_specs()
             .iter()
             .map(|f| MetaColumnWrapper {
-                ksname: f.table_spec.ks_name().to_owned(),
-                tablename: f.table_spec.table_name().to_owned(),
-                name: f.name.clone(),
-                type_code: map_column_type_to_cql_type(&f.typ),
+                ksname: f.table_spec().ks_name().to_owned(),
+                tablename: f.table_spec().table_name().to_owned(),
+                name: f.name().to_owned(),
+                type_code: map_column_type_to_cql_type(&f.typ()),
             })
             .collect()
     }
