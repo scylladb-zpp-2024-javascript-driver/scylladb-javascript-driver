@@ -51,7 +51,7 @@ impl SessionWrapper {
             .query_unpaged(query, &[])
             .await
             .map_err(err_to_napi)?;
-        Ok(QueryResultWrapper::from_query(query_result))
+        QueryResultWrapper::from_query(query_result).map_err(err_to_napi)
     }
 
     /// Prepares a statement through rust driver for a given session
@@ -89,12 +89,13 @@ impl SessionWrapper {
             .iter()
             .map(|e| e.as_ref().map(|v| v.parameter.clone()))
             .collect();
-        Ok(QueryResultWrapper::from_query(
+        QueryResultWrapper::from_query(
             self.internal
                 .execute_unpaged(&query.prepared, params_vec)
                 .await
                 .map_err(err_to_napi)?,
-        ))
+        )
+        .map_err(err_to_napi)
     }
 }
 
