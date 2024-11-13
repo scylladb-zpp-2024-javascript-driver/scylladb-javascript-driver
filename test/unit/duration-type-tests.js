@@ -159,6 +159,44 @@ describe("Duration", function () {
             });
         });
     });
+    describe("setter errors", function () {
+        it("should validate if months setter throws an error", function () {
+            assert.throws(
+                function () {
+                    let duration = new Duration(0, 0, 0);
+                    duration.months = 1;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "Duration months is read-only",
+                },
+            );
+        });
+        it("should validate if days setter throws an error", function () {
+            assert.throws(
+                function () {
+                    let duration = new Duration(0, 0, 0);
+                    duration.days = 1;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "Duration days is read-only",
+                },
+            );
+        });
+        it("should validate if nanoseconds setter throws an error", function () {
+            assert.throws(
+                function () {
+                    let duration = new Duration(0, 0, 0);
+                    duration.nanoseconds = 1;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "Duration nanoseconds is read-only",
+                },
+            );
+        });
+    });
 });
 
 /**
