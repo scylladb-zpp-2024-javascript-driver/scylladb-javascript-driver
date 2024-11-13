@@ -142,7 +142,7 @@ impl PreparedStatementWrapper {
         self.prepared
             .get_variable_col_specs()
             .iter()
-            .map(|e| map_column_type_to_cql_type(&e.typ))
+            .map(|e| map_column_type_to_cql_type(e.typ()))
             .collect()
     }
 }
