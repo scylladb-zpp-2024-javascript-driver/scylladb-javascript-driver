@@ -1,5 +1,6 @@
-use napi::{Error, Status};
 use scylla::{frame::response::result::CqlValue, QueryResult};
+
+use crate::utils::js_error;
 
 #[napi]
 pub struct QueryResultWrapper {
@@ -28,7 +29,7 @@ impl QueryResultWrapper {
         let rows = match &self.internal.rows {
             Some(r) => r,
             None => {
-                return Err(Error::new(Status::GenericFailure, "No rows"));
+                return Err(js_error("No rows"));
             }
         };
 
