@@ -22,3 +22,4 @@ pub async fn test_connection(uri: String) -> String {
 pub mod auth;
 pub mod result;
 pub mod session;
+pub mod utils;
