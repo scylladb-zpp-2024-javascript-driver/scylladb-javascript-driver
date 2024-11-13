@@ -1,7 +1,6 @@
-use napi::{Error, Status};
 use scylla::{Session, SessionBuilder};
 
-use crate::result::QueryResultWrapper;
+use crate::{result::QueryResultWrapper, utils::err_to_napi};
 
 #[napi]
 pub struct SessionOptions {
@@ -31,7 +30,7 @@ impl SessionWrapper {
             .known_node(options.connect_points[0].clone())
             .build()
             .await
-            .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
+            .map_err(err_to_napi)?;
         Ok(SessionWrapper {
             internal_session: sb,
         })
@@ -43,7 +42,7 @@ impl SessionWrapper {
             .internal_session
             .query_unpaged(query, &[])
             .await
-            .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
+            .map_err(err_to_napi)?;
         Ok(QueryResultWrapper::from_query(query))
     }
 }
