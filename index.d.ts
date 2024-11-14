@@ -54,6 +54,10 @@ export declare function testsGetCqlWrapperSet(): CqlValueWrapper
 export declare function testsGetCqlWrapperSmallInt(): CqlValueWrapper
 /** Test function returning sample CqlValueWrapper with TinyInt type */
 export declare function testsGetCqlWrapperTinyInt(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Uuid type */
+export declare function testsGetCqlWrapperUuid(): CqlValueWrapper
+/** Test function returning sample CqlValueWrapper with Timeuuid type */
+export declare function testsGetCqlWrapperTimeUuid(): CqlValueWrapper
 export declare class PlainTextAuthProvider {
   id: number
   static new(): PlainTextAuthProvider
@@ -84,6 +88,8 @@ export declare class CqlValueWrapper {
   getSet(): Array<CqlValueWrapper>
   getSmallInt(): number
   getTinyInt(): number
+  getUuid(): UuidWrapper
+  getTimeUuid(): TimeUuidWrapper
 }
 export declare class SessionOptions {
   connectPoints: Array<string>
@@ -92,4 +98,11 @@ export declare class SessionOptions {
 export declare class SessionWrapper {
   static createSession(options: SessionOptions): Promise<SessionWrapper>
   queryUnpagedNoValues(query: string): Promise<QueryResultWrapper>
+}
+export declare class TimeUuidWrapper {
+  getBuffer(): Buffer
+}
+export declare class UuidWrapper {
+  static new(buffer: Buffer): UuidWrapper
+  getBuffer(): Buffer
 }
