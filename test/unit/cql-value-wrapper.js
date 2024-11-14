@@ -5,6 +5,8 @@ const { getCqlObject } = require("../../lib/types/results-wrapper");
 const Uuid = require("../../lib/types/uuid");
 const TimeUuid = require("../../lib/types/time-uuid");
 const Duration = require("../../lib/types/duration");
+const LocalTime = require("../../lib/types/local-time");
+const Long = require("long");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -167,5 +169,17 @@ describe("Cql value wrapper", function () {
             "8e14e760-7fa8-11eb-bc66-000000000001",
         );
         assert.equal(value.equals(expectedUuid), true);
+    });
+
+    it("should get LocalTime type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperTime();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Time);
+        let value = getCqlObject(element);
+        assert.instanceOf(value, LocalTime);
+        /* Corresponding value: 
+        let element = CqlValue::Time(CqlTime(64 * 1_000_000_000)); */
+        let expectedLocalTime = new LocalTime(Long.fromString("64000000000"));
+        assert.equal(value.equals(expectedLocalTime), true);
     });
 });
