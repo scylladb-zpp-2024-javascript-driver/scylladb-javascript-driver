@@ -9,6 +9,7 @@ use scylla::{
 };
 
 use crate::types::duration::DurationWrapper;
+use crate::types::local_time::LocalTimeWrapper;
 use crate::utils::js_error;
 
 #[napi]
@@ -171,7 +172,7 @@ impl CqlValueWrapper {
             CqlValue::UserDefinedType { .. } => CqlType::UserDefinedType, // NOI
             CqlValue::SmallInt(_) => CqlType::SmallInt,
             CqlValue::TinyInt(_) => CqlType::TinyInt,
-            CqlValue::Time(_) => CqlType::Time, // NOI
+            CqlValue::Time(_) => CqlType::Time,
             CqlValue::Timeuuid(_) => CqlType::Timeuuid,
             CqlValue::Tuple(_) => CqlType::Tuple, // NOI
             CqlValue::Uuid(_) => CqlType::Uuid,
@@ -281,6 +282,14 @@ impl CqlValueWrapper {
         match self.inner.as_tinyint() {
             Some(r) => Ok(r),
             None => Err(Self::generic_error("tiny_int")),
+        }
+    }
+
+    #[napi]
+    pub fn get_local_time(&self) -> napi::Result<LocalTimeWrapper> {
+        match self.inner.as_cql_time() {
+            Some(r) => Ok(LocalTimeWrapper::from_cql_time(r)),
+            None => Err(Self::generic_error("local_time")),
         }
     }
 

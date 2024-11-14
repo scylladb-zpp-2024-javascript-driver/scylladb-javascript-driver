@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use scylla::frame::{
     response::result::CqlValue,
-    value::{Counter, CqlDuration, CqlTimeuuid},
+    value::{Counter, CqlDuration, CqlTime, CqlTimeuuid},
 };
 
 use crate::result::CqlValueWrapper;
@@ -111,5 +111,12 @@ pub fn tests_get_cql_wrapper_uuid() -> CqlValueWrapper {
 pub fn tests_get_cql_wrapper_time_uuid() -> CqlValueWrapper {
     let element =
         CqlValue::Timeuuid(CqlTimeuuid::from_str("8e14e760-7fa8-11eb-bc66-000000000001").unwrap());
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with CqlTime type
+pub fn tests_get_cql_wrapper_time() -> CqlValueWrapper {
+    let element = CqlValue::Time(CqlTime(64 * 1_000_000_000));
     CqlValueWrapper { inner: element }
 }
