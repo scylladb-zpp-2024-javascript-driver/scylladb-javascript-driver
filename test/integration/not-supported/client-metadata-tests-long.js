@@ -12,14 +12,14 @@ describe("Client", function () {
     this.timeout(240000);
     // Tests fail due to incorrect value
     // INVESTIGATE(@wprzytula)
-    ///    Uncaught AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-    ///
-    ///    '5' !== '3'
-    ///
-    ///          + expected - actual
-    ///
-    ///          -5
-    ///          +3
+    // /    Uncaught AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+    // /
+    // /    '5' !== '3'
+    // /
+    // /          + expected - actual
+    // /
+    // /          -5
+    // /          +3
 
     /* describe("#getReplicas() with MurmurPartitioner", function () {
         before(function (done) {
@@ -451,14 +451,14 @@ function validateMurmurReplicas(client) {
         utils.allocBufferFromArray([0, 0, 0, 1]),
     );
     assert.ok(replicas);
-    //2 replicas per each dc
+    // 2 replicas per each dc
     assert.strictEqual(replicas.length, 4);
     assert.strictEqual(
         replicas.reduce((val, h) => val + (h.datacenter === "dc1" ? 1 : 0), 0),
         2,
     );
 
-    //pre-calculated based on murmur3
+    // pre-calculated based on murmur3
     let lastOctets = replicas.map(helper.lastOctetOf);
     assert.strictEqual(lastOctets[0], "3");
     assert.strictEqual(lastOctets[1], "7");
@@ -470,13 +470,13 @@ function validateMurmurReplicas(client) {
         utils.allocBufferFromArray([0, 0, 0, 3]),
     );
     assert.ok(replicas);
-    //2 replicas per each dc
+    // 2 replicas per each dc
     assert.strictEqual(replicas.length, 4);
     assert.strictEqual(
         replicas.reduce((val, h) => val + (h.datacenter === "dc1" ? 1 : 0), 0),
         2,
     );
-    //pre-calculated based on murmur3
+    // pre-calculated based on murmur3
     lastOctets = replicas.map(helper.lastOctetOf);
     assert.strictEqual(lastOctets[0], "1");
     assert.strictEqual(lastOctets[1], "5");

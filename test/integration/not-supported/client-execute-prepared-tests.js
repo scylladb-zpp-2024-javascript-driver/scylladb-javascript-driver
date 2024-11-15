@@ -227,7 +227,7 @@ describe("Client @SERVER_API", function () {
             utils.series(
                 [
                     function (seriesNext) {
-                        //parallel
+                        // parallel
                         utils.times(
                             10,
                             function (n, next) {
@@ -431,7 +431,7 @@ describe("Client @SERVER_API", function () {
                                     types.Integer.fromString("9999901443"),
                                 );
                                 if (n % 2 === 0) {
-                                    //as a string also
+                                    // as a string also
                                     value = value.toString();
                                 }
                                 expectedRows[id] = value.toString();
@@ -508,7 +508,7 @@ describe("Client @SERVER_API", function () {
                                     value = "-" + value;
                                 }
                                 if (n % 2 === 0) {
-                                    //as a BigDecimal too
+                                    // as a BigDecimal too
                                     value = types.BigDecimal.fromString(value);
                                 }
                                 expectedRows[id] = value.toString();
@@ -640,7 +640,7 @@ describe("Client @SERVER_API", function () {
             const MapPF = helper.Map;
             const values = [
                 [
-                    //map1 to n with array of length 2 as values
+                    // map1 to n with array of length 2 as values
                     Uuid.random(),
                     new MapPF([
                         ["k1", "v1"],
@@ -701,7 +701,7 @@ describe("Client @SERVER_API", function () {
                         );
                     },
                     function selectData(seriesNext) {
-                        //Make ? markers C*1.2-compatible
+                        // Make ? markers C*1.2-compatible
                         const markers = values.map(() => "?").join(",");
                         const query = util.format(
                             "SELECT * FROM %s WHERE id IN (" + markers + ")",
@@ -811,7 +811,7 @@ describe("Client @SERVER_API", function () {
                         );
                     },
                     function selectData(seriesNext) {
-                        //Make ? markers C*1.2-compatible
+                        // Make ? markers C*1.2-compatible
                         const markers = values.map(() => "?").join(",");
                         const query = util.format(
                             "SELECT * FROM %s WHERE id IN (" + markers + ")",
@@ -1085,7 +1085,7 @@ describe("Client @SERVER_API", function () {
                     client1.connect.bind(client1),
                     client2.connect.bind(client2),
                     function insert2(next) {
-                        //use undefined
+                        // use undefined
                         const query = util.format(
                             "INSERT INTO %s (id1, id2, text_sample, map_sample) VALUES (?, ?, ?, ?)",
                             commonTable,
@@ -1833,7 +1833,7 @@ describe("Client @SERVER_API", function () {
                             );
                         },
                         function insert2(next) {
-                            //use undefined
+                            // use undefined
                             const query = util.format(
                                 "INSERT INTO %s (id1, id2, text_sample, map_sample) VALUES (?, ?, ?, ?)",
                                 commonTable,
@@ -2289,23 +2289,23 @@ describe("Client @SERVER_API", function () {
             // Test fails due to incorrect results:
             // INVESTIGATE(@wprzytula)
             // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/runs/11573862581/job/32216863054?pr=43#step:11:764
-            ///         1) Client @SERVER_API
-            ///         #execute(query, params, {prepare: 1}, callback)
-            ///           with materialized views
-            ///             should choose the correct coordinator based on the partition key:
-            ///
-            ///        Uncaught AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-            ///
-            ///  '1' !== '3'
-            ///
-            ///        + expected - actual
-            ///
-            ///        -1
-            ///        +3
-            ///
-            ///        at /home/runner/work/scylladb-javascript-driver/scylladb-javascript-driver/test/integration/short/client-execute-prepared-tests.js:2332:40
-            ///        at /home/runner/work/scylladb-javascript-driver/scylladb-javascript-driver/lib/promise-utils.js:147:44
-            ///        at process.processTicksAndRejections (node:internal/process/task_queues:77:11)
+            // /         1) Client @SERVER_API
+            // /         #execute(query, params, {prepare: 1}, callback)
+            // /           with materialized views
+            // /             should choose the correct coordinator based on the partition key:
+            // /
+            // /        Uncaught AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+            // /
+            // /  '1' !== '3'
+            // /
+            // /        + expected - actual
+            // /
+            // /        -1
+            // /        +3
+            // /
+            // /        at /home/runner/work/scylladb-javascript-driver/scylladb-javascript-driver/test/integration/short/client-execute-prepared-tests.js:2332:40
+            // /        at /home/runner/work/scylladb-javascript-driver/scylladb-javascript-driver/lib/promise-utils.js:147:44
+            // /        at process.processTicksAndRejections (node:internal/process/task_queues:77:11)
 
             /* it("should choose the correct coordinator based on the partition key", function (done) {
                 const client = new Client({

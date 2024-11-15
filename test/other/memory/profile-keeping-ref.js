@@ -1,11 +1,10 @@
 "use strict";
-/* eslint-disable no-console, no-undef */
+
 const assert = require("assert");
 const util = require("util");
 let heapdump;
 const heapdumpPath = "/var/log/nodejs-driver";
 try {
-    // eslint-disable-next-line global-require
     heapdump = require("heapdump");
 } catch (e) {
     console.log(e);
@@ -91,14 +90,14 @@ utils.series(
                 "SELECT id, int_sample, bigint_sample, blob_sample FROM %s",
                 table,
             );
-            //const query = util.format('SELECT blob_sample FROM %s', table);
+            // const query = util.format('SELECT blob_sample FROM %s', table);
             global.gc();
             client.eachRow(
                 query,
                 [],
                 { prepare: true, autoPage: true },
                 function (n, row) {
-                    //Buffer length + uuid + int + bigint
+                    // Buffer length + uuid + int + bigint
                     totalByteLength += row["blob_sample"].length + 4 + 16 + 8;
                     values.push(row.values());
                 },

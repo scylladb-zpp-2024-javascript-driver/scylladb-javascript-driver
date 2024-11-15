@@ -15,6 +15,7 @@ const policies = require("../../lib/policies");
 const clientOptions = require("../../lib/client-options");
 const ProfileManager = require("../../lib/execution-profile").ProfileManager;
 
+/* eslint camelcase: "off" */
 describe("ControlConnection", function () {
     describe("constructor", function () {
         it("should create a new metadata instance", function () {
@@ -474,22 +475,22 @@ describe("ControlConnection", function () {
             const cc = newInstance(options);
             cc.host = new Host("18.18.18.18", 1, options);
             const rows = [
-                //valid rpc address
+                // valid rpc address
                 {
                     rpc_address: getInet([5, 4, 3, 2]),
                     peer: getInet([1, 1, 1, 1]),
                 },
-                //valid rpc address
+                // valid rpc address
                 {
                     rpc_address: getInet([9, 8, 7, 6]),
                     peer: getInet([1, 1, 1, 1]),
                 },
-                //should not be added
+                // should not be added
                 {
                     rpc_address: null,
                     peer: utils.allocBufferFromArray([1, 1, 1, 1]),
                 },
-                //should use peer address
+                // should use peer address
                 {
                     rpc_address: getInet([0, 0, 0, 0]),
                     peer: getInet([5, 5, 5, 5]),
@@ -510,14 +511,14 @@ describe("ControlConnection", function () {
             );
             const cc = newInstance(options);
             const rows = [
-                //valid rpc address
+                // valid rpc address
                 {
                     rpc_address: getInet([5, 4, 3, 2]),
                     peer: getInet([1, 1, 1, 1]),
                     data_center: "dc100",
                     release_version: "2.1.4",
                 },
-                //valid rpc address
+                // valid rpc address
                 {
                     rpc_address: getInet([9, 8, 7, 6]),
                     peer: getInet([1, 1, 1, 1]),
@@ -555,14 +556,14 @@ describe("ControlConnection", function () {
             );
             const cc = newInstance(options);
             const rows = [
-                //valid rpc address
+                // valid rpc address
                 {
                     rpc_address: getInet([5, 4, 3, 2]),
                     peer: getInet([1, 1, 1, 1]),
                     data_center: "dc100",
                     release_version: "2.1.4",
                 },
-                //valid rpc address
+                // valid rpc address
                 {
                     rpc_address: getInet([9, 8, 7, 6]),
                     peer: getInet([1, 1, 1, 1]),
@@ -586,14 +587,14 @@ describe("ControlConnection", function () {
             delete options.localDataCenter;
             const cc = newInstance(options);
             const rows = [
-                //valid rpc address
+                // valid rpc address
                 {
                     rpc_address: getInet([5, 4, 3, 2]),
                     peer: getInet([1, 1, 1, 1]),
                     data_center: "dc100",
                     release_version: "2.1.4",
                 },
-                //valid rpc address
+                // valid rpc address
                 {
                     rpc_address: getInet([9, 8, 7, 6]),
                     peer: getInet([1, 1, 1, 1]),

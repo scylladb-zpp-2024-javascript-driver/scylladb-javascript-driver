@@ -748,7 +748,6 @@ describe("pool", function () {
                 // Execute queries in the background
                 process.nextTick(async () => {
                     while (!stop && responseCounter < maxResults) {
-                        // eslint-disable-next-line no-loop-func
                         await promiseUtils.times(100, 32, async () => {
                             const checkReject = client.isShuttingDown;
                             let timePassed = false;

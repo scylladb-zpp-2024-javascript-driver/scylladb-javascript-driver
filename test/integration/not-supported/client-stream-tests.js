@@ -22,8 +22,8 @@ describe("Client", function () {
             stream
                 .on("end", done)
                 .on("readable", function () {
-                    //Node.js 0.10, readable is never called
-                    //Node.js 0.12, readable is called with null
+                    // Node.js 0.10, readable is never called
+                    // Node.js 0.12, readable is called with null
                     const chunk = stream.read();
                     assert.strictEqual(chunk, null);
                 })
@@ -78,8 +78,8 @@ describe("Client", function () {
                     done();
                 })
                 .on("readable", function () {
-                    //Node.js 0.10, never emits readable
-                    //Node.js 0.12, it emits a null value, causing the rest of the events to chain
+                    // Node.js 0.10, never emits readable
+                    // Node.js 0.12, it emits a null value, causing the rest of the events to chain
                     assert.strictEqual(stream.read(), null);
                 })
                 .on("error", function (err) {
@@ -98,8 +98,8 @@ describe("Client", function () {
                     done();
                 })
                 .on("readable", function () {
-                    //Node.js 0.10, never emits readable
-                    //Node.js 0.12, it emits a null value, causing the rest of the events to chain
+                    // Node.js 0.10, never emits readable
+                    // Node.js 0.12, it emits a null value, causing the rest of the events to chain
                     assert.strictEqual(stream.read(), null);
                 })
                 .on("error", function (err) {
@@ -118,8 +118,8 @@ describe("Client", function () {
                     done();
                 })
                 .on("readable", function () {
-                    //Node.js 0.10, never emits readable
-                    //Node.js 0.12, it emits a null value, causing the rest of the events to chain
+                    // Node.js 0.10, never emits readable
+                    // Node.js 0.12, it emits a null value, causing the rest of the events to chain
                     assert.strictEqual(stream.read(), null);
                 })
                 .on("error", function (err) {
@@ -164,8 +164,8 @@ describe("Client", function () {
                     done();
                 })
                 .on("readable", function () {
-                    //Node.js 0.10, never emits readable
-                    //Node.js 0.12, it emits a null value, causing the rest of the events to chain
+                    // Node.js 0.10, never emits readable
+                    // Node.js 0.12, it emits a null value, causing the rest of the events to chain
                     assert.strictEqual(stream.read(), null);
                 })
                 .on("error", function (err) {
@@ -344,15 +344,15 @@ describe("Client", function () {
         });
         it("should emit other ResponseErrors", function (done) {
             const client = newInstance();
-            //Invalid amount of parameters
+            // Invalid amount of parameters
             const stream = client.stream(helper.queries.basic, ["param1"], {
                 prepare: 1,
             });
             let errCalled = false;
             stream
                 .on("readable", function () {
-                    //Node.js 0.10, never emits readable
-                    //Node.js 0.12, it emits a null value, causing the rest of the events to chain
+                    // Node.js 0.10, never emits readable
+                    // Node.js 0.12, it emits a null value, causing the rest of the events to chain
                     assert.strictEqual(stream.read(), null);
                 })
                 .on("error", function (err) {
@@ -388,7 +388,7 @@ describe("Client", function () {
                 .on("readable", function () {
                     const streamContext = this;
                     setTimeout(function () {
-                        //delay all reading
+                        // delay all reading
                         let row;
                         while ((row = streamContext.read())) {
                             assert.ok(row);
@@ -460,7 +460,7 @@ describe("Client", function () {
                                         assert.ok(row);
                                         rowsRead++;
                                         if (rowsRead % 55 === 0) {
-                                            //delay from time to time
+                                            // delay from time to time
                                             return setTimeout(whilstNext, 100);
                                         }
                                         whilstNext();

@@ -1,6 +1,6 @@
 "use strict";
 const assert = require("assert");
-//project modules
+// project modules
 const utils = require("../../lib/utils");
 const helper = require("../test-helper");
 const reconnection = require("../../lib/policies/reconnection");

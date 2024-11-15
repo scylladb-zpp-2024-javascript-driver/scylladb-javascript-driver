@@ -363,7 +363,7 @@ function newInstance(address, protocolVersion, options) {
     if (typeof protocolVersion === "undefined") {
         protocolVersion = getProtocolVersion();
     }
-    //var logEmitter = function (name, type) { if (type === 'verbose') { return; } console.log.apply(console, arguments);};
+    // var logEmitter = function (name, type) { if (type === 'verbose') { return; } console.log.apply(console, arguments);};
     options = utils.deepExtend(
         { logEmitter: helper.noop },
         options || defaultOptions,

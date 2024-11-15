@@ -17,7 +17,7 @@ describe("StreamIdStack", function () {
         assert.strictEqual(stack.pop(), 1);
         assert.strictEqual(stack.pop(), 2);
         assert.strictEqual(stack.inUse, 3);
-        //1 becomes available again
+        // 1 becomes available again
         stack.push(1);
         assert.strictEqual(stack.inUse, 2);
         assert.strictEqual(stack.pop(), 1);
@@ -53,11 +53,11 @@ describe("StreamIdStack", function () {
         for (let i = 0; i < ids.length; i++) {
             assert.strictEqual(ids[i], i);
         }
-        //popped all from the first 3 groups
+        // popped all from the first 3 groups
         assert.strictEqual(stack.pop(), 128 * 3 - 1);
         assert.strictEqual(stack.groups.length, 3);
-        stack.push(10); //group 0
-        stack.push(200); //group 1
+        stack.push(10); // group 0
+        stack.push(200); // group 1
         assert.strictEqual(stack.pop(), 10);
         assert.strictEqual(stack.pop(), 200);
         assert.strictEqual(stack.pop(), 128 * 3);
@@ -69,7 +69,7 @@ describe("StreamIdStack", function () {
     it("should release unused groups", function () {
         const releaseDelay = 5000;
         const stack = newInstance(3, releaseDelay);
-        //6 groups,
+        // 6 groups,
         const length = 128 * 5 + 2;
 
         pop(stack, length);
@@ -79,7 +79,7 @@ describe("StreamIdStack", function () {
         stack.push(128 * 5);
         assert.strictEqual(stack.groups.length, 6);
 
-        //the last group is completed and can be released
+        // the last group is completed and can be released
         stack.push(128 * 5 + 1);
 
         // push 10 more
@@ -89,7 +89,7 @@ describe("StreamIdStack", function () {
 
         clock.tick(releaseDelay);
 
-        //there should be 5 groups now
+        // there should be 5 groups now
         assert.strictEqual(stack.groups.length, 5);
 
         assert.strictEqual(stack.inUse, length - 12);
@@ -100,43 +100,43 @@ describe("StreamIdStack", function () {
         const releaseDelay = 100;
         const stack = newInstance(3, releaseDelay);
 
-        //6 groups,
+        // 6 groups,
         pop(stack, 128 * 5 + 2);
-        //return just 1 to the last group
+        // return just 1 to the last group
         stack.push(128 * 5);
         assert.strictEqual(stack.groups.length, 6);
-        //the last group is completed and but can not be released as is the current one
+        // the last group is completed and but can not be released as is the current one
         stack.push(128 * 5 + 1);
         assert.strictEqual(stack.groups.length, 6);
 
         clock.tick(releaseDelay);
 
-        //there should be 5 groups now
+        // there should be 5 groups now
         assert.strictEqual(stack.groups.length, 6);
         stack.clear();
     });
     it("should not release more than release size per time", function () {
         const releaseDelay = 100;
         const stack = newInstance(3, releaseDelay);
-        //12 groups,
+        // 12 groups,
         pop(stack, 128 * 11 + 2);
         assert.strictEqual(stack.groups.length, 12);
-        //return
+        // return
         push(stack, 0, 128 * 11 + 2);
         assert.strictEqual(stack.groups.length, 12);
         assert.strictEqual(stack.groupIndex, 0);
         assert.strictEqual(stack.inUse, 0);
-        assert.strictEqual(stack.pop(), 127); //last from the first group
+        assert.strictEqual(stack.pop(), 127); // last from the first group
         assert.strictEqual(stack.inUse, 1);
 
         clock.tick(releaseDelay);
 
-        //there should be 12 - 4 groups now
+        // there should be 12 - 4 groups now
         assert.strictEqual(stack.groups.length, 8);
 
         clock.tick(releaseDelay);
 
-        //there should be 12 - 8 groups now
+        // there should be 12 - 8 groups now
         assert.strictEqual(stack.groups.length, 4);
         stack.clear();
     });
