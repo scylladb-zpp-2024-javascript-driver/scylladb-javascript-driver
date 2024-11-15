@@ -46,7 +46,7 @@ describe("RoundRobinPolicy", function () {
                 function (err) {
                     assert.equal(err, null);
                     assert.strictEqual(hosts.length, times);
-                    //Count the number of times of each element
+                    // Count the number of times of each element
                     originalHosts.forEach(function (item) {
                         let length = 0;
                         let lastHost = null;
@@ -105,12 +105,12 @@ describe("RoundRobinPolicy", function () {
                             assert.strictEqual(item.done, false);
                             assert.notEqual(item.value, null);
                         }
-                        //one more time
+                        // one more time
                         item = iterator.next();
-                        //it should be finished
+                        // it should be finished
                         assert.strictEqual(item.done, true);
                         assert.equal(item.value, null);
-                        //call once again just for fun
+                        // call once again just for fun
                         iterator.next();
                         next();
                     });
@@ -138,8 +138,8 @@ describe("DCAwareRoundRobinPolicy", function () {
         });
     });
     it("should yield local nodes in a round robin manner in parallel", function (done) {
-        //local datacenter: dc1
-        //0 host per remote datacenter
+        // local datacenter: dc1
+        // 0 host per remote datacenter
         const policy = new DCAwareRoundRobinPolicy();
         const options = clientOptions.extend({}, helper.baseOptions, {
             policies: { loadBalancing: policy },
@@ -163,7 +163,7 @@ describe("DCAwareRoundRobinPolicy", function () {
                         for (let i = 0; i < originalHosts.length; i++) {
                             const item = iterator.next();
                             if (i >= localLength) {
-                                //once the local have ended, it should be "done"
+                                // once the local have ended, it should be "done"
                                 assert.strictEqual(
                                     item.done,
                                     true,
@@ -185,7 +185,7 @@ describe("DCAwareRoundRobinPolicy", function () {
                 function (err) {
                     assert.equal(err, null);
                     assert.strictEqual(hosts.length, times * localLength);
-                    //Count the number of times of each element
+                    // Count the number of times of each element
                     originalHosts.forEach(function (item) {
                         let length = 0;
                         let lastHost = null;
@@ -195,10 +195,10 @@ describe("DCAwareRoundRobinPolicy", function () {
                             lastHost = host;
                         });
                         if (item.datacenter === "dc1") {
-                            //check that appears the same times it was iterated.
+                            // check that appears the same times it was iterated.
                             assert.strictEqual(length, times);
                         } else {
-                            //check that it never hit the remote dc
+                            // check that it never hit the remote dc
                             assert.strictEqual(length, 0);
                         }
                     });
@@ -562,7 +562,7 @@ describe("TokenAwarePolicy", function () {
                     const expected = iterations / totalHosts;
                     for (let i = 0; i < totalHosts; i++) {
                         const hostsAtPosition = replicaPositions[i];
-                        // eslint-disable-next-line no-loop-func
+
                         Object.keys(hostsAtPosition).forEach(
                             function (address) {
                                 const timesSelected = hostsAtPosition[address];
@@ -626,7 +626,7 @@ describe("AllowListPolicy", function () {
             policy.getDistance({ address: "h_not_exists:9042" }),
             types.distance.ignored,
         );
-        //child policy should not be called
+        // child policy should not be called
         assert.strictEqual(getDistanceCalled, 2);
     });
     it("should filter the child policy hosts", function (done) {

@@ -239,7 +239,7 @@ describe("Uuid", function () {
 describe("TimeUuid", function () {
     describe("constructor()", function () {
         it("should generate based on the parameters", function () {
-            //Gregorian calendar epoch
+            // Gregorian calendar epoch
             let val = new TimeUuid(
                 new Date(-12219292800000),
                 0,
@@ -260,7 +260,7 @@ describe("TimeUuid", function () {
                 val.toString(),
                 "00989680-0000-1000-8000-000000000000",
             );
-            //unix  epoch
+            // unix  epoch
             val = new TimeUuid(
                 new Date(0),
                 0,
@@ -360,7 +360,7 @@ describe("TimeUuid", function () {
                 ] = true;
             }
             assert.strictEqual(Object.keys(values).length, length);
-            //next should collide
+            // next should collide
             assert.strictEqual(
                 values[
                     TimeUuid.fromDate(date, null, "host01", "AA").toString()

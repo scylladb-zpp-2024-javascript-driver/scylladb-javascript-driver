@@ -22,6 +22,7 @@ const Encoder = require("../../lib/encoder");
 const isDoneForToken =
     require("../../lib/metadata/schema-parser").isDoneForToken;
 
+/* eslint camelcase: "off" */
 describe("Metadata", function () {
     this.timeout(5000);
 
@@ -341,7 +342,7 @@ describe("Metadata", function () {
             assert.deepEqual(replicasByToken, replicas);
 
             assert.ok(replicas);
-            //Primary replica plus the 2 next tokens
+            // Primary replica plus the 2 next tokens
             assert.strictEqual(replicas.length, 3);
             assert.strictEqual(replicas[0], "0");
             assert.strictEqual(replicas[1], "1");
@@ -387,7 +388,7 @@ describe("Metadata", function () {
                 "6",
                 "7",
             ];
-            //load primary replicas
+            // load primary replicas
             metadata.primaryReplicas = {};
             for (let i = 0; i < metadata.ring.length; i++) {
                 const h = new Host(i.toString(), 2, options);
@@ -405,7 +406,7 @@ describe("Metadata", function () {
                 const t = metadata.newToken(utils.allocBufferFromArray([0]));
                 const replicasByToken = metadata.getReplicas("dummy", t);
                 assert.deepEqual(replicasByToken, replicas);
-                //3 replicas from dc1 and 1 replica from dc2
+                // 3 replicas from dc1 and 1 replica from dc2
                 assert.strictEqual(replicas.length, 4);
                 assert.strictEqual(replicas[0].address, "0");
                 assert.strictEqual(replicas[1].address, "1");
@@ -449,7 +450,7 @@ describe("Metadata", function () {
                 "6",
                 "7",
             ];
-            //load primary replicas
+            // load primary replicas
             metadata.primaryReplicas = {};
             for (let i = 0; i < metadata.ring.length; i++) {
                 // Hosts with in alternate dc and alternate rack
@@ -539,7 +540,7 @@ describe("Metadata", function () {
                 "6",
                 "7",
             ];
-            //load primary replicas
+            // load primary replicas
             metadata.primaryReplicas = {};
             for (let i = 0; i < metadata.ring.length; i++) {
                 // Hosts with in alternate dc and alternate rack
@@ -548,7 +549,7 @@ describe("Metadata", function () {
                 h.rack = h.datacenter + "_r" + (i % 4 <= 1 ? 1 : 2);
                 metadata.primaryReplicas[i.toString()] = h;
             }
-            //reorganize racks in dc1 to set contiguous tokens in the same rack
+            // reorganize racks in dc1 to set contiguous tokens in the same rack
             metadata.primaryReplicas["0"].rack = "dc1_rack1";
             metadata.primaryReplicas["2"].rack = "dc1_rack1";
             metadata.primaryReplicas["4"].rack = "dc1_rack2";
@@ -897,7 +898,7 @@ describe("Metadata", function () {
             });
             const metadata = new Metadata(clientOptions.defaultOptions(), cc);
             metadata.initialized = true;
-            //no keyspace named ks1 in metadata
+            // no keyspace named ks1 in metadata
             metadata.keyspaces = {};
             metadata.getUdt("ks1", "udt1", function (err, udtInfo) {
                 assert.ifError(err);
@@ -920,10 +921,10 @@ describe("Metadata", function () {
                 flags: utils.emptyObject,
             });
             const metadata = new Metadata(clientOptions.defaultOptions(), cc);
-            //no keyspace named ks1 in metadata
+            // no keyspace named ks1 in metadata
             metadata.initialized = true;
             metadata.keyspaces = { ks1: { udts: {} } };
-            //Invoke multiple times in parallel
+            // Invoke multiple times in parallel
             utils.times(
                 50,
                 function (n, next) {
@@ -958,10 +959,10 @@ describe("Metadata", function () {
                 flags: utils.emptyObject,
             });
             const metadata = new Metadata(clientOptions.defaultOptions(), cc);
-            //no keyspace named ks1 in metadata
+            // no keyspace named ks1 in metadata
             metadata.initialized = true;
             metadata.keyspaces = { ks1: { udts: {} } };
-            //Invoke multiple times in parallel
+            // Invoke multiple times in parallel
             utils.timesSeries(
                 50,
                 function (n, next) {
@@ -1186,12 +1187,12 @@ describe("Metadata", function () {
                 coordinator: types.InetAddress.fromString("10.10.10.1"),
                 parameters: ["a", "b"],
                 started_at: new Date(),
-                duration: null, //duration null means that trace is not fully flushed
+                duration: null, // duration null means that trace is not fully flushed
             };
 
             let calls = 0;
             const cc = getControlConnectionForResponse((r) => {
-                //try with empty result and null duration
+                // try with empty result and null duration
                 let rows = [];
                 if (++calls > 1) {
                     rows = [sessionRow];
@@ -1370,7 +1371,7 @@ describe("Metadata", function () {
                         /schema_columnfamilies/,
                     );
                     assert.match(cc.query.secondCall.args[0], /schema_columns/);
-                    //assert.strictEqual(calledRows, 1);
+                    // assert.strictEqual(calledRows, 1);
                     assert.strictEqual(results.length, 100);
                     assert.strictEqual(results[0].name, "tbl1");
                     assert.strictEqual(results[0], results[1]);
@@ -2344,7 +2345,7 @@ describe("Metadata", function () {
                         customType,
                     );
                     assert.strictEqual(table.populateCacheOnFlush, true);
-                    //default as it does not exist for C* 1.2
+                    // default as it does not exist for C* 1.2
                     assert.strictEqual(table.speculativeRetry, "NONE");
                     assert.strictEqual(table.indexInterval, null);
                     assert.strictEqual(table.memtableFlushPeriod, 0);
@@ -2422,7 +2423,7 @@ describe("Metadata", function () {
             });
 
             it("should parse with compact storage", function (done) {
-                //1 pk, 1 ck and 1 val
+                // 1 pk, 1 ck and 1 val
                 const tableRow = {
                     keyspace_name: "ks_tbl_meta",
                     columnfamily_name: "tbl5",
@@ -2474,7 +2475,7 @@ describe("Metadata", function () {
             });
 
             it("should parse with compact storage with pk", function (done) {
-                //1 pk, 2 val
+                // 1 pk, 2 val
                 const tableRow = {
                     keyspace_name: "ks_tbl_meta",
                     columnfamily_name: "tbl1",
@@ -2545,7 +2546,7 @@ describe("Metadata", function () {
             });
 
             it("should parse with compact storage and all columns as clustering keys", function (done) {
-                //1 pk, 2 ck
+                // 1 pk, 2 ck
                 const tableRow = {
                     keyspace_name: "ks_tbl_meta",
                     columnfamily_name: "tbl1",
@@ -2898,7 +2899,7 @@ describe("Metadata", function () {
                         table.extensions["hello"].toString("utf8"),
                         "world",
                     );
-                    //not present, default
+                    // not present, default
                     assert.strictEqual(table.populateCacheOnFlush, false);
                     assert.strictEqual(table.columns.length, 6);
                     assert.deepEqual(
@@ -2998,7 +2999,7 @@ describe("Metadata", function () {
             });
 
             it("should parse with compact storage", function (done) {
-                //1 pk, 1 ck and 1 val
+                // 1 pk, 1 ck and 1 val
                 const tableRow = {
                     keyspace_name: "ks_tbl_meta",
                     table_name: "tbl5",
@@ -3079,7 +3080,7 @@ describe("Metadata", function () {
             });
 
             it("should parse with custom index", function (done) {
-                //1 pk, 1 ck and 1 val
+                // 1 pk, 1 ck and 1 val
                 const tableRow = {
                     keyspace_name: "ks_tbl_meta",
                     table_name: "tbl5",
@@ -3184,7 +3185,7 @@ describe("Metadata", function () {
             });
 
             it("should parse with compact storage with pk", function (done) {
-                //1 pk, 2 val
+                // 1 pk, 2 val
                 const tableRow = {
                     keyspace_name: "ks_tbl_meta",
                     table_name: "tbl6",
@@ -3287,7 +3288,7 @@ describe("Metadata", function () {
             });
 
             it("should parse with compact storage and all columns as clustering keys", function (done) {
-                //1 pk, 2 ck. similar to tbl5 but with id2 and text1 as ck
+                // 1 pk, 2 ck. similar to tbl5 but with id2 and text1 as ck
                 const tableRow = {
                     keyspace_name: "ks1",
                     table_name: "tbl10",
@@ -3624,7 +3625,7 @@ describe("Metadata", function () {
                                 if (n < 5) {
                                     assert.strictEqual(funcArray.length, 0);
                                 } else {
-                                    //there should be a row
+                                    // there should be a row
                                     assert.strictEqual(funcArray.length, 1);
                                 }
                                 next();
@@ -4358,7 +4359,7 @@ describe("Metadata", function () {
                                 if (n < 5) {
                                     assert.strictEqual(funcArray.length, 0);
                                 } else {
-                                    //there should be a row
+                                    // there should be a row
                                     assert.strictEqual(funcArray.length, 1);
                                 }
                                 next();
@@ -4986,7 +4987,7 @@ describe("SchemaParser", function () {
     describe("isDoneForToken()", function () {
         it("should skip if dc not included in topology", function () {
             const replicationFactors = { dc1: 3, dc2: 1 };
-            //dc2 does not exist
+            // dc2 does not exist
             const datacenters = {
                 dc1: { hostLength: 6 },
             };
@@ -4997,7 +4998,7 @@ describe("SchemaParser", function () {
         });
 
         it("should skip if rf equals to 0", function () {
-            //rf 0 for dc2
+            // rf 0 for dc2
             const replicationFactors = { dc1: 4, dc2: 0 };
             const datacenters = {
                 dc1: { hostLength: 6 },
@@ -5011,7 +5012,7 @@ describe("SchemaParser", function () {
 
         it("should return false for undefined replicasByDc[dcName]", function () {
             const replicationFactors = { dc1: 3, dc2: 1 };
-            //dc2 does not exist
+            // dc2 does not exist
             const datacenters = {
                 dc1: { hostLength: 6 },
             };
@@ -5089,7 +5090,7 @@ function getAddress(h) {
  */
 function getTokenizer() {
     const t = new tokenizer.Murmur3Tokenizer();
-    //Use the first byte as token
+    // Use the first byte as token
     t.hash = (b) => new Murmur3Token(MutableLong.fromNumber(b[0]));
     t.stringify = stringifyDefault;
     return t;

@@ -67,7 +67,7 @@ describe("Parser", function () {
                     "it should return a mustAuthenticate return flag",
                 );
                 assert.strictEqual(item.authenticatorName, "abc");
-                //mocha will fail if done is called multiple times
+                // mocha will fail if done is called multiple times
                 done();
             });
             const header = getFrameHeader(5, types.opcodes.authenticate);
@@ -134,7 +134,7 @@ describe("Parser", function () {
                 {
                     header: getFrameHeader(4, types.opcodes.result, 2, true),
                     chunk: Buffer.concat([
-                        utils.allocBufferUnsafe(16), //uuid
+                        utils.allocBufferUnsafe(16), // uuid
                         utils.allocBufferFromArray([
                             0,
                             0,
@@ -157,7 +157,7 @@ describe("Parser", function () {
             });
 
             const body = Buffer.concat([
-                utils.allocBufferUnsafe(16), //uuid
+                utils.allocBufferUnsafe(16), // uuid
                 utils.allocBufferFromArray([
                     0,
                     0,
@@ -220,7 +220,7 @@ describe("Parser", function () {
             });
 
             const body = Buffer.concat([
-                utils.allocBufferUnsafe(16), //uuid
+                utils.allocBufferUnsafe(16), // uuid
                 getBodyChunks(3, 1, 0, undefined, null).chunk,
             ]);
             parser._transform(
@@ -331,7 +331,7 @@ describe("Parser", function () {
                 assert.strictEqual(item.keyspaceSet, "ks1");
                 done();
             });
-            //kind + stringLength + string
+            // kind + stringLength + string
             const bodyLength = 4 + 2 + 3;
             parser._transform(
                 {
@@ -388,7 +388,7 @@ describe("Parser", function () {
                 assert.deepEqual(item.meta.partitionKeys, [4]);
                 done();
             });
-            //kind +
+            // kind +
             // id length + id
             // meta id length + id
             // metadata (flags + columnLength + partitionKeyLength + partition key index + ksname + tblname + column name + column type) +
@@ -508,7 +508,7 @@ describe("Parser", function () {
                 );
                 done();
             });
-            //kind +
+            // kind +
             // id length + id
             // metadata (flags + columnLength + ksname + tblname + column name + column type) +
             // result metadata (flags + columnLength + ksname + tblname + column name + column type)
@@ -1288,19 +1288,19 @@ describe("Parser", function () {
                 );
                 done();
             });
-            //kind
+            // kind
             parser._transform(
                 getBodyChunks(1, 0, 0, 4),
                 null,
                 doneIfError(done),
             );
-            //metadata
+            // metadata
             parser._transform(
                 getBodyChunks(1, 0, 4, 12),
                 null,
                 doneIfError(done),
             );
-            //column names and rows
+            // column names and rows
             parser._transform(
                 getBodyChunks(1, 0, 12, null),
                 null,
@@ -1319,7 +1319,7 @@ describe("Parser", function () {
                 );
                 done();
             });
-            //2 columns, no rows, in one chunk
+            // 2 columns, no rows, in one chunk
             parser._transform(
                 getBodyChunks(2, 0, 0, null),
                 null,
@@ -1347,7 +1347,7 @@ describe("Parser", function () {
                 }
             });
             parser.setOptions(33, { byRow: true });
-            //3 columns, 2 rows
+            // 3 columns, 2 rows
             parser._transform(
                 getBodyChunks(3, rowLength, 0, 10),
                 null,
@@ -1490,7 +1490,7 @@ describe("Parser", function () {
                                 }
                                 const start = j;
                                 if (start === 0) {
-                                    //sum a few bytes
+                                    // sum a few bytes
                                     chunkedItem.chunk = Buffer.concat([
                                         utils.allocBufferUnsafe(9),
                                         item.chunk.slice(start, end),
@@ -1514,7 +1514,7 @@ describe("Parser", function () {
                             transformChunkedItem(i);
                         }
                         process.nextTick(() => {
-                            //assert result
+                            // assert result
                             expected.forEach(function (expectedItem, index) {
                                 assert.ok(
                                     result[index],
@@ -1620,7 +1620,7 @@ describe("Parser", function () {
                         doneParsing.then(() => {
                             process.nextTick(() => {
                                 assert.ok(byRowCompleted);
-                                //assert result
+                                // assert result
                                 expected.forEach(
                                     function (expectedItem, index) {
                                         assert.ok(
@@ -1647,9 +1647,9 @@ describe("Parser", function () {
         });
         it("should emit row with large row values", function (done) {
             this.timeout(20000);
-            //3mb value
+            // 3mb value
             let cellValue = helper.fillArray(3 * 1024 * 1024, 74);
-            //Add the length 0x00300000 of the value
+            // Add the length 0x00300000 of the value
             cellValue = [0, 30, 0, 0].concat(cellValue);
             const rowLength = 1;
             utils.series(
@@ -1668,7 +1668,7 @@ describe("Parser", function () {
                                 next();
                             }
                         });
-                        //1 columns, 1 row, 1 chunk
+                        // 1 columns, 1 row, 1 chunk
                         parser._transform(
                             getBodyChunks(1, rowLength, 0, null, cellValue),
                             null,
@@ -1689,7 +1689,7 @@ describe("Parser", function () {
                                 next();
                             }
                         });
-                        //1 columns, 1 row, 2 chunks
+                        // 1 columns, 1 row, 2 chunks
                         parser._transform(
                             getBodyChunks(1, rowLength, 0, 50, cellValue),
                             null,
@@ -1715,7 +1715,7 @@ describe("Parser", function () {
                                 next();
                             }
                         });
-                        //1 columns, 1 row, 6 chunks
+                        // 1 columns, 1 row, 6 chunks
                         parser._transform(
                             getBodyChunks(1, rowLength, 0, 50, cellValue),
                             null,
@@ -1749,7 +1749,7 @@ describe("Parser", function () {
                     },
                     function (next) {
                         let cellValue = helper.fillArray(256, 74);
-                        //Add the length 256 of the value
+                        // Add the length 256 of the value
                         cellValue = [0, 0, 1, 0].concat(cellValue);
                         const parser = newInstance();
                         let rowCounter = 0;
@@ -1764,7 +1764,7 @@ describe("Parser", function () {
                                 next();
                             }
                         });
-                        //1 columns, 1 row, 6 small chunks
+                        // 1 columns, 1 row, 6 small chunks
                         parser._transform(
                             getBodyChunks(1, rowLength, 0, 50, cellValue),
                             null,
@@ -1793,7 +1793,7 @@ describe("Parser", function () {
                     },
                     function (next) {
                         let cellValue = helper.fillArray(256, 74);
-                        //Add the length 256 of the value
+                        // Add the length 256 of the value
                         cellValue = [0, 0, 1, 0].concat(cellValue);
                         const parser = newInstance();
                         let rowCounter = 0;
@@ -1808,7 +1808,7 @@ describe("Parser", function () {
                                 next();
                             }
                         });
-                        //2 columns, 1 row, small and large chunks
+                        // 2 columns, 1 row, small and large chunks
                         parser._transform(
                             getBodyChunks(2, rowLength, 0, 19, cellValue),
                             null,
@@ -1849,7 +1849,7 @@ describe("Parser", function () {
                 assert.strictEqual(item.authChallenge, true);
                 done();
             });
-            //Length + buffer
+            // Length + buffer
             const bodyLength = 4 + 2;
             parser._transform(
                 {
@@ -1883,11 +1883,11 @@ describe("Parser", function () {
                 assert.strictEqual(item.header.opcode, types.opcodes.error);
                 helper.assertInstanceOf(item.error, errors.ResponseError);
                 assert.strictEqual(item.error.message, "ERR");
-                //mocha will fail if done is called multiple times
+                // mocha will fail if done is called multiple times
                 assert.strictEqual(parser.read(), null);
                 done();
             });
-            //streamId 33
+            // streamId 33
             const header = new types.FrameHeader(
                 4,
                 0,
@@ -1942,9 +1942,9 @@ describe("Parser", function () {
                     rowCounter++;
                 }
             });
-            //12 is the stream id used by the header helper by default
+            // 12 is the stream id used by the header helper by default
             parser.setOptions(12, { byRow: true });
-            //3 columns, 2 rows
+            // 3 columns, 2 rows
             parser._transform(
                 getBodyChunks(3, rowLength, 0, 10),
                 null,
@@ -2033,12 +2033,12 @@ function getBodyChunks(
 ) {
     let i;
     let fullChunk = [
-        //kind
+        // kind
         0,
         0,
         0,
         types.resultKind.rows,
-        //flags and column count
+        // flags and column count
         0,
         0,
         0,
@@ -2047,35 +2047,35 @@ function getBodyChunks(
         0,
         0,
         columnLength,
-        //column names
+        // column names
         0,
         1,
-        97, //string 'a' as ksname
+        97, // string 'a' as ksname
         0,
         1,
-        98, //string 'b' as tablename
+        98, // string 'b' as tablename
     ];
     for (i = 0; i < columnLength; i++) {
         fullChunk = fullChunk.concat([
             0,
             1,
-            99 + i, //string name, starting by 'c' as column name
+            99 + i, // string name, starting by 'c' as column name
             0,
-            types.dataTypes.text, //short datatype
+            types.dataTypes.text, // short datatype
         ]);
     }
-    //rows length
+    // rows length
     fullChunk = fullChunk.concat([0, 0, 0, rowLength || 0]);
     for (i = 0; i < rowLength; i++) {
         let rowChunk = [];
         for (let j = 0; j < columnLength; j++) {
-            //4 bytes length + bytes of each column value
+            // 4 bytes length + bytes of each column value
             if (!cellValue) {
                 rowChunk.push(0);
                 rowChunk.push(0);
                 rowChunk.push(0);
                 rowChunk.push(1);
-                //value
+                // value
                 rowChunk.push(j);
             } else {
                 rowChunk = rowChunk.concat(cellValue);
@@ -2101,15 +2101,15 @@ function getBodyChunks(
 
 function getEventData(eventType, value) {
     const bodyArray = [];
-    //EVENT TYPE
+    // EVENT TYPE
     bodyArray.push(utils.allocBufferFromArray([0, eventType.length]));
     bodyArray.push(utils.allocBufferFromString(eventType));
-    //STATUS CHANGE DESCRIPTION
+    // STATUS CHANGE DESCRIPTION
     bodyArray.push(utils.allocBufferFromArray([0, value.length]));
     bodyArray.push(utils.allocBufferFromString(value));
-    //Address
+    // Address
     bodyArray.push(utils.allocBufferFromArray([4, 127, 0, 0, 1]));
-    //Port
+    // Port
     bodyArray.push(utils.allocBufferFromArray([0, 0, 0, 200]));
 
     const body = Buffer.concat(bodyArray);

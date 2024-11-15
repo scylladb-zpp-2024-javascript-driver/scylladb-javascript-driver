@@ -212,7 +212,7 @@ describe("Client", function () {
                         const nodeDown = client.hosts.get(nodeDownAddress);
                         nodeDown.on("up", function () {
                             helper.trace("Node marked as UP");
-                            setTimeout(next, 1000); //give time for driver to re prepare statement
+                            setTimeout(next, 1000); // give time for driver to re prepare statement
                         });
                         sCluster.node(nodeDownAddress).start(function () {});
                     },

@@ -676,7 +676,7 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
                                         assert.ifError(err);
                                         assert.ok(func);
                                         assert.strictEqual(func.name, "sum2");
-                                        //changed
+                                        // changed
                                         assert.strictEqual(
                                             func.initCondition,
                                             "200",

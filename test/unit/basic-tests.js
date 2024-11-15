@@ -25,9 +25,8 @@ describe("types", function () {
     describe("Long", function () {
         const Long = types.Long;
         it("should convert from and to Buffer", function () {
-            /* eslint-disable no-multi-spaces */
             [
-                //int64 decimal value    //hex value
+                // int64 decimal value    //hex value
                 ["-123456789012345678", "fe4964b459cf0cb2"],
                 ["-800000000000000000", "f4e5d43d13b00000"],
                 ["-888888888888888888", "f3aa0843dcfc71c8"],
@@ -49,7 +48,6 @@ describe("types", function () {
                     "Hexadecimal values should match for " + item[1],
                 );
             });
-            /* eslint-enable no-multi-spaces */
         });
 
         it("should return a valid number for int greater than 2^53 and less than -2^53", function () {
@@ -81,9 +79,9 @@ describe("types", function () {
     });
     describe("Integer", function () {
         const Integer = types.Integer;
-        /* eslint-disable no-multi-spaces */
+
         const values = [
-            //hex value                      |      string varint
+            // hex value                      |      string varint
             ["02000001", "33554433"],
             ["02000000", "33554432"],
             ["1111111111111111", "1229782938247303441"],
@@ -111,7 +109,7 @@ describe("types", function () {
             ["00ba0cef", "12193007"],
             ["00ffffffff", "4294967295"],
         ];
-        /* eslint-enable no-multi-spaces */
+
         it("should create from buffer", function () {
             values.forEach(function (item) {
                 const buffer = utils.allocBufferFromString(item[0], "hex");
@@ -287,9 +285,9 @@ describe("types", function () {
     describe("LocalTime", function () {
         const LocalTime = types.LocalTime;
         const Long = types.Long;
-        /* eslint-disable no-multi-spaces */
+
         const values = [
-            //Long value         |     string representation  |   hour/min/sec/nanos
+            // Long value         |     string representation  |   hour/min/sec/nanos
             ["1000000001", "00:00:01.000000001", [0, 0, 1, 1]],
             ["0", "00:00:00", [0, 0, 0, 0]],
             ["3600000006001", "01:00:00.000006001", [1, 0, 0, 6001]],
@@ -298,7 +296,7 @@ describe("types", function () {
             ["52171800000000", "14:29:31.8", [14, 29, 31, 800000000]],
             ["52171800600000", "14:29:31.8006", [14, 29, 31, 800600000]],
         ];
-        /* eslint-enable no-multi-spaces */
+
         describe("new LocalTime", function () {
             it("should refuse to create LocalTime from invalid values.", function () {
                 // Not a long.
@@ -453,7 +451,7 @@ describe("types", function () {
         it("should be readable on objectMode", function (done) {
             const buf = [];
             const stream = new types.ResultStream({ objectMode: true });
-            //passing objects
+            // passing objects
             stream.add({
                 toString: function () {
                     return "One";
@@ -691,7 +689,7 @@ describe("utils", function () {
     describe("#deepExtend", function () {
         it("should override only the most inner props", function () {
             let value;
-            //single values
+            // single values
             value = utils.deepExtend({}, { a: "1" });
             assert.strictEqual(value.a, "1");
             value = utils.deepExtend({ a: "2" }, { a: "1" });
@@ -700,7 +698,7 @@ describe("utils", function () {
             assert.strictEqual(value.a.toString(), new Date(100).toString());
             value = utils.deepExtend({ a: 2 }, { a: 1 });
             assert.strictEqual(value.a, 1);
-            //composed 1 level
+            // composed 1 level
             value = utils.deepExtend(
                 { a: { a1: 1, a2: 2 }, b: 1000 },
                 { a: { a2: 15 } },
@@ -708,7 +706,7 @@ describe("utils", function () {
             assert.strictEqual(value.a.a2, 15);
             assert.strictEqual(value.a.a1, 1);
             assert.strictEqual(value.b, 1000);
-            //composed 2 level
+            // composed 2 level
             value = utils.deepExtend(
                 { a: { a1: 1, a2: { a21: 10, a22: 20 } } },
                 { a: { a2: { a21: 11 } }, b: { b1: 100, b2: 200 } },
@@ -718,7 +716,7 @@ describe("utils", function () {
             assert.strictEqual(value.a.a1, 1);
             assert.strictEqual(value.b.b1, 100);
             assert.strictEqual(value.b.b2, 200);
-            //multiple sources
+            // multiple sources
             value = utils.deepExtend(
                 { z: 9 },
                 { a: { a1: 1, a2: { a21: 10, a22: 20 } } },
@@ -730,10 +728,10 @@ describe("utils", function () {
             assert.strictEqual(value.b.b1, 100);
             assert.strictEqual(value.b.b2, 200);
             assert.strictEqual(value.z, 9);
-            //!source
+            // !source
             value = utils.deepExtend({ z: 3 }, null);
             assert.strictEqual(value.z, 3);
-            //undefined
+            // undefined
             const o = undefined;
             value = utils.deepExtend({ z: 4 }, o);
             assert.strictEqual(value.z, 4);
@@ -764,12 +762,12 @@ describe("clientOptions", function () {
             let options = clientOptions.extend(a);
             assert.notStrictEqual(a, options);
             assert.notStrictEqual(options, clientOptions.defaultOptions());
-            //it should use baseOptions as source
+            // it should use baseOptions as source
             const b = {};
             options = clientOptions.extend(b, a);
-            //B is the instance source
+            // B is the instance source
             assert.strictEqual(b, options);
-            //A is the target
+            // A is the target
             assert.notStrictEqual(a, options);
             assert.notStrictEqual(options, clientOptions.defaultOptions());
         });
@@ -798,7 +796,7 @@ describe("clientOptions", function () {
                 clientOptions.extend({
                     contactPoints: ["host1"],
                     policies: {
-                        //Use whatever object
+                        // Use whatever object
                         loadBalancing: new (function C1() {})(),
                     },
                 });
@@ -807,7 +805,7 @@ describe("clientOptions", function () {
                 clientOptions.extend({
                     contactPoints: ["host1"],
                     policies: {
-                        //Use whatever object
+                        // Use whatever object
                         retry: new (function C2() {})(),
                     },
                 });
@@ -1059,9 +1057,9 @@ describe("writers", function () {
 
 describe("exports", function () {
     it("should contain API", function () {
-        //test that the exposed API is the one expected
-        //it looks like a dumb test and it is, but it is necessary!
-        /* eslint-disable global-require */
+        // test that the exposed API is the one expected
+        // it looks like a dumb test and it is, but it is necessary!
+
         const api = require("../../main.js");
         assert.strictEqual(api.Client, Client);
         assert.ok(api.errors);
@@ -1074,7 +1072,7 @@ describe("exports", function () {
         assert.ok(api.policies);
         assert.ok(api.auth);
         assert.ok(typeof api.auth.AuthProvider, "function");
-        //policies modules
+        // policies modules
         assert.strictEqual(api.policies.loadBalancing, loadBalancing);
         assert.strictEqual(
             typeof api.policies.loadBalancing.LoadBalancingPolicy,
@@ -1156,7 +1154,7 @@ describe("exports", function () {
         assert.ok(api.mapping.q);
         assert.strictEqual(typeof api.mapping.q.in_, "function");
 
-        //metadata module with classes
+        // metadata module with classes
         assert.ok(api.metadata);
         assert.strictEqual(typeof api.metadata.Metadata, "function");
         assert.strictEqual(
@@ -1179,7 +1177,6 @@ describe("exports", function () {
 
         assert.ok(api.concurrent);
         assert.strictEqual(typeof api.concurrent.executeConcurrent, "function");
-        /* eslint-enable global-require */
     });
 });
 

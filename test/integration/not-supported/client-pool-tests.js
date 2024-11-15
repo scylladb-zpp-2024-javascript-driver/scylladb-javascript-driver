@@ -42,7 +42,7 @@ describe("Client", function () {
             assert.strictEqual(client.hosts.values().length, 3);
             assert.strictEqual(client.hosts.keys().length, 3);
 
-            //It should be serializable
+            // It should be serializable
             assert.doesNotThrow(() => JSON.stringify(client.hosts));
         });
 
@@ -126,8 +126,8 @@ describe("Client", function () {
                     function (n, next) {
                         client.connect(function (err) {
                             assert.ok(err);
-                            //Not very nice way to check but here it is
-                            //Does the message contains Keyspace
+                            // Not very nice way to check but here it is
+                            // Does the message contains Keyspace
                             assert.ok(
                                 err.message.toLowerCase().indexOf("keyspace") >=
                                     0,
@@ -148,7 +148,7 @@ describe("Client", function () {
             const client = newInstance({ contactPoints: contactPoints });
             client.connect(function (err) {
                 assert.ifError(err);
-                //the 3 original hosts
+                // the 3 original hosts
                 assert.strictEqual(client.hosts.length, 3);
                 const hosts = client.hosts.keys();
                 assert.strictEqual(hosts[0], contactPoints[0] + ":9042");
@@ -232,7 +232,7 @@ describe("Client", function () {
                             return done(err);
                         }
                         setTimeout(function () {
-                            //wait until all connections are made in the background
+                            // wait until all connections are made in the background
                             assert.strictEqual(
                                 client.hosts.values()[0].pool.connections
                                     .length,
@@ -780,7 +780,7 @@ describe("Client", function () {
                 12,
                 6,
                 function (n, next) {
-                    //No matter what, the keyspace does not exists
+                    // No matter what, the keyspace does not exists
                     client.execute(helper.queries.basic, function (err) {
                         helper.assertInstanceOf(err, Error);
                         next();
@@ -888,7 +888,7 @@ describe("Client", function () {
 
             const client = newInstance();
 
-            //warmup first
+            // warmup first
             utils.timesSeries(
                 10,
                 function (n, next) {
@@ -1183,7 +1183,7 @@ describe("Client", function () {
                             },
                             function (err) {
                                 assert.ifError(err);
-                                //delay the next queries
+                                // delay the next queries
                                 setTimeout(seriesNext, 10000);
                             },
                         );
@@ -1198,7 +1198,7 @@ describe("Client", function () {
                         );
                     },
                     function assertions(seriesNext) {
-                        //Only 2 hosts alive at the end
+                        // Only 2 hosts alive at the end
                         assert.strictEqual(
                             client.hosts.values().reduce(function (val, h) {
                                 return val + (h.isUp() ? 1 : 0);
@@ -1209,8 +1209,8 @@ describe("Client", function () {
                             hostsDown.length >= 1,
                             "Expected at least 1 host down" + " event.",
                         );
-                        //Ensure each down event is for the stopped host.  We may get
-                        //multiple down events for the same host on a control connection.
+                        // Ensure each down event is for the stopped host.  We may get
+                        // multiple down events for the same host on a control connection.
                         hostsDown.forEach(function (downHost) {
                             assert.strictEqual(
                                 helper.lastOctetOf(downHost),
@@ -1291,13 +1291,13 @@ describe("Client", function () {
                             20,
                             function (n, next) {
                                 if (n === 30) {
-                                    //kill a node when there are some outstanding requests
+                                    // kill a node when there are some outstanding requests
                                     helper.ccmHelper.exec(
                                         ["node2", "stop", "--not-gently"],
                                         function (err) {
                                             killed = true;
                                             assert.ifError(err);
-                                            //do a couple of more queries
+                                            // do a couple of more queries
                                             utils.timesSeries(
                                                 10,
                                                 function (n, next2) {
@@ -1313,7 +1313,7 @@ describe("Client", function () {
                                     return;
                                 }
                                 if (killed) {
-                                    //Don't issue more requests
+                                    // Don't issue more requests
                                     return next();
                                 }
                                 client.execute(query, function (err) {
@@ -1381,7 +1381,7 @@ describe("Client", function () {
                 [
                     client.connect.bind(client),
                     function makeSomeQueries(next) {
-                        //to ensure that the pool is all up!
+                        // to ensure that the pool is all up!
                         utils.times(
                             100,
                             function (n, timesNext) {

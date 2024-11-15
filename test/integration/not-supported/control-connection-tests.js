@@ -308,7 +308,7 @@ function newInstance(options, localConnections, remoteConnections) {
             options,
         ),
     );
-    //disable the heartbeat
+    // disable the heartbeat
     options.pooling.heartBeatInterval = 0;
     options.pooling.coreConnectionsPerHost[types.distance.local] =
         localConnections || 2;

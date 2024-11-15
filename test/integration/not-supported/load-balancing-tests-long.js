@@ -15,7 +15,7 @@ describe("DCAwareRoundRobinPolicy", function () {
         const countByHost = {};
         utils.series(
             [
-                //1 cluster with 3 dcs with 2 nodes each
+                // 1 cluster with 3 dcs with 2 nodes each
                 helper.ccmHelper.start("2:2:2"),
                 function testCase(next) {
                     const options = utils.deepExtend({}, helper.baseOptions, {

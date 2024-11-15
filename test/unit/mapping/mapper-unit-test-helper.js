@@ -103,7 +103,7 @@ const mapperHelper = (module.exports = {
                 Sample: {
                     tables: ["table1"],
                     columns: {
-                        location_type: "locationType",
+                        location_type: "locationType", // eslint-disable-line camelcase
                     },
                 },
             },

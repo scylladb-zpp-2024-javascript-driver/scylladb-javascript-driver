@@ -205,7 +205,7 @@ describe("Client @SERVER_API", function () {
             const client = setupInfo.client;
             const columns =
                 "id, timeuuid_sample, text_sample, double_sample, timestamp_sample, blob_sample, list_sample";
-            //a precision a float32 can represent
+            // a precision a float32 can represent
             const values = [
                 types.Uuid.random(),
                 types.TimeUuid.now(),
@@ -215,7 +215,7 @@ describe("Client @SERVER_API", function () {
                 utils.allocBufferUnsafe(100),
                 ["one", "two"],
             ];
-            //no hint
+            // no hint
             insertSelectTest(client, table, columns, values, null, done);
         });
         vit(
@@ -224,7 +224,7 @@ describe("Client @SERVER_API", function () {
             function (done) {
                 const client = setupInfo.client;
                 const columns = "id, text_sample, float_sample, int_sample";
-                //a precision a float32 can represent
+                // a precision a float32 can represent
                 const values = [
                     types.Uuid.random(),
                     "text sample",
@@ -278,7 +278,7 @@ describe("Client @SERVER_API", function () {
                     ["list_text1"],
                     ["set_text1"],
                 ];
-                //complete info
+                // complete info
                 const hints = [
                     null,
                     "map<text, text>",
@@ -298,7 +298,7 @@ describe("Client @SERVER_API", function () {
                 map.set("k1", "value 1");
                 map.set("k2", "value 2");
                 const values = [types.Uuid.random(), map];
-                //complete info
+                // complete info
                 const hints = [null, "map<text, text>"];
                 const client = newInstance({ encoding: { map: helper.Map } });
                 insertSelectTest(client, table, columns, values, hints, done);
@@ -329,7 +329,7 @@ describe("Client @SERVER_API", function () {
                         );
                     },
                     function selectData(seriesNext) {
-                        //It should only return the first page
+                        // It should only return the first page
                         client.execute(
                             util.format("SELECT * FROM %s", table),
                             [],
@@ -373,7 +373,7 @@ describe("Client @SERVER_API", function () {
                             );
                         },
                         function selectData(seriesNext) {
-                            //It should only return the first page and iteration should not invoke next page.
+                            // It should only return the first page and iteration should not invoke next page.
                             client.execute(
                                 util.format("SELECT * FROM %s", table),
                                 [],
@@ -425,7 +425,7 @@ describe("Client @SERVER_API", function () {
                     "SELECT * FROM %s WHERE id IN (?, ?, ?)",
                     table,
                 );
-                //valid params
+                // valid params
                 const params = [
                     types.Uuid.random(),
                     types.Uuid.random(),
@@ -440,7 +440,7 @@ describe("Client @SERVER_API", function () {
                                 params,
                                 { hints: {} },
                                 function (err) {
-                                    //it should not fail
+                                    // it should not fail
                                     next(err);
                                 },
                             );
@@ -451,7 +451,7 @@ describe("Client @SERVER_API", function () {
                                 params,
                                 { hints: ["uuid"] },
                                 function (err) {
-                                    //it should not fail
+                                    // it should not fail
                                     next(err);
                                 },
                             );
@@ -506,10 +506,10 @@ describe("Client @SERVER_API", function () {
                             "SELECT * FROM %s WHERE list_sample CONTAINS ? AND list_sample CONTAINS ? ALLOW FILTERING",
                             table,
                         );
-                        //valid params
+                        // valid params
                         const params = ["val1", "val2"];
                         client.execute(query, params, function (err) {
-                            //it should not fail
+                            // it should not fail
                             assert.ifError(err);
                             done();
                         });
@@ -631,7 +631,7 @@ describe("Client @SERVER_API", function () {
             const client = newInstance({
                 pooling: {
                     coreConnectionsPerHost: {
-                        //lots of connections per host
+                        // lots of connections per host
                         0: 100,
                         1: 1,
                         2: 0,
@@ -664,7 +664,7 @@ describe("Client @SERVER_API", function () {
         });
         it("should return the column definitions", function (done) {
             const client = setupInfo.client;
-            //insert at least 1 row
+            // insert at least 1 row
             const insertQuery = util.format(
                 "INSERT INTO %s (id) VALUES (%s)",
                 table,
@@ -971,7 +971,7 @@ describe("Client @SERVER_API", function () {
                 function (err, result) {
                     assert.ifError(err);
                     assert.ok(result.info);
-                    assert.equal(result.info.traceId, null); //its undefined really but anything that evaluates as null is OK
+                    assert.equal(result.info.traceId, null); // its undefined really but anything that evaluates as null is OK
                     done();
                 },
             );

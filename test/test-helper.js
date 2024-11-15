@@ -122,7 +122,7 @@ const helper = {
     },
     /** @type Function */
     noop: function () {
-        //do nothing
+        // do nothing
     },
     /** @type Function */
     failop: function () {
@@ -153,7 +153,7 @@ const helper = {
      */
     baseOptions: (function () {
         return {
-            //required
+            // required
             contactPoints: ["127.0.0.1"],
             localDataCenter: "dc1",
             // retry all queries multiple times (for improved test resiliency).
@@ -512,13 +512,13 @@ const helper = {
     },
 
     versionCompare: function (instanceVersionStr, version) {
-        let expected = [1, 0]; //greater than or equals to
+        let expected = [1, 0]; // greater than or equals to
         if (version.indexOf("<=") === 0) {
             version = version.substr(2);
-            expected = [-1, 0]; //less than or equals to
+            expected = [-1, 0]; // less than or equals to
         } else if (version.indexOf("<") === 0) {
             version = version.substr(1);
-            expected = [-1]; //less than
+            expected = [-1]; // less than
         }
         const instanceVersion = instanceVersionStr.split(".").map(function (x) {
             return parseInt(x, 10);
@@ -529,14 +529,14 @@ const helper = {
         for (let i = 0; i < compareVersion.length; i++) {
             const compare = compareVersion[i] || 0;
             if (instanceVersion[i] > compare) {
-                //is greater
+                // is greater
                 return expected.indexOf(1) >= 0;
             } else if (instanceVersion[i] < compare) {
-                //is smaller
+                // is smaller
                 return expected.indexOf(-1) >= 0;
             }
         }
-        //are equal
+        // are equal
         return expected.indexOf(0) >= 0;
     },
     log: function (levels) {
@@ -545,7 +545,6 @@ const helper = {
         }
         return function (l) {
             if (levels.indexOf(l) >= 0) {
-                // eslint-disable-next-line no-console, no-undef
                 console.log.apply(console, arguments);
             }
         };
@@ -648,7 +647,7 @@ const helper = {
         if (!helper.isTracing()) {
             return;
         }
-        // eslint-disable-next-line no-console, no-undef
+
         console.log("\t..." + util.format.apply(null, arguments));
     },
 
@@ -1069,7 +1068,6 @@ const helper = {
     },
     requireOptional: function (moduleName) {
         try {
-            // eslint-disable-next-line
             return require(moduleName);
         } catch (err) {
             if (err.code === "MODULE_NOT_FOUND") {
@@ -1197,7 +1195,7 @@ MapPolyFill.prototype.get = function (k) {
 
 MapPolyFill.prototype.forEach = function (callback) {
     this.arr.forEach(function (item) {
-        //first the value, then the key
+        // first the value, then the key
         callback(item[1], item[0]);
     });
 };
@@ -1249,9 +1247,9 @@ helper.ccm.startAll = function (nodeLength, options, callback) {
     utils.series(
         [
             function (next) {
-                //it wont hurt to remove
+                // it wont hurt to remove
                 self.exec(["remove"], function () {
-                    //ignore error
+                    // ignore error
                     next();
                 });
             },
@@ -1468,7 +1466,7 @@ helper.ccm.spawn = function (processName, params, callback) {
 
     p.on("close", function (code) {
         if (closing++ > 0) {
-            //avoid calling multiple times
+            // avoid calling multiple times
             return;
         }
         const info = { code: code, stdout: stdoutArray, stderr: stderrArray };
@@ -1519,7 +1517,7 @@ helper.ccm.waitForUp = function (callback) {
                 started = regex.test(info.stdout.join(""));
                 retryCount++;
                 if (!started) {
-                    //wait 1 sec between retries
+                    // wait 1 sec between retries
                     return setTimeout(next, 1000);
                 }
                 return next();
@@ -1557,7 +1555,6 @@ helper.ads._spawnAndWait = function (processName, params, cb) {
     }
     helper.trace("Executing: " + processName + " " + params.join(" "));
 
-    // eslint-disable-next-line prefer-const
     let timeout;
 
     const callbackOnce = (err) => {
@@ -1678,8 +1675,9 @@ helper.ads.acquireTicket = function (username, principal, cb) {
  */
 helper.ads.destroyTicket = function (principal, cb) {
     if (typeof principal === "function") {
-        //noinspection JSValidateTypes
+        // noinspection JSValidateTypes
         cb = principal;
+        // eslint-disable-next-line
         principal = null;
     }
 

@@ -326,7 +326,7 @@ describe("Client", function () {
             await client.execute(query, { key2: 2, key1: 1 }, queryOptions);
 
             assert.ok(execOptions.getRoutingKey());
-            // eslint-disable-next-line no-useless-concat
+
             assert.strictEqual(
                 execOptions.getRoutingKey().toString("hex"),
                 "00040000000100" + "00040000000200",
@@ -355,7 +355,7 @@ describe("Client", function () {
             await client.execute(query, { key2: 2, key1: 1 }, queryOptions);
 
             assert.ok(execOptions.getRoutingKey());
-            // eslint-disable-next-line no-useless-concat
+
             assert.strictEqual(
                 execOptions.getRoutingKey().toString("hex"),
                 "00040000000100" + "00040000000200",
@@ -412,7 +412,7 @@ describe("Client", function () {
             assert.strictEqual(hints[3].code, types.dataTypes.udt);
             assert.ok(hints[3].info);
             assert.strictEqual(hints[3].info.keyspace, "ks1");
-            //nested collections
+            // nested collections
             assert.ok(hints[4]);
             assert.strictEqual(hints[4].code, types.dataTypes.map);
             assert.ok(Array.isArray(hints[4].info));

@@ -127,17 +127,15 @@ const simulacronHelper = {
                     this.sProcess.exitCode,
                 );
                 cb();
+            } else if (helper.isWin()) {
+                const params = ["Stop-Process", this.sProcess.pid];
+                this._execute("powershell", params, cb);
             } else {
-                if (helper.isWin()) {
-                    const params = ["Stop-Process", this.sProcess.pid];
-                    this._execute("powershell", params, cb);
-                } else {
-                    this.sProcess.on("close", function () {
-                        cb();
-                    });
-                    this.sProcess.on("error", cb);
-                    this.sProcess.kill("SIGINT");
-                }
+                this.sProcess.on("close", function () {
+                    cb();
+                });
+                this.sProcess.on("error", cb);
+                this.sProcess.kill("SIGINT");
             }
         } else {
             cb(Error("Process is not defined."));
@@ -184,6 +182,7 @@ const simulacronHelper = {
         return { cluster: simulacronCluster, client: client };
     },
     baseOptions: (function () {
+        // eslint-disable-next-line
         const serverInfo = helper.getServerInfo();
 
         return {

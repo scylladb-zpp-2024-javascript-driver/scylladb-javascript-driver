@@ -594,7 +594,7 @@ describe("metadata @SERVER_API", function () {
                                         client.controlConnection
                                             .protocolVersion >= 4
                                     ) {
-                                        //Check the new field added in C* 2.2
+                                        // Check the new field added in C* 2.2
                                         helper.assertInstanceOf(
                                             trace.clientAddress,
                                             types.InetAddress,
@@ -1023,7 +1023,7 @@ describe("metadata @SERVER_API", function () {
                                 table.columnsByName["rating_votes"].type.code,
                                 types.dataTypes.counter,
                             );
-                            //true counter tables
+                            // true counter tables
                             assert.strictEqual(table.replicateOnWrite, true);
                             assert.strictEqual(table.virtual, false);
                             done();

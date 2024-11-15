@@ -4,10 +4,8 @@ const util = require("util");
 let heapdump;
 const heapdumpPath = "/var/log/nodejs-driver";
 try {
-    // eslint-disable-next-line global-require
     heapdump = require("heapdump");
 } catch (e) {
-    /* eslint-disable no-console, no-undef */
     console.error("There was an error while trying to import heapdump", e);
 }
 
@@ -101,7 +99,7 @@ utils.series(
                 [],
                 { prepare: true, autoPage: true },
                 function (n, row) {
-                    //Buffer + int + uuid
+                    // Buffer + int + uuid
                     totalByteLength += row["blob_sample"].length + 4 + 16;
                     rowCount++;
                 },

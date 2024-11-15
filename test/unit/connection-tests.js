@@ -46,7 +46,7 @@ describe("Connection", function () {
         }
         it("should prepare different queries", function (done) {
             const connection = newInstance();
-            //override sendStream behaviour
+            // override sendStream behaviour
             connection.sendStream = function (r, o, cb) {
                 setImmediate(function () {
                     cb(null, r.query);
@@ -67,7 +67,7 @@ describe("Connection", function () {
         it("should prepare different queries with keyspace", function (done) {
             const connection = newInstance();
             connection.keyspace = "ks1";
-            //override sendStream behaviour
+            // override sendStream behaviour
             connection.sendStream = function (r, o, cb) {
                 setImmediate(function () {
                     cb(null, r.query);
@@ -88,7 +88,7 @@ describe("Connection", function () {
         it("should prepare the same query once", function (done) {
             const connection = newInstance();
             let ioCount = 0;
-            //override sendStream behaviour
+            // override sendStream behaviour
             connection.sendStream = function (r, o, cb) {
                 setImmediate(function () {
                     ioCount++;
@@ -112,7 +112,7 @@ describe("Connection", function () {
             const connection = newInstance();
             connection.keyspace = "ks1";
             let ioCount = 0;
-            //override sendStream behaviour
+            // override sendStream behaviour
             connection.sendStream = function (r, o, cb) {
                 setImmediate(function () {
                     ioCount++;
@@ -269,7 +269,7 @@ describe("Connection", function () {
             c.open(function (err) {
                 assert.ifError(err);
                 assert.ok(c.connected);
-                //it is now connected
+                // it is now connected
                 const socket = c.netClient;
                 let closeEmitted = 0;
                 socket.on("close", function () {
@@ -308,7 +308,7 @@ describe("Connection", function () {
             c.open(function (err) {
                 assert.ifError(err);
                 assert.ok(c.connected);
-                //force destroy
+                // force destroy
                 c.connected = false;
                 const socket = c.netClient;
                 let closeEmitted = 0;

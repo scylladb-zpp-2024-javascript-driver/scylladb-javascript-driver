@@ -146,7 +146,6 @@ describe("InetAddress", function () {
             assert.strictEqual(val.toString(), "10.11.12.13");
         });
         it("should parse IPv4-Mapped IPv6 addresses", function () {
-            /* eslint-disable no-multi-spaces */
             [
                 [
                     "0:0:0:0:0:FFFF:129.144.52.38",
@@ -158,7 +157,6 @@ describe("InetAddress", function () {
                 const ip = InetAddress.fromString(item[0]);
                 assert.strictEqual(ip.toString("hex"), item[1]);
             });
-            /* eslint-enable no-multi-spaces */
         });
         it("should throw TypeError for invalid IPv6 address with embedded IPv4 address", function () {
             [

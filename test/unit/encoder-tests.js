@@ -369,7 +369,7 @@ describe("encoder", function () {
             encoded = encoder.encode(val1, dataTypes.inet);
             val2 = encoder.decode(encoded, { code: dataTypes.inet });
             assert.ok(val1.equals(val2));
-            //Buffers are valid InetAddress
+            // Buffers are valid InetAddress
             encoded = encoder.encode(val1.getBuffer(), dataTypes.inet);
             assert.strictEqual(
                 encoded.toString("hex"),
@@ -420,7 +420,7 @@ describe("encoder", function () {
                 ),
                 function () {
                     let value = { value1: "Surprise", value2: "Madafaka" };
-                    //Minimum info, guessed
+                    // Minimum info, guessed
                     let encoded = encoder.encode(value, dataTypes.map);
                     let decoded = encoder.decode(encoded, {
                         code: dataTypes.map,
@@ -433,7 +433,7 @@ describe("encoder", function () {
                         util.inspect(decoded),
                         util.inspect(value),
                     );
-                    //Minimum info, guessed
+                    // Minimum info, guessed
                     value = { value1: 1.1, valueN: 1.2 };
                     encoded = encoder.encode(value, dataTypes.map);
                     decoded = encoder.decode(encoded, {
@@ -447,7 +447,7 @@ describe("encoder", function () {
                         util.inspect(decoded),
                         util.inspect(value),
                     );
-                    //Minimum info string, guessed
+                    // Minimum info string, guessed
                     value = {
                         value1: new Date(9999999),
                         valueN: new Date(5555555),
@@ -464,7 +464,7 @@ describe("encoder", function () {
                         util.inspect(decoded),
                         util.inspect(value),
                     );
-                    //Minimum info string, guessed
+                    // Minimum info string, guessed
                     value = {};
                     value[types.uuid()] = 0;
                     value[types.uuid()] = 2;
@@ -480,7 +480,7 @@ describe("encoder", function () {
                         util.inspect(decoded),
                         util.inspect(value),
                     );
-                    //full info string
+                    // full info string
                     value = { value1: 1, valueN: -3 };
                     encoded = encoder.encode(value, "map<text,int>");
                     decoded = encoder.decode(encoded, {
@@ -494,7 +494,7 @@ describe("encoder", function () {
                         util.inspect(decoded),
                         util.inspect(value),
                     );
-                    //full info typeInfo
+                    // full info typeInfo
                     value = { value1: 1, valueN: -33892 };
                     encoded = encoder.encode(value, {
                         code: dataTypes.map,
@@ -799,7 +799,7 @@ describe("encoder", function () {
                         util.inspect(decoded),
                         util.inspect(value),
                     );
-                    //with type info
+                    // with type info
                     encoded = encoder.encode(value, {
                         code: dataTypes.set,
                         info: { code: dataTypes.text },
@@ -847,10 +847,10 @@ describe("encoder", function () {
                 ),
                 function () {
                     if (typeof Set !== "function") {
-                        //Set not supported in Node.js runtime
+                        // Set not supported in Node.js runtime
                         return;
                     }
-                    // eslint-disable-next-line no-undef
+
                     const Es6Set = Set;
                     const encoder = new Encoder(version, {
                         encoding: { set: Es6Set },
@@ -956,7 +956,7 @@ describe("encoder", function () {
                         });
                         return arr.toString();
                     }
-                    // eslint-disable-next-line no-undef
+
                     const Es6Map = Map;
                     const encoder = new Encoder(version, {
                         encoding: { map: Es6Map },
@@ -1227,9 +1227,9 @@ describe("encoder", function () {
         it("should encode/decode LocalTime as time", function () {
             const encoder = new Encoder(3, {});
             const type = { code: dataTypes.time };
-            /* eslint-disable no-multi-spaces */
+
             [
-                //Long value         |     string representation
+                // Long value         |     string representation
                 ["2000000501", "00:00:02.000000501"],
                 ["0", "00:00:00"],
                 ["3600000006001", "01:00:00.000006001"],
@@ -1246,7 +1246,6 @@ describe("encoder", function () {
                 helper.assertInstanceOf(decoded, types.LocalTime);
                 assert.strictEqual(decoded.toString(), item[1]);
             });
-            /* eslint-enable no-multi-spaces */
         });
 
         it("should refuse to encode invalid values as LocalTime.", function () {
@@ -1550,7 +1549,7 @@ describe("encoder", function () {
         const encoder = new Encoder(2, {});
         it("should concat Array of buffers in the correct format", function () {
             let options = getExecOptions({
-                //Its an array of 3 values
+                // Its an array of 3 values
                 /** @type {Array|Buffer} */
                 routingKey: [
                     utils.allocBufferFromArray([1]),
@@ -1560,19 +1559,19 @@ describe("encoder", function () {
             });
             encoder.setRoutingKeyFromUser([1, "text"], options);
             assert.ok(options.getRoutingKey());
-            //The routingKey should have the form: [2-byte-length] + key + [0]
-            // eslint-disable-next-line no-useless-concat
+            // The routingKey should have the form: [2-byte-length] + key + [0]
+
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
                 "00010100" + "00010200" + "0002030300",
             );
 
             options = getExecOptions({
-                //Its an array of 1 value
+                // Its an array of 1 value
                 routingKey: [utils.allocBufferFromArray([1])],
             });
             encoder.setRoutingKeyFromUser([], options);
-            //the result should be a single value
+            // the result should be a single value
             assert.strictEqual(options.getRoutingKey().toString("hex"), "01");
         });
 
@@ -1592,7 +1591,7 @@ describe("encoder", function () {
                 routingKey: utils.allocBufferFromArray([1, 2, 3, 4]),
             });
             encoder.setRoutingKeyFromUser([1, "text"], options);
-            //The routing key should take precedence over routingIndexes
+            // The routing key should take precedence over routingIndexes
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
                 initialRoutingKey,
@@ -1640,15 +1639,15 @@ describe("encoder", function () {
                 routingIndexes: [0, 2],
             });
             encoder.setRoutingKeyFromUser([1, "yeah", 2], options);
-            //length1 + buffer1 + 0 + length2 + buffer2 + 0
-            // eslint-disable-next-line no-useless-concat
+            // length1 + buffer1 + 0 + length2 + buffer2 + 0
+
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
                 "0004" + "00000001" + "00" + "0004" + "00000002" + "00",
             );
 
             options = getExecOptions({
-                //less hints
+                // less hints
                 hints: ["int"],
                 routingIndexes: [0, 2],
             });
@@ -1656,15 +1655,15 @@ describe("encoder", function () {
                 [1, "yeah", utils.allocBufferFromArray([1, 1, 1, 1])],
                 options,
             );
-            //length1 + buffer1 + 0 + length2 + buffer2 + 0
-            // eslint-disable-next-line no-useless-concat
+            // length1 + buffer1 + 0 + length2 + buffer2 + 0
+
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
                 "0004" + "00000001" + "00" + "0004" + "01010101" + "00",
             );
 
             options = getExecOptions({
-                //no hints
+                // no hints
                 routingIndexes: [1, 2],
             });
             encoder.setRoutingKeyFromUser(
@@ -1673,8 +1672,8 @@ describe("encoder", function () {
             );
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
-                //length1 + buffer1 + 0 + length2 + buffer2 + 0
-                // eslint-disable-next-line no-useless-concat
+                // length1 + buffer1 + 0 + length2 + buffer2 + 0
+
                 "0004" +
                     utils.allocBufferFromString("yeah").toString("hex") +
                     "00" +
@@ -1873,7 +1872,7 @@ describe("encoder", function () {
                 ")";
             const dataType = encoder.parseFqTypeName(typeText);
             assert.strictEqual(dataTypes.udt, dataType.code);
-            //Udt name
+            // Udt name
             assert.ok(dataType.info);
             assert.strictEqual("phone", dataType.info.name);
             assert.strictEqual(2, dataType.info.fields.length);
@@ -1920,7 +1919,7 @@ describe("encoder", function () {
             );
             assert.strictEqual(dataTypes.varchar, subTypes[0].type.code);
             assert.strictEqual(dataTypes.set, subTypes[2].type.code);
-            //field name
+            // field name
             assert.strictEqual("phones", subTypes[2].name);
 
             const phonesSubType = subTypes[2].type.info;
@@ -1936,7 +1935,7 @@ describe("encoder", function () {
     describe("#parseTypeName()", function () {
         it("should parse single type names", async () => {
             const encoder = new Encoder(4, {});
-            /* eslint-disable no-multi-spaces */
+
             const items = [
                 ["int", dataTypes.int],
                 ["uuid", dataTypes.uuid],
@@ -1955,7 +1954,6 @@ describe("encoder", function () {
                 ["timeuuid", dataTypes.timeuuid],
                 ["ascii", dataTypes.ascii],
             ];
-            /* eslint-enable no-multi-spaces */
 
             for (const item of items) {
                 const dataType = await encoder.parseTypeName(
