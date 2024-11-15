@@ -32,3 +32,5 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
       - name: Prettier for JS
         run: npx prettier "{lib,examples,test}/**/*.js" --check
+      - name: Eslint
+        run: npm run eslint      
