@@ -600,8 +600,7 @@ describe("Client @SERVER_API", function () {
                 done,
             );
         }); */
-        // issues #79
-        /* vit("2.2", "should accept unset as a valid value", function (done) {
+        vit("2.2", "should accept unset as a valid value", function (done) {
             const client = setupInfo.client;
             const id = types.Uuid.random();
             utils.series(
@@ -638,7 +637,7 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
         // No pooling support
         /* it("should handle several concurrent executes while the pool is not ready", function (done) {
             const client = newInstance({
