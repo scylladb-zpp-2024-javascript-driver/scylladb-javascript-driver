@@ -83,9 +83,12 @@ impl SessionWrapper {
     pub async fn execute_prepared(
         &self,
         query: &PreparedStatementWrapper,
-        params: Vec<&QueryParameterWrapper>,
+        params: Vec<Option<&QueryParameterWrapper>>,
     ) -> napi::Result<QueryResultWrapper> {
-        let params_vec: Vec<CqlValue> = params.iter().map(|e| e.parameter.clone()).collect();
+        let params_vec: Vec<Option<CqlValue>> = params
+            .iter()
+            .map(|e| e.as_ref().map(|v| v.parameter.clone()))
+            .collect();
         Ok(QueryResultWrapper::from_query(
             self.internal
                 .execute_unpaged(&query.prepared, params_vec)
