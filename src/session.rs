@@ -4,6 +4,7 @@ use scylla::{
 };
 
 use crate::requests::parameter_wrappers::QueryParameterWrapper;
+use crate::requests::request::QueryOptionsWrapper;
 use crate::{
     options, requests::request::PreparedStatementWrapper, result::QueryResultWrapper,
     utils::err_to_napi,
@@ -60,7 +61,11 @@ impl SessionWrapper {
     }
 
     #[napi]
-    pub async fn query_unpaged_no_values(&self, query: String) -> napi::Result<QueryResultWrapper> {
+    pub async fn query_unpaged_no_values(
+        &self,
+        query: String,
+        _options: &QueryOptionsWrapper,
+    ) -> napi::Result<QueryResultWrapper> {
         let query_result = self
             .internal
             .query_unpaged(query, &[])
@@ -99,6 +104,7 @@ impl SessionWrapper {
         &self,
         query: &PreparedStatementWrapper,
         params: Vec<Option<&QueryParameterWrapper>>,
+        _options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
         QueryResultWrapper::from_query(
