@@ -3,10 +3,9 @@ use scylla::{
     SessionBuilder,
 };
 
+use crate::requests::parameter_wrappers::QueryParameterWrapper;
 use crate::{
-    options,
-    request::{PreparedStatementWrapper, QueryParameterWrapper},
-    result::QueryResultWrapper,
+    options, requests::request::PreparedStatementWrapper, result::QueryResultWrapper,
     utils::err_to_napi,
 };
 
