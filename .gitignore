@@ -1,3 +1,7 @@
+# Files created autmaticly during build
+index.js
+index.d.ts
+
 lib-cov
 *.seed
 *.log
