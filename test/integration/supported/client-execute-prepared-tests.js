@@ -899,9 +899,7 @@ describe("Client @SERVER_API", function () {
         });
  */
 
-        // Protocol level timestamp implemented in #92
-        // TODO: fix this test
-        /* vit("2.1", "should support protocol level timestamp", function (done) {
+        vit("2.1", "should support protocol level timestamp", function (done) {
             const client = setupInfo.client;
             const id = Uuid.random();
             const timestamp = types.generateTimestamp(new Date(), 456);
@@ -951,7 +949,7 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
 
         // No support for client keyspace option
         // TODO: fix this test
