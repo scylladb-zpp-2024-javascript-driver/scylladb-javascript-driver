@@ -74,6 +74,7 @@ export declare class QueryParameterWrapper {
   static fromCounter(val: bigint): QueryParameterWrapper
   static fromDouble(val: number): QueryParameterWrapper
   static fromDuration(val: DurationWrapper): QueryParameterWrapper
+  static fromEmpty(): QueryParameterWrapper
   static fromFloat(val: number): QueryParameterWrapper
   static fromInt(val: number): QueryParameterWrapper
   static fromText(val: string): QueryParameterWrapper

@@ -71,6 +71,13 @@ impl QueryParameterWrapper {
     }
 
     #[napi]
+    pub fn from_empty() -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Empty,
+        }
+    }
+
+    #[napi]
     pub fn from_float(val: f64) -> QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Float(val as f32),

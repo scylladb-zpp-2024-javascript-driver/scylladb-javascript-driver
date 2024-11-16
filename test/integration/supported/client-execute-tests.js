@@ -600,7 +600,7 @@ describe("Client @SERVER_API", function () {
                 done,
             );
         }); */
-        // issues #79
+        // requires #37 to function correctly
         /* vit("2.2", "should accept unset as a valid value", function (done) {
             const client = setupInfo.client;
             const id = types.Uuid.random();
