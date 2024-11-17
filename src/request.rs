@@ -2,7 +2,7 @@ use napi::bindgen_prelude::{BigInt, Buffer};
 use scylla::{
     frame::{
         response::result::CqlValue,
-        value::{Counter, CqlTimeuuid},
+        value::{Counter, CqlTimestamp, CqlTimeuuid},
     },
     prepared_statement::PreparedStatement,
 };
@@ -91,6 +91,16 @@ impl QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Text(val),
         }
+    }
+
+    #[napi]
+    pub fn from_timestamp(val: BigInt) -> napi::Result<QueryParameterWrapper> {
+        Ok(QueryParameterWrapper {
+            parameter: CqlValue::Timestamp(CqlTimestamp(bigint_to_i64(
+                val,
+                "timestamp cannot overflow i64",
+            )?)),
+        })
     }
 
     #[napi]
