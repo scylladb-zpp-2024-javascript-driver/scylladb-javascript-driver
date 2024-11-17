@@ -118,6 +118,19 @@ impl QueryParameterWrapper {
     }
 
     #[napi]
+    pub fn from_map(
+        val: Vec<(&QueryParameterWrapper, &QueryParameterWrapper)>,
+    ) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Map(
+                val.iter()
+                    .map(|f| (f.0.parameter.clone(), f.1.parameter.clone()))
+                    .collect(),
+            ),
+        }
+    }
+
+    #[napi]
     pub fn from_small_int(val: i32) -> napi::Result<QueryParameterWrapper> {
         Ok(QueryParameterWrapper {
             parameter: CqlValue::SmallInt(
