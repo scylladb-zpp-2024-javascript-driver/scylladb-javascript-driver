@@ -199,7 +199,7 @@ impl CqlValueWrapper {
             CqlValue::Float(_) => CqlType::Float,
             CqlValue::Int(_) => CqlType::Int,
             CqlValue::Text(_) => CqlType::Text,
-            CqlValue::Timestamp(_) => CqlType::Timestamp, // NOI
+            CqlValue::Timestamp(_) => CqlType::Timestamp,
             CqlValue::Inet(_) => CqlType::Inet,
             CqlValue::List(_) => CqlType::List,
             CqlValue::Map(_) => CqlType::Map, // NOI
@@ -289,6 +289,14 @@ impl CqlValueWrapper {
     pub fn get_text(&self) -> napi::Result<String> {
         match self.inner.as_text() {
             Some(r) => Ok(r.clone()),
+            None => Err(Self::generic_error("text")),
+        }
+    }
+
+    #[napi]
+    pub fn get_timestamp(&self) -> napi::Result<BigInt> {
+        match self.inner.as_cql_timestamp() {
+            Some(r) => Ok(r.0.into()),
             None => Err(Self::generic_error("text")),
         }
     }
