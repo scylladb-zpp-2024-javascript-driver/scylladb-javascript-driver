@@ -202,7 +202,7 @@ impl CqlValueWrapper {
             CqlValue::Timestamp(_) => CqlType::Timestamp,
             CqlValue::Inet(_) => CqlType::Inet,
             CqlValue::List(_) => CqlType::List,
-            CqlValue::Map(_) => CqlType::Map, // NOI
+            CqlValue::Map(_) => CqlType::Map,
             CqlValue::Set(_) => CqlType::Set,
             CqlValue::UserDefinedType { .. } => CqlType::UserDefinedType, // NOI
             CqlValue::SmallInt(_) => CqlType::SmallInt,
@@ -317,6 +317,25 @@ impl CqlValueWrapper {
                 .map(|f| CqlValueWrapper { inner: f.clone() })
                 .collect()),
             None => Err(Self::generic_error("list")),
+        }
+    }
+
+    #[napi]
+    /// Return array of "tuples" keeping (key, value) for each element in the map
+    /// Currently NAPI doesn't implement ToNapiValue for tuples,
+    /// but the returned typed here will be the same as if we returned tuple.
+    pub fn get_map(&self) -> napi::Result<Vec<Vec<CqlValueWrapper>>> {
+        match self.inner.as_map() {
+            Some(r) => Ok(r
+                .iter()
+                .map(|f| {
+                    vec![
+                        CqlValueWrapper { inner: f.0.clone() },
+                        CqlValueWrapper { inner: f.1.clone() },
+                    ]
+                })
+                .collect()),
+            None => Err(Self::generic_error("map")),
         }
     }
 
