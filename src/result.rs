@@ -201,8 +201,8 @@ impl CqlValueWrapper {
             CqlValue::Text(_) => CqlType::Text,
             CqlValue::Timestamp(_) => CqlType::Timestamp, // NOI
             CqlValue::Inet(_) => CqlType::Inet,
-            CqlValue::List(_) => CqlType::List, // NOI
-            CqlValue::Map(_) => CqlType::Map,   // NOI
+            CqlValue::List(_) => CqlType::List,
+            CqlValue::Map(_) => CqlType::Map, // NOI
             CqlValue::Set(_) => CqlType::Set,
             CqlValue::UserDefinedType { .. } => CqlType::UserDefinedType, // NOI
             CqlValue::SmallInt(_) => CqlType::SmallInt,
@@ -298,6 +298,17 @@ impl CqlValueWrapper {
         match self.inner.as_inet() {
             Some(r) => Ok(InetAddressWrapper::from_ip_addr(r)),
             None => Err(Self::generic_error("inet")),
+        }
+    }
+
+    #[napi]
+    pub fn get_list(&self) -> napi::Result<Vec<CqlValueWrapper>> {
+        match self.inner.as_list() {
+            Some(r) => Ok(r
+                .iter()
+                .map(|f| CqlValueWrapper { inner: f.clone() })
+                .collect()),
+            None => Err(Self::generic_error("list")),
         }
     }
 
