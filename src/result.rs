@@ -202,7 +202,7 @@ impl CqlValueWrapper {
             CqlValue::Timestamp(_) => CqlType::Timestamp,
             CqlValue::Inet(_) => CqlType::Inet,
             CqlValue::List(_) => CqlType::List,
-            CqlValue::Map(_) => CqlType::Map, // NOI
+            CqlValue::Map(_) => CqlType::Map,
             CqlValue::Set(_) => CqlType::Set,
             CqlValue::UserDefinedType { .. } => CqlType::UserDefinedType, // NOI
             CqlValue::SmallInt(_) => CqlType::SmallInt,
@@ -317,6 +317,20 @@ impl CqlValueWrapper {
                 .map(|f| CqlValueWrapper { inner: f.clone() })
                 .collect()),
             None => Err(Self::generic_error("list")),
+        }
+    }
+
+    #[napi]
+    /// If keys is true, return map keys, otherwise values
+    pub fn get_map(&self, keys: bool) -> napi::Result<Vec<CqlValueWrapper>> {
+        match self.inner.as_map() {
+            Some(r) => Ok(r
+                .iter()
+                .map(|f| CqlValueWrapper {
+                    inner: if keys { f.0.clone() } else { f.1.clone() },
+                })
+                .collect()),
+            None => Err(Self::generic_error("map")),
         }
     }
 
