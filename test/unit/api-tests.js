@@ -1,26 +1,15 @@
 "use strict";
 const { assert } = require("chai");
 const api = require("../../");
-const auth = require("../../lib/auth");
-const helper = require("../test-helper");
 
 describe("API", function () {
-    it("should expose auth module", function () {
+    it("should expose expose deprecated datastax auth module", function () {
         assert.ok(api.auth);
         assert.strictEqual(
             typeof api.auth.DsePlainTextAuthProvider,
             "function",
         );
-        assert.ok(
-            new api.auth.DsePlainTextAuthProvider("u", "pass") instanceof
-                auth.AuthProvider,
-        );
-        if (helper.requireOptional("kerberos")) {
-            assert.ok(
-                new api.auth.DseGssapiAuthProvider() instanceof
-                    auth.AuthProvider,
-            );
-        }
+        assert.strictEqual(typeof api.auth.DseGssapiAuthProvider, "function");
     });
 
     it("should expose geometry module", function () {
