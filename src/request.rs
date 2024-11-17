@@ -94,6 +94,13 @@ impl QueryParameterWrapper {
     }
 
     #[napi]
+    pub fn from_list(val: Vec<&QueryParameterWrapper>) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::List(val.iter().map(|f| f.parameter.clone()).collect()),
+        }
+    }
+
+    #[napi]
     pub fn from_set(val: Vec<&QueryParameterWrapper>) -> QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Set(val.iter().map(|f| f.parameter.clone()).collect()),
