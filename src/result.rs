@@ -244,14 +244,6 @@ impl CqlValueWrapper {
     }
 
     #[napi]
-    pub fn get_inet(&self) -> napi::Result<InetAddressWrapper> {
-        match self.inner.as_inet() {
-            Some(r) => Ok(InetAddressWrapper::from_ip_addr(r)),
-            None => Err(Error::new(Status::GenericFailure, "Error")),
-        }
-    }
-
-    #[napi]
     pub fn get_int(&self) -> napi::Result<i32> {
         match self.inner.as_int() {
             Some(r) => Ok(r),
@@ -264,6 +256,14 @@ impl CqlValueWrapper {
         match self.inner.as_text() {
             Some(r) => Ok(r.clone()),
             None => Err(Self::generic_error("text")),
+        }
+    }
+
+    #[napi]
+    pub fn get_inet(&self) -> napi::Result<InetAddressWrapper> {
+        match self.inner.as_inet() {
+            Some(r) => Ok(InetAddressWrapper::from_ip_addr(r)),
+            None => Err(Self::generic_error("inet")),
         }
     }
 

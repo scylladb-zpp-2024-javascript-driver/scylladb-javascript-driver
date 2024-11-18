@@ -191,9 +191,8 @@ describe("Cql value wrapper", function () {
         let value = getCqlObject(element);
         assert.instanceOf(value, InetAddress);
         /* Corresponding value: 
-        let element = CqlValue::Inet(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
-        */
+        let element = CqlValue::Inet(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))); */
         let expectedInet = InetAddress.fromString("127.0.0.1");
-        assert.equal(value.equals(expectedInet), true);
+        assert.strictEqual(value.equals(expectedInet), true);
     });
 });
