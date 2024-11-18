@@ -192,10 +192,6 @@ export interface ClientOptions {
     password: string;
   };
 
-  cloud?: {
-    secureConnectBundle: string | URL;
-  };
-
   encoding?: {
     map?: Function;
     set?: Function;

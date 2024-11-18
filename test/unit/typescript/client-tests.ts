@@ -71,7 +71,7 @@ async function myTest(): Promise<any> {
   // EventEmitter methods
   client
     .stream(query, params1, { prepare: true, executionProfile: "ep1" })
-    .on("data", () => {})
+    .on("data", () => { })
     .on("error", (err) => console.error(err));
 
   promise = client.shutdown();
@@ -91,15 +91,6 @@ async function myTest(): Promise<any> {
     id: types.Uuid.random(),
     applicationName: "My app",
     applicationVersion: "3.1.2",
-  });
-
-  otherClient = new Client({
-    cloud: { secureConnectBundle: "path/to/bundle" },
-  });
-
-  otherClient = new Client({
-    cloud: { secureConnectBundle: "path/to/bundle" },
-    credentials: { username: "a", password: "b" },
   });
 
   let ep1: ExecutionProfile = new ExecutionProfile("oltp1", {
