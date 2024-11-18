@@ -7,14 +7,13 @@ import { types } from "./lib/types";
 import { metrics } from "./lib/metrics";
 import { tracker } from "./lib/tracker";
 import { metadata } from "./lib/metadata";
-import { datastax } from "./lib/datastax/";
 import Long = types.Long;
 import Uuid = types.Uuid;
 
 // Export imported submodules
 export { concurrent } from "./lib/concurrent";
 export { mapping } from "./lib/mapping";
-export { auth, datastax, metadata, metrics, policies, tracker, types };
+export { auth, metadata, metrics, policies, tracker, types };
 
 export const version: number;
 
