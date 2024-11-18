@@ -8,8 +8,8 @@ use scylla::{
     QueryResult,
 };
 
-use crate::types::inet::InetAddressWrapper;
 use crate::types::duration::DurationWrapper;
+use crate::types::inet::InetAddressWrapper;
 use crate::types::local_time::LocalTimeWrapper;
 use crate::utils::js_error;
 
