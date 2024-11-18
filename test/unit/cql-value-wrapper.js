@@ -7,6 +7,7 @@ const TimeUuid = require("../../lib/types/time-uuid");
 const Duration = require("../../lib/types/duration");
 const LocalTime = require("../../lib/types/local-time");
 const Long = require("long");
+const InetAddress = require("../../lib/types/inet-address");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -181,5 +182,18 @@ describe("Cql value wrapper", function () {
         let element = CqlValue::Time(CqlTime(64 * 1_000_000_000)); */
         let expectedLocalTime = new LocalTime(Long.fromString("64000000000"));
         assert.equal(value.equals(expectedLocalTime), true);
+    });
+
+    it("should get inet type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperInet();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Inet);
+        let value = getCqlObject(element);
+        assert.instanceOf(value, InetAddress);
+        /* Corresponding value: 
+        let element = CqlValue::Inet(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+        */
+        let expectedInet = InetAddress.fromString("127.0.0.1");
+        assert.equal(value.equals(expectedInet), true);
     });
 });

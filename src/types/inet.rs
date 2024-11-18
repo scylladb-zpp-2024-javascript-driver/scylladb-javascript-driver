@@ -4,7 +4,7 @@ use std::net::IpAddr;
 
 #[napi]
 pub struct InetAddressWrapper {
-    inet: IpAddr,
+    pub(crate) inet: IpAddr,
 }
 
 #[napi]
