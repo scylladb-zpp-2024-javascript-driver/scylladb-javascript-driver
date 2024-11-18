@@ -6,6 +6,7 @@ const InetAddress = require("../../lib/types").InetAddress;
 
 describe("InetAddress", function () {
     describe("constructor", function () {
+        // TODO: DataStax throws TypeErrors, but due to napi-rs limitations, we temporarily throw Errors.
         it("should validate the Buffer length", function () {
             assert.throws(function () {
                 return new InetAddress(utils.allocBufferUnsafe(10));
@@ -195,15 +196,33 @@ describe("InetAddress", function () {
             const val = new InetAddress(
                 utils.allocBufferFromArray([127, 0, 0, 1]),
             );
-            assert.throws(function () {
-                val.buffer = utils.allocBufferFromArray([127, 0, 0, 1]);
-            }, Error);
-            assert.throws(function () {
-                val.version = 6;
-            }, Error);
-            assert.throws(function () {
-                val.length = 4;
-            }, Error);
+            assert.throws(
+                function () {
+                    val.buffer = utils.allocBufferFromArray([127, 0, 0, 1]);
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress buffer is read-only",
+                },
+            );
+            assert.throws(
+                function () {
+                    val.version = 6;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress version is read-only",
+                },
+            );
+            assert.throws(
+                function () {
+                    val.length = 4;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress length is read-only",
+                },
+            );
         });
     });
 });
