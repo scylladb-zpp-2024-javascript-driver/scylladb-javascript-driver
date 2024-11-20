@@ -35,6 +35,13 @@ impl QueryParameterWrapper {
     }
 
     #[napi]
+    pub fn from_bigint(val: BigInt) -> napi::Result<QueryParameterWrapper> {
+        Ok(QueryParameterWrapper {
+            parameter: CqlValue::BigInt(bigint_to_i64(val, "Cannot fit value in CqlBigInt")?),
+        })
+    }
+
+    #[napi]
     pub fn from_boolean(val: bool) -> QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Boolean(val),
