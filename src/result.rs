@@ -231,6 +231,14 @@ impl CqlValueWrapper {
     }
 
     #[napi]
+    pub fn get_bigint(&self) -> napi::Result<BigInt> {
+        match self.inner.as_bigint() {
+            Some(r) => Ok(BigInt::from(r)),
+            None => Err(Self::generic_error("bigint")),
+        }
+    }
+
+    #[napi]
     pub fn get_boolean(&self) -> napi::Result<bool> {
         match self.inner.as_boolean() {
             Some(r) => Ok(r),
