@@ -27,3 +27,15 @@ strip = "symbols"
 
 [profile.dev]
 panic = "abort"
+
+[[bin]]
+name = "select_benchmark"
+path = "benchmark/logic_rust/select.rs"
+
+[[bin]]
+name = "insert_benchmark"
+path = "benchmark/logic_rust/insert.rs"
+
+[[bin]]
+name = "concurrent_insert_benchmark"
+path = "benchmark/logic_rust/concurrent_insert.rs"
