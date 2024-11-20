@@ -5,7 +5,7 @@ use std::{
 
 use scylla::frame::{
     response::result::CqlValue,
-    value::{Counter, CqlDuration, CqlTime, CqlTimeuuid},
+    value::{Counter, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid},
 };
 
 use crate::result::CqlValueWrapper;
@@ -15,6 +15,13 @@ use uuid::uuid;
 /// Test function returning sample CqlValueWrapper with Ascii type
 pub fn tests_get_cql_wrapper_ascii() -> CqlValueWrapper {
     let element = CqlValue::Ascii("test value".to_owned());
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with BigInt type
+pub fn tests_get_cql_wrapper_bigint() -> CqlValueWrapper {
+    let element = CqlValue::BigInt(69);
     CqlValueWrapper { inner: element }
 }
 
@@ -79,12 +86,43 @@ pub fn tests_get_cql_wrapper_text() -> CqlValueWrapper {
 }
 
 #[napi]
+/// Test function returning sample CqlValueWrapper with Timestamp type
+pub fn tests_get_cql_wrapper_timestamp() -> CqlValueWrapper {
+    let element = CqlValue::Timestamp(CqlTimestamp(1_000_000_i64));
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with List type
+pub fn tests_get_cql_wrapper_list() -> CqlValueWrapper {
+    let element = CqlValue::List(vec![
+        CqlValue::Duration(CqlDuration {
+            months: 6,
+            days: 5,
+            nanoseconds: 4,
+        }),
+        CqlValue::Boolean(false),
+    ]);
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
 /// Test function returning sample CqlValueWrapper with Set type
 pub fn tests_get_cql_wrapper_set() -> CqlValueWrapper {
     let element = CqlValue::Set(vec![
         CqlValue::Text("some text".to_owned()),
         CqlValue::Int(1),
     ]);
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with Map type
+pub fn tests_get_cql_wrapper_map() -> CqlValueWrapper {
+    let element = CqlValue::Map(vec![(
+        CqlValue::Uuid(uuid!("ffffffff-ffff-ffff-eeee-ffffffffffff")),
+        CqlValue::Int(1999),
+    )]);
     CqlValueWrapper { inner: element }
 }
 
