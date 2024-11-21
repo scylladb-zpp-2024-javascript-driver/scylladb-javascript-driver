@@ -4,6 +4,8 @@
 
 # ScyllaDB JS Driver
 
+Documentation available [here](https://scylladb-zpp-2024-javascript-driver.github.io/scylladb-javascript-driver/docs)
+
 ## Installation and build process
 
 For installation of the required packages, type command below:
