@@ -293,7 +293,6 @@ impl CqlValueWrapper {
             None => Err(Self::generic_error("tiny_int")),
         }
     }
-
     #[napi]
     pub fn get_local_time(&self) -> napi::Result<LocalTimeWrapper> {
         match self.inner.as_cql_time() {
@@ -303,18 +302,18 @@ impl CqlValueWrapper {
     }
 
     #[napi]
-    pub fn get_uuid(&self) -> napi::Result<UuidWrapper> {
-        match self.inner.as_uuid() {
-            Some(r) => Ok(UuidWrapper::from_cql_uuid(r)),
-            None => Err(Self::generic_error("uuid")),
-        }
-    }
-
-    #[napi]
     pub fn get_time_uuid(&self) -> napi::Result<TimeUuidWrapper> {
         match self.inner.as_timeuuid() {
             Some(r) => Ok(TimeUuidWrapper::from_cql_time_uuid(r)),
             None => Err(Self::generic_error("time_uuid")),
+        }
+    }
+
+    #[napi]
+    pub fn get_uuid(&self) -> napi::Result<UuidWrapper> {
+        match self.inner.as_uuid() {
+            Some(r) => Ok(UuidWrapper::from_cql_uuid(r)),
+            None => Err(Self::generic_error("uuid")),
         }
     }
 }
