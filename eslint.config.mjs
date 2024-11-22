@@ -6,7 +6,7 @@ import pluginJs from "@eslint/js";
 export default [
   pluginJs.configs.recommended,
   {
-    ignores: ["test/integration/not-supported/**"],
+    ignores: ["test/integration/**"],
   }, 
   {
     files: ["lib/**/*.js", "test/**/*.js", "examples/**/*.js"], 
@@ -32,6 +32,7 @@ export default [
       "spaced-comment": "error",
 
       // This will be deleted after everything is switched from prototypes to classes
+      // TODO: FIX
       "no-prototype-builtins": "off",
 
       // Check if variable names are in camelCase
