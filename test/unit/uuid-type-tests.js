@@ -3,7 +3,6 @@
 const assert = require("assert");
 const helper = require("../test-helper");
 const utils = require("../../lib/utils");
-const { fromString } = require("../../lib/types/uuid");
 const Uuid = require("../../lib/types").Uuid;
 const TimeUuid = require("../../lib/types").TimeUuid;
 
