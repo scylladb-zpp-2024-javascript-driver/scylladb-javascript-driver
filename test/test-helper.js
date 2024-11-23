@@ -1677,7 +1677,6 @@ helper.ads.destroyTicket = function (principal, cb) {
     if (typeof principal === "function") {
         // noinspection JSValidateTypes
         cb = principal;
-        // eslint-disable-next-line
         principal = null;
     }
 
