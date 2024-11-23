@@ -6,10 +6,6 @@ import pluginJs from "@eslint/js";
 export default [
   pluginJs.configs.recommended,
   {
-    ignores: ["test/integration/**"],
-  }, 
-  {
-    files: ["lib/**/*.js", "test/**/*.js", "examples/**/*.js"], 
     languageOptions: {
       sourceType: "commonjs",
       globals: {
