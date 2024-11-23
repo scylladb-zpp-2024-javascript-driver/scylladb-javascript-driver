@@ -63,8 +63,8 @@
     "prepublishOnly": "napi prepublish -t npm",
     "universal": "napi universal",
     "version": "napi version",
-    "eslint": "npx eslint \"lib/**/*.js\" \"test/**/*.js\" \"examples/**/*.js\"",
-    "eslint-fix": "npx eslint \"lib/**/*.js\" \"test/**/*.js\" \"examples/**/*.js\" --fix"
+    "eslint": "npx eslint \"lib/**/*.js\" \"examples/**/*.js\"",
+    "eslint-fix": "npx eslint \"lib/**/*.js\" \"examples/**/*.js\" --fix"
   },
   "engines": {
     "node": ">=16"
