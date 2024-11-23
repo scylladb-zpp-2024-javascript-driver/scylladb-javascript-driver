@@ -4,7 +4,6 @@ const { assert } = require("chai");
 
 const ModelMappingInfo = require("../../../lib/mapping/model-mapping-info");
 
-/* eslint camelcase: "off" */
 describe("ModelMappingInfo", function () {
     describe("parse()", function () {
         it("should throw when the model keyspace is not set", () => {

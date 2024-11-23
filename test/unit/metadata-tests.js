@@ -22,7 +22,6 @@ const Encoder = require("../../lib/encoder");
 const isDoneForToken =
     require("../../lib/metadata/schema-parser").isDoneForToken;
 
-/* eslint camelcase: "off" */
 describe("Metadata", function () {
     this.timeout(5000);
 

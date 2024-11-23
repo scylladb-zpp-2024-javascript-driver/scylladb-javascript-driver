@@ -103,7 +103,7 @@ describe("ModelMapper", () => {
                         tables: ["table1"],
                         columns: {
                             id2: { fromModel: (a) => a + suffix },
-                            location_type: "locationType", // eslint-disable-line camelcase
+                            location_type: "locationType",
                         },
                     },
                 },

@@ -182,7 +182,6 @@ const simulacronHelper = {
         return { cluster: simulacronCluster, client: client };
     },
     baseOptions: (function () {
-        // eslint-disable-next-line
         const serverInfo = helper.getServerInfo();
 
         return {

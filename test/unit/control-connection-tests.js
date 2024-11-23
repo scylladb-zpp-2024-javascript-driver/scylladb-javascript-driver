@@ -15,7 +15,6 @@ const policies = require("../../lib/policies");
 const clientOptions = require("../../lib/client-options");
 const ProfileManager = require("../../lib/execution-profile").ProfileManager;
 
-/* eslint camelcase: "off" */
 describe("ControlConnection", function () {
     describe("constructor", function () {
         it("should create a new metadata instance", function () {
