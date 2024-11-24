@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: streams.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: streams.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+
+const util = require("util");
+const { Transform, Writable } = require("stream");
+
+const types = require("./types");
+const utils = require("./utils");
+const errors = require("./errors");
+const { FrameHeader } = types;
+const { FrameReader } = require("./readers");
+
+/**
+ * Transforms chunks, emits data objects {header, chunk}
+ * @param options Stream options
+ * @extends Transform
+ */
+function Protocol(options) {
+    Transform.call(this, options);
+    this.header = null;
+    this.bodyLength = 0;
+    this.clearHeaderChunks();
+    this.version = 0;
+    this.headerSize = 0;
+}
+
+util.inherits(Protocol, Transform);
+
+Protocol.prototype._transform = function (chunk, encoding, callback) {
+    let error = null;
+    try {
+        this.readItems(chunk);
+    } catch (err) {
+        error = err;
+    }
+    callback(error);
+};
+
+/**
+ * Parses the chunk into frames (header and body).
+ * Emits (push) complete frames or frames with incomplete bodies. Following chunks containing the rest of the body will
+ * be emitted using the same frame.
+ * It buffers incomplete headers.
+ * @param {Buffer} chunk
+ */
+Protocol.prototype.readItems = function (chunk) {
+    if (!chunk || chunk.length === 0) {
+        return;
+    }
+    if (this.version === 0) {
+        // The server replies the first message with the max protocol version supported
+        this.version = FrameHeader.getProtocolVersion(chunk);
+        this.headerSize = FrameHeader.size(this.version);
+    }
+    let offset = 0;
+    let currentHeader = this.header;
+    this.header = null;
+    if (this.headerChunks.byteLength !== 0) {
+        // incomplete header was buffered try to read the header from the buffered chunks
+        this.headerChunks.parts.push(chunk);
+        if (this.headerChunks.byteLength + chunk.length &lt; this.headerSize) {
+            this.headerChunks.byteLength += chunk.length;
+            return;
+        }
+        currentHeader = FrameHeader.fromBuffer(
+            Buffer.concat(this.headerChunks.parts, this.headerSize),
+        );
+        offset = this.headerSize - this.headerChunks.byteLength;
+        this.clearHeaderChunks();
+    }
+    const items = [];
+    while (true) {
+        if (!currentHeader) {
+            if (this.headerSize > chunk.length - offset) {
+                if (chunk.length - offset &lt;= 0) {
+                    break;
+                }
+                // the header is incomplete, buffer it until the next chunk
+                const headerPart = chunk.slice(offset, chunk.length);
+                this.headerChunks.parts.push(headerPart);
+                this.headerChunks.byteLength = headerPart.length;
+                break;
+            }
+            // read header
+            currentHeader = FrameHeader.fromBuffer(chunk, offset);
+            offset += this.headerSize;
+        }
+        // parse body
+        const remaining = chunk.length - offset;
+        if (currentHeader.bodyLength &lt;= remaining + this.bodyLength) {
+            items.push({
+                header: currentHeader,
+                chunk: chunk,
+                offset: offset,
+                frameEnded: true,
+            });
+            offset += currentHeader.bodyLength - this.bodyLength;
+            // reset the body length
+            this.bodyLength = 0;
+        } else if (remaining >= 0) {
+            // the body is not fully contained in this chunk
+            // will continue later
+            this.header = currentHeader;
+            this.bodyLength += remaining;
+            if (remaining > 0) {
+                // emit if there is at least a byte to emit
+                items.push({
+                    header: currentHeader,
+                    chunk: chunk,
+                    offset: offset,
+                    frameEnded: false,
+                });
+            }
+            break;
+        }
+        currentHeader = null;
+    }
+    for (let i = 0; i &lt; items.length; i++) {
+        this.push(items[i]);
+    }
+};
+
+Protocol.prototype.clearHeaderChunks = function () {
+    this.headerChunks = { byteLength: 0, parts: [] };
+};
+
+/**
+ * A stream that gets reads header + body chunks and transforms them into header + (row | error)
+ * @param {Object} streamOptions Node.js Stream options
+ * @param {Encoder} encoder Encoder instance for the parser to use
+ * @extends Transform
+ */
+function Parser(streamOptions, encoder) {
+    Transform.call(this, streamOptions);
+    // frames that are streaming, indexed by id
+    this.frames = {};
+    this.encoder = encoder;
+}
+
+util.inherits(Parser, Transform);
+
+Parser.prototype._transform = function (item, encoding, callback) {
+    const frameInfo = this.frameState(item);
+
+    let error = null;
+    try {
+        this.parseBody(frameInfo, item);
+    } catch (err) {
+        error = err;
+    }
+    callback(error);
+
+    if (item.frameEnded) {
+        if (frameInfo.cellBuffer) {
+            // Frame was being streamed but an error force it to buffer the result
+            this.push({
+                header: frameInfo.header,
+                error: new errors.DriverInternalError(
+                    "There was an problem while parsing streaming frame, opcode " +
+                        frameInfo.header.opcode,
+                ),
+            });
+        }
+        // all the parsing finished and it was streamed down
+        // emit an item that signals it
+        this.push({ header: frameInfo.header, frameEnded: true });
+    }
+};
+
+/**
+ * @param frameInfo
+ * @param {{header: FrameHeader, chunk: Buffer, offset: Number}} item
+ */
+Parser.prototype.parseBody = function (frameInfo, item) {
+    frameInfo.isStreaming =
+        frameInfo.byRow &amp;&amp; item.header.opcode === types.opcodes.result;
+    if (!this.handleFrameBuffers(frameInfo, item)) {
+        // Frame isn't complete and we are not streaming the frame
+        return;
+    }
+    const reader = new FrameReader(item.header, item.chunk, item.offset);
+    // Check that flags have not been parsed yet for this frame
+    if (frameInfo.flagsInfo === undefined) {
+        const originalOffset = reader.offset;
+        try {
+            frameInfo.flagsInfo = reader.readFlagsInfo();
+        } catch (e) {
+            return this.handleParsingError(
+                e,
+                frameInfo,
+                reader,
+                originalOffset,
+            );
+        }
+    }
+
+    // All the body for most operations is already buffered at this stage
+    // Except for RESULT
+    switch (item.header.opcode) {
+        case types.opcodes.result:
+            return this.parseResult(frameInfo, reader);
+        case types.opcodes.ready:
+        case types.opcodes.authSuccess:
+            return this.push({ header: frameInfo.header, ready: true });
+        case types.opcodes.authChallenge:
+            return this.push({
+                header: frameInfo.header,
+                authChallenge: true,
+                token: reader.readBytes(),
+            });
+        case types.opcodes.authenticate:
+            return this.push({
+                header: frameInfo.header,
+                mustAuthenticate: true,
+                authenticatorName: reader.readString(),
+            });
+        case types.opcodes.error:
+            return this.push({
+                header: frameInfo.header,
+                error: reader.readError(),
+            });
+        case types.opcodes.supported:
+            return this.push({
+                header: frameInfo.header,
+                supported: reader.readStringMultiMap(),
+            });
+        case types.opcodes.event:
+            return this.push({
+                header: frameInfo.header,
+                event: reader.readEvent(),
+            });
+        default:
+            return this.push({
+                header: frameInfo.header,
+                error: new Error(
+                    "Received invalid opcode: " + item.header.opcode,
+                ),
+            });
+    }
+};
+
+/**
+ * Buffers if needed and returns true if it has all the necessary data to continue parsing the frame.
+ * @param frameInfo
+ * @param {{header: FrameHeader, chunk: Buffer, offset: Number}} item
+ * @returns {Boolean}
+ */
+Parser.prototype.handleFrameBuffers = function (frameInfo, item) {
+    if (!frameInfo.isStreaming) {
+        // Handle buffering for complete frame bodies
+        const currentLength =
+            (frameInfo.bufferLength || 0) + item.chunk.length - item.offset;
+        if (currentLength &lt; item.header.bodyLength) {
+            // buffer until the frame is completed
+            this.addFrameBuffer(frameInfo, item);
+            return false;
+        }
+        // We have received the full frame body
+        if (frameInfo.buffers) {
+            item.chunk = this.getFrameBuffer(frameInfo, item);
+            item.offset = 0;
+        }
+        return true;
+    }
+    if (frameInfo.cellBuffer) {
+        // Handle buffering for frame cells (row cells or metadata cells)
+        if (item.offset !== 0) {
+            throw new errors.DriverInternalError(
+                "Following chunks can not have an offset greater than zero",
+            );
+        }
+        frameInfo.cellBuffer.parts.push(item.chunk);
+        if (!frameInfo.cellBuffer.expectedLength) {
+            // Its a buffer outside a row cell (metadata or other)
+            if (frameInfo.cellBuffer.parts.length !== 2) {
+                throw new errors.DriverInternalError(
+                    "Buffer for streaming frame can not contain more than 1 item",
+                );
+            }
+            item.chunk = Buffer.concat(
+                frameInfo.cellBuffer.parts,
+                frameInfo.cellBuffer.byteLength + item.chunk.length,
+            );
+            frameInfo.cellBuffer = null;
+            return true;
+        }
+        if (
+            frameInfo.cellBuffer.expectedLength >
+            frameInfo.cellBuffer.byteLength + item.chunk.length
+        ) {
+            // We still haven't got the cell data
+            frameInfo.cellBuffer.byteLength += item.chunk.length;
+            return false;
+        }
+        item.chunk = Buffer.concat(
+            frameInfo.cellBuffer.parts,
+            frameInfo.cellBuffer.byteLength + item.chunk.length,
+        );
+        frameInfo.cellBuffer = null;
+    }
+    return true;
+};
+
+/**
+ * Adds this chunk to the frame buffers.
+ * @param frameInfo
+ * @param {{header: FrameHeader, chunk: Buffer, offset: Number}} item
+ */
+Parser.prototype.addFrameBuffer = function (frameInfo, item) {
+    if (!frameInfo.buffers) {
+        frameInfo.buffers = [item.chunk.slice(item.offset)];
+        frameInfo.bufferLength = item.chunk.length - item.offset;
+        return;
+    }
+    if (item.offset > 0) {
+        throw new errors.DriverInternalError(
+            "Following chunks can not have an offset greater than zero",
+        );
+    }
+    frameInfo.buffers.push(item.chunk);
+    frameInfo.bufferLength += item.chunk.length;
+};
+
+/**
+ * Adds the last chunk and concatenates the frame buffers
+ * @param frameInfo
+ * @param {{header: FrameHeader, chunk: Buffer, offset: Number}} item
+ */
+Parser.prototype.getFrameBuffer = function (frameInfo, item) {
+    frameInfo.buffers.push(item.chunk);
+    const result = Buffer.concat(frameInfo.buffers, frameInfo.bodyLength);
+    frameInfo.buffers = null;
+    return result;
+};
+
+/**
+ * Tries to read the result in the body of a message
+ * @param frameInfo Frame information, header / metadata
+ * @param {FrameReader} reader
+ */
+Parser.prototype.parseResult = function (frameInfo, reader) {
+    let result;
+    // As we might be streaming and the frame buffer might not be complete,
+    // read the metadata and different types of result values in a try-catch.
+    // Store the reader position
+    const originalOffset = reader.offset;
+    try {
+        if (!frameInfo.meta) {
+            frameInfo.kind = reader.readInt();
+            // Spec 4.2.5
+            switch (frameInfo.kind) {
+                case types.resultKind.voidResult:
+                    result = {
+                        header: frameInfo.header,
+                        flags: frameInfo.flagsInfo,
+                    };
+                    break;
+                case types.resultKind.rows:
+                    // Parse the rows metadata, the rest of the response is going to be parsed afterwards
+                    frameInfo.meta = reader.readMetadata(frameInfo.kind);
+                    break;
+                case types.resultKind.setKeyspace:
+                    result = {
+                        header: frameInfo.header,
+                        keyspaceSet: reader.readString(),
+                        flags: frameInfo.flagsInfo,
+                    };
+                    break;
+                case types.resultKind.prepared: {
+                    const preparedId = utils.copyBuffer(
+                        reader.readShortBytes(),
+                    );
+                    frameInfo.meta = reader.readMetadata(frameInfo.kind);
+                    result = {
+                        header: frameInfo.header,
+                        id: preparedId,
+                        meta: frameInfo.meta,
+                        flags: frameInfo.flagsInfo,
+                    };
+                    break;
+                }
+                case types.resultKind.schemaChange:
+                    result = {
+                        header: frameInfo.header,
+                        schemaChange: reader.parseSchemaChange(),
+                        flags: frameInfo.flagsInfo,
+                    };
+                    break;
+                default:
+                    throw errors.DriverInternalError(
+                        "Unexpected result kind: " + frameInfo.kind,
+                    );
+            }
+        }
+    } catch (e) {
+        return this.handleParsingError(e, frameInfo, reader, originalOffset);
+    }
+    if (result) {
+        if (frameInfo.emitted) {
+            // It may contain additional metadata and info that it's not being parsed
+            return;
+        }
+        frameInfo.emitted = true;
+        return this.push(result);
+    }
+    if (reader.remainingLength() > 0) {
+        this.parseRows(frameInfo, reader);
+    }
+};
+
+/**
+ * @param frameInfo
+ * @param {FrameReader} reader
+ */
+Parser.prototype.parseRows = function (frameInfo, reader) {
+    if (frameInfo.parsingError) {
+        // No more processing on this frame
+        return;
+    }
+    if (frameInfo.rowLength === undefined) {
+        try {
+            frameInfo.rowLength = reader.readInt();
+        } catch (e) {
+            return this.handleParsingError(e, frameInfo, reader);
+        }
+    }
+    if (frameInfo.rowLength === 0) {
+        return this.push({
+            header: frameInfo.header,
+            result: {
+                rows: utils.emptyArray,
+                meta: frameInfo.meta,
+                flags: frameInfo.flagsInfo,
+            },
+        });
+    }
+    const meta = frameInfo.meta;
+    frameInfo.rowIndex = frameInfo.rowIndex || 0;
+    for (let i = frameInfo.rowIndex; i &lt; frameInfo.rowLength; i++) {
+        const rowOffset = reader.offset;
+        const row = new types.Row(meta.columns);
+        let cellBuffer;
+        for (let j = 0; j &lt; meta.columns.length; j++) {
+            const c = meta.columns[j];
+            try {
+                cellBuffer = reader.readBytes();
+            } catch (e) {
+                return this.handleParsingError(
+                    e,
+                    frameInfo,
+                    reader,
+                    rowOffset,
+                    i,
+                );
+            }
+            try {
+                row[c.name] = this.encoder.decode(cellBuffer, c.type);
+            } catch (e) {
+                // Something went wrong while decoding, we are not going to be able to recover
+                return this.handleParsingError(e, frameInfo, null);
+            }
+        }
+        this.push({
+            header: frameInfo.header,
+            row: row,
+            meta: frameInfo.meta,
+            byRow: frameInfo.byRow,
+            length: frameInfo.rowLength,
+            flags: frameInfo.flagsInfo,
+        });
+    }
+    if (frameInfo.byRow) {
+        // Use an event item to identify that all the streaming rows have finished processing
+        this.push({
+            header: frameInfo.header,
+            byRowCompleted: true,
+            meta: frameInfo.meta,
+            length: frameInfo.rowLength,
+            flags: frameInfo.flagsInfo,
+        });
+    }
+};
+
+/**
+ * Sets parser options (ie: how to yield the results as they are parsed)
+ * @param {Number} id Id of the stream
+ * @param options
+ */
+Parser.prototype.setOptions = function (id, options) {
+    if (this.frames[id.toString()]) {
+        throw new types.DriverError("There was already state for this frame");
+    }
+    this.frames[id.toString()] = options;
+};
+
+/**
+ * Manually clears the frame options.
+ * This class already clears the provided options when the frame ends, so it's usually not required to invoke this
+ * method.
+ * When manually setting the options for continuous paging, it's possible that the frame options are set while
+ * it's being cancelled.
+ * @param {Number} id The streamId
+ */
+Parser.prototype.clearOptions = function (id) {
+    delete this.frames[id.toString()];
+};
+
+/**
+ * Gets the frame info from the internal state.
+ * In case it is not there, it creates it.
+ * In case the frame ended
+ */
+Parser.prototype.frameState = function (item) {
+    let frameInfo = this.frames[item.header.streamId];
+    if (!frameInfo) {
+        frameInfo = {};
+        if (!item.frameEnded) {
+            // store it in the frames
+            this.frames[item.header.streamId] = frameInfo;
+        }
+    } else if (item.frameEnded) {
+        // if it was already stored, remove it
+        delete this.frames[item.header.streamId];
+    }
+    frameInfo.header = item.header;
+    return frameInfo;
+};
+
+/**
+ * Handles parsing error: pushing an error if its unexpected or buffer the cell if its streaming
+ * @param {Error} e
+ * @param frameInfo
+ * @param {FrameReader} reader
+ * @param {Number} [originalOffset]
+ * @param {Number} [rowIndex]
+ */
+Parser.prototype.handleParsingError = function (
+    e,
+    frameInfo,
+    reader,
+    originalOffset,
+    rowIndex,
+) {
+    if (reader &amp;&amp; frameInfo.isStreaming &amp;&amp; e instanceof RangeError) {
+        // A controlled error, buffer from offset and move on
+        return this.bufferResultCell(
+            frameInfo,
+            reader,
+            originalOffset,
+            rowIndex,
+            e.expectedLength,
+        );
+    }
+    frameInfo.parsingError = true;
+    frameInfo.cellBuffer = null;
+    this.push({ header: frameInfo.header, error: e });
+};
+
+/**
+ * When streaming, it buffers data since originalOffset.
+ * @param frameInfo
+ * @param {FrameReader} reader
+ * @param {Number} [originalOffset]
+ * @param {Number} [rowIndex]
+ * @param {Number} [expectedLength]
+ */
+Parser.prototype.bufferResultCell = function (
+    frameInfo,
+    reader,
+    originalOffset,
+    rowIndex,
+    expectedLength,
+) {
+    if (!originalOffset &amp;&amp; originalOffset !== 0) {
+        originalOffset = reader.offset;
+    }
+    frameInfo.rowIndex = rowIndex;
+    const buffer = reader.slice(originalOffset);
+    frameInfo.cellBuffer = {
+        parts: [buffer],
+        byteLength: buffer.length,
+        expectedLength: expectedLength,
+    };
+};
+
+/**
+ * Represents a writable streams that emits results
+ */
+function ResultEmitter(options) {
+    Writable.call(this, options);
+    /**
+     * Stores the rows for frames that needs to be yielded as one result with many rows
+     */
+    this.rowBuffer = {};
+}
+
+util.inherits(ResultEmitter, Writable);
+
+ResultEmitter.prototype._write = function (item, encoding, callback) {
+    let error = null;
+    try {
+        this.each(item);
+    } catch (err) {
+        error = err;
+    }
+    callback(error);
+};
+
+/**
+ * Analyzes the item and emit the corresponding event
+ */
+ResultEmitter.prototype.each = function (item) {
+    if (item.error || item.result) {
+        // Its either an error or an empty array rows
+        // no transformation needs to be made
+        return this.emit("result", item.header, item.error, item.result);
+    }
+    if (item.frameEnded) {
+        return this.emit("frameEnded", item.header);
+    }
+    if (item.lastContinuousPage) {
+        return this.emit("lastContinuousPage", item.header);
+    }
+    if (item.byRowCompleted) {
+        return this.emit(
+            "byRowCompleted",
+            item.header,
+            item.row,
+            item.meta,
+            item.flags,
+        );
+    }
+    if (item.byRow) {
+        // it should be yielded by row
+        return this.emit(
+            "row",
+            item.header,
+            item.row,
+            item.meta,
+            item.length,
+            item.flags,
+        );
+    }
+    if (item.row) {
+        // it should be yielded as a result
+        // it needs to be buffered to an array of rows
+        return this.bufferAndEmit(item);
+    }
+    if (item.event) {
+        // its an event from Cassandra
+        return this.emit("nodeEvent", item.header, item.event);
+    }
+    // its a raw response (object with flags)
+    return this.emit("result", item.header, null, item);
+};
+
+/**
+ * Buffers the rows until the result set is completed and emits the result event.
+ */
+ResultEmitter.prototype.bufferAndEmit = function (item) {
+    let rows = this.rowBuffer[item.header.streamId];
+    if (!rows) {
+        rows = this.rowBuffer[item.header.streamId] = [];
+    }
+    rows.push(item.row);
+    if (rows.length === item.length) {
+        this.emit("result", item.header, null, {
+            rows: rows,
+            meta: item.meta,
+            flags: item.flags,
+        });
+        delete this.rowBuffer[item.header.streamId];
+    }
+};
+
+exports.Protocol = Protocol;
+exports.Parser = Parser;
+exports.ResultEmitter = ResultEmitter;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="AuthResponseRequest.html">AuthResponseRequest</a></li><li><a href="BatchRequest.html">BatchRequest</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Connection.html">Connection</a></li><li><a href="ControlConnection.html">ControlConnection</a></li><li><a href="CredentialsRequest.html">CredentialsRequest</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecuteRequest.html">ExecuteRequest</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="FrameReader.html">FrameReader</a></li><li><a href="FrameWriter.html">FrameWriter</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostConnectionPool.html">HostConnectionPool</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="InsightsClient.html">InsightsClient</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Murmur3Tokenizer.html">Murmur3Tokenizer</a></li><li><a href="OperationState.html">OperationState</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="PrepareHandler.html">PrepareHandler</a></li><li><a href="QueryRequest.html">QueryRequest</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="RandomTokenizer.html">RandomTokenizer</a></li><li><a href="Request.html">Request</a></li><li><a href="RequestExecution.html">RequestExecution</a></li><li><a href="RequestHandler.html">RequestHandler</a></li><li><a href="StartupRequest.html">StartupRequest</a></li><li><a href="StreamIdStack.html">StreamIdStack</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="Tokenizer.html">Tokenizer</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="WriteQueue.html">WriteQueue</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-DseGssapiAuthProvider.html">DseGssapiAuthProvider</a></li><li><a href="module-auth-DsePlainTextAuthProvider.html">DsePlainTextAuthProvider</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Parser">Parser</a></li><li><a href="global.html#Protocol">Protocol</a></li><li><a href="global.html#ResultEmitter">ResultEmitter</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#defaultReleaseDelay">defaultReleaseDelay</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#errorCodes">errorCodes</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#fromSignedByte">fromSignedByte</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getDefaultOptions">getDefaultOptions</a></li><li><a href="global.html#groupSize">groupSize</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxGroupsFor2Bytes">maxGroupsFor2Bytes</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#releasableSize">releasableSize</a></li><li><a href="global.html#resultFlag">resultFlag</a></li><li><a href="global.html#rowBuffer">rowBuffer</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#shiftToGroup">shiftToGroup</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sun Nov 24 2024 15:06:54 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

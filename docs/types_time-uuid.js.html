@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: types/time-uuid.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: types/time-uuid.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+const util = require("util");
+const crypto = require("crypto");
+const Long = require("long");
+
+const Uuid = require("./uuid");
+const utils = require("../utils");
+
+/** @module types */
+/**
+ * Oct 15, 1582 in milliseconds since unix epoch
+ * @const
+ * @private
+ */
+const _unixToGregorian = 12219292800000;
+/**
+ * 10,000 ticks in a millisecond
+ * @const
+ * @private
+ */
+const _ticksInMs = 10000;
+
+const minNodeId = utils.allocBufferFromString("808080808080", "hex");
+const minClockId = utils.allocBufferFromString("8080", "hex");
+const maxNodeId = utils.allocBufferFromString("7f7f7f7f7f7f", "hex");
+const maxClockId = utils.allocBufferFromString("7f7f", "hex");
+
+/**
+ * Counter used to generate up to 10000 different timeuuid values with the same Date
+ * @private
+ * @type {number}
+ */
+let _ticks = 0;
+/**
+ * Counter used to generate ticks for the current time
+ * @private
+ * @type {number}
+ */
+let _ticksForCurrentTime = 0;
+/**
+ * Remember the last time when a ticks for the current time so that it can be reset
+ * @private
+ * @type {number}
+ */
+let _lastTimestamp = 0;
+
+/**
+ * Creates a new instance of Uuid based on the parameters provided according to rfc4122.
+ * If any of the arguments is not provided, it will be randomly generated, except for the date that will use the current
+ * date.
+ * &lt;p>
+ *   Note that when nodeId and/or clockId portions are not provided, the constructor will generate them using
+ *   &lt;code>crypto.randomBytes()&lt;/code>. As it's possible that &lt;code>crypto.randomBytes()&lt;/code> might block, it's
+ *   recommended that you use the callback-based version of the static methods &lt;code>fromDate()&lt;/code> or
+ *   &lt;code>now()&lt;/code> in that case.
+ * &lt;/p>
+ * @class
+ * @classdesc Represents an immutable version 1 universally unique identifier (UUID). A UUID represents a 128-bit value.
+ * &lt;p>Usage: &lt;code>TimeUuid.now()&lt;/code>&lt;/p>
+ * @extends module:types~Uuid
+ * @param {Date} [value] The datetime for the instance, if not provided, it will use the current Date.
+ * @param {Number} [ticks] A number from 0 to 10000 representing the 100-nanoseconds units for this instance to fill in the information not available in the Date,
+ * as Ecmascript Dates have only milliseconds precision.
+ * @param {String|Buffer} [nodeId] A 6-length Buffer or string of 6 ascii characters representing the node identifier, ie: 'host01'.
+ * @param {String|Buffer} [clockId] A 2-length Buffer or string of 6 ascii characters representing the clock identifier.
+ * @constructor
+ */
+function TimeUuid(value, ticks, nodeId, clockId) {
+    let buffer;
+    if (value instanceof Buffer) {
+        if (value.length !== 16) {
+            throw new Error("Buffer for v1 uuid not valid");
+        }
+        buffer = value;
+    } else {
+        buffer = generateBuffer(value, ticks, nodeId, clockId);
+    }
+    Uuid.call(this, buffer);
+}
+
+util.inherits(TimeUuid, Uuid);
+
+/**
+ * Generates a TimeUuid instance based on the Date provided using random node and clock values.
+ * @param {Date} date Date to generate the v1 uuid.
+ * @param {Number} [ticks] A number from 0 to 10000 representing the 100-nanoseconds units for this instance to fill in the information not available in the Date,
+ * as Ecmascript Dates have only milliseconds precision.
+ * @param {String|Buffer} [nodeId] A 6-length Buffer or string of 6 ascii characters representing the node identifier, ie: 'host01'.
+ * If not provided, a random nodeId will be generated.
+ * @param {String|Buffer} [clockId] A 2-length Buffer or string of 6 ascii characters representing the clock identifier.
+ * If not provided a random clockId will be generated.
+ * @param {Function} [callback] An optional callback to be invoked with the error as first parameter and the created
+ * &lt;code>TimeUuid&lt;/code> as second parameter. When a callback is provided, the random portions of the
+ * &lt;code>TimeUuid&lt;/code> instance are created asynchronously.
+ * &lt;p>
+ *   When nodeId and/or clockId portions are not provided, this method will generate them using
+ *   &lt;code>crypto.randomBytes()&lt;/code>. As it's possible that &lt;code>crypto.randomBytes()&lt;/code> might block, it's
+ *   recommended that you use the callback-based version of this method in that case.
+ * &lt;/p>
+ * @example &lt;caption>Generate a TimeUuid from a ECMAScript Date&lt;/caption>
+ * const timeuuid = TimeUuid.fromDate(new Date());
+ * @example &lt;caption>Generate a TimeUuid from a Date with ticks portion&lt;/caption>
+ * const timeuuid = TimeUuid.fromDate(new Date(), 1203);
+ * @example &lt;caption>Generate a TimeUuid from a Date without any random portion&lt;/caption>
+ * const timeuuid = TimeUuid.fromDate(new Date(), 1203, 'host01', '02');
+ * @example &lt;caption>Generate a TimeUuid from a Date with random node and clock identifiers&lt;/caption>
+ * TimeUuid.fromDate(new Date(), 1203, function (err, timeuuid) {
+ *   // do something with the generated timeuuid
+ * });
+ */
+TimeUuid.fromDate = function (date, ticks, nodeId, clockId, callback) {
+    if (typeof ticks === "function") {
+        callback = ticks;
+        ticks = nodeId = clockId = null;
+    } else if (typeof nodeId === "function") {
+        callback = nodeId;
+        nodeId = clockId = null;
+    } else if (typeof clockId === "function") {
+        callback = clockId;
+        clockId = null;
+    }
+
+    if (!callback) {
+        return new TimeUuid(date, ticks, nodeId, clockId);
+    }
+
+    utils.parallel(
+        [
+            (next) =>
+                getOrGenerateRandom(nodeId, 6, (err, buffer) =>
+                    next(err, (nodeId = buffer)),
+                ),
+            (next) =>
+                getOrGenerateRandom(clockId, 2, (err, buffer) =>
+                    next(err, (clockId = buffer)),
+                ),
+        ],
+        (err) => {
+            if (err) {
+                return callback(err);
+            }
+
+            let timeUuid;
+            try {
+                timeUuid = new TimeUuid(date, ticks, nodeId, clockId);
+            } catch (e) {
+                return callback(e);
+            }
+
+            callback(null, timeUuid);
+        },
+    );
+};
+
+/**
+ * Parses a string representation of a TimeUuid
+ * @param {String} value
+ * @returns {TimeUuid}
+ */
+TimeUuid.fromString = function (value) {
+    return new TimeUuid(Uuid.fromString(value).getBuffer());
+};
+
+/**
+ * Returns the smaller possible type 1 uuid with the provided Date.
+ */
+TimeUuid.min = function (date, ticks) {
+    return new TimeUuid(date, ticks, minNodeId, minClockId);
+};
+
+/**
+ * Returns the biggest possible type 1 uuid with the provided Date.
+ */
+TimeUuid.max = function (date, ticks) {
+    return new TimeUuid(date, ticks, maxNodeId, maxClockId);
+};
+
+/**
+ * Generates a TimeUuid instance based on the current date using random node and clock values.
+ * @param {String|Buffer} [nodeId] A 6-length Buffer or string of 6 ascii characters representing the node identifier, ie: 'host01'.
+ * If not provided, a random nodeId will be generated.
+ * @param {String|Buffer} [clockId] A 2-length Buffer or string of 6 ascii characters representing the clock identifier.
+ * If not provided a random clockId will be generated.
+ * @param {Function} [callback] An optional callback to be invoked with the error as first parameter and the created
+ * &lt;code>TimeUuid&lt;/code> as second parameter. When a callback is provided, the random portions of the
+ * &lt;code>TimeUuid&lt;/code> instance are created asynchronously.
+ * &lt;p>
+ *   When nodeId and/or clockId portions are not provided, this method will generate them using
+ *   &lt;code>crypto.randomBytes()&lt;/code>. As it's possible that &lt;code>crypto.randomBytes()&lt;/code> might block, it's
+ *   recommended that you use the callback-based version of this method in that case.
+ * &lt;/p>
+ * @example &lt;caption>Generate a TimeUuid from a Date without any random portion&lt;/caption>
+ * const timeuuid = TimeUuid.now('host01', '02');
+ * @example &lt;caption>Generate a TimeUuid with random node and clock identifiers&lt;/caption>
+ * TimeUuid.now(function (err, timeuuid) {
+ *   // do something with the generated timeuuid
+ * });
+ * @example &lt;caption>Generate a TimeUuid based on the current date (might block)&lt;/caption>
+ * const timeuuid = TimeUuid.now();
+ */
+TimeUuid.now = function (nodeId, clockId, callback) {
+    return TimeUuid.fromDate(null, null, nodeId, clockId, callback);
+};
+
+/**
+ * Gets the Date and 100-nanoseconds units representation of this instance.
+ * @returns {{date: Date, ticks: Number}}
+ */
+TimeUuid.prototype.getDatePrecision = function () {
+    const timeLow = this.buffer.readUInt32BE(0);
+
+    let timeHigh = 0;
+    timeHigh |= (this.buffer[4] &amp; 0xff) &lt;&lt; 8;
+    timeHigh |= this.buffer[5] &amp; 0xff;
+    timeHigh |= (this.buffer[6] &amp; 0x0f) &lt;&lt; 24;
+    timeHigh |= (this.buffer[7] &amp; 0xff) &lt;&lt; 16;
+
+    const val = Long.fromBits(timeLow, timeHigh);
+    const ticksInMsLong = Long.fromNumber(_ticksInMs);
+    const ticks = val.modulo(ticksInMsLong);
+    const time = val
+        .div(ticksInMsLong)
+        .subtract(Long.fromNumber(_unixToGregorian));
+    return { date: new Date(time.toNumber()), ticks: ticks.toNumber() };
+};
+
+/**
+ * Gets the Date representation of this instance.
+ * @returns {Date}
+ */
+TimeUuid.prototype.getDate = function () {
+    return this.getDatePrecision().date;
+};
+
+/**
+ * Returns the node id this instance
+ * @returns {Buffer}
+ */
+TimeUuid.prototype.getNodeId = function () {
+    return this.buffer.slice(10);
+};
+
+/**
+ * Returns the clock id this instance, with the variant applied (first 2 msb being 1 and 0).
+ * @returns {Buffer}
+ */
+TimeUuid.prototype.getClockId = function () {
+    return this.buffer.slice(8, 10);
+};
+
+/**
+ * Returns the node id this instance as an ascii string
+ * @returns {String}
+ */
+TimeUuid.prototype.getNodeIdString = function () {
+    return this.buffer.slice(10).toString("ascii");
+};
+
+function writeTime(buffer, time, ticks) {
+    // value time expressed in ticks precision
+    const val = Long.fromNumber(time + _unixToGregorian)
+        .multiply(Long.fromNumber(10000))
+        .add(Long.fromNumber(ticks));
+    const timeHigh = val.getHighBitsUnsigned();
+    buffer.writeUInt32BE(val.getLowBitsUnsigned(), 0);
+    buffer.writeUInt16BE(timeHigh &amp; 0xffff, 4);
+    buffer.writeUInt16BE((timeHigh >>> 16) &amp; 0xffff, 6);
+}
+
+/**
+ * Returns a buffer of length 2 representing the clock identifier
+ * @param {String|Buffer} clockId
+ * @returns {Buffer}
+ * @private
+ */
+function getClockId(clockId) {
+    let buffer = clockId;
+    if (typeof clockId === "string") {
+        buffer = utils.allocBufferFromString(clockId, "ascii");
+    }
+    if (!(buffer instanceof Buffer)) {
+        // Generate
+        buffer = getRandomBytes(2);
+    } else if (buffer.length !== 2) {
+        throw new Error("Clock identifier must have 2 bytes");
+    }
+    return buffer;
+}
+
+/**
+ * Returns a buffer of length 6 representing the clock identifier
+ * @param {String|Buffer} nodeId
+ * @returns {Buffer}
+ * @private
+ */
+function getNodeId(nodeId) {
+    let buffer = nodeId;
+    if (typeof nodeId === "string") {
+        buffer = utils.allocBufferFromString(nodeId, "ascii");
+    }
+    if (!(buffer instanceof Buffer)) {
+        // Generate
+        buffer = getRandomBytes(6);
+    } else if (buffer.length !== 6) {
+        throw new Error("Node identifier must have 6 bytes");
+    }
+    return buffer;
+}
+
+/**
+ * Returns the ticks portion of a timestamp.  If the ticks are not provided an internal counter is used that gets reset at 10000.
+ * @private
+ * @param {Number} [ticks]
+ * @returns {Number}
+ */
+function getTicks(ticks) {
+    if (typeof ticks !== "number" || ticks >= _ticksInMs) {
+        _ticks++;
+        if (_ticks >= _ticksInMs) {
+            _ticks = 0;
+        }
+        ticks = _ticks;
+    }
+    return ticks;
+}
+
+/**
+ * Returns an object with the time representation of the date expressed in milliseconds since unix epoch
+ * and a ticks property for the 100-nanoseconds precision.
+ * @private
+ * @returns {{time: Number, ticks: Number}}
+ */
+function getTimeWithTicks(date, ticks) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        // time with ticks for the current time
+        date = new Date();
+        const time = date.getTime();
+        _ticksForCurrentTime++;
+        if (_ticksForCurrentTime > _ticksInMs || time > _lastTimestamp) {
+            _ticksForCurrentTime = 0;
+            _lastTimestamp = time;
+        }
+        ticks = _ticksForCurrentTime;
+    }
+    return {
+        time: date.getTime(),
+        ticks: getTicks(ticks),
+    };
+}
+
+function getRandomBytes(length) {
+    return crypto.randomBytes(length);
+}
+
+function getOrGenerateRandom(id, length, callback) {
+    if (id) {
+        return callback(null, id);
+    }
+    crypto.randomBytes(length, callback);
+}
+
+/**
+ * Generates a 16-length Buffer instance
+ * @private
+ * @param {Date} date
+ * @param {Number} ticks
+ * @param {String|Buffer} nodeId
+ * @param {String|Buffer} clockId
+ * @returns {Buffer}
+ */
+function generateBuffer(date, ticks, nodeId, clockId) {
+    const timeWithTicks = getTimeWithTicks(date, ticks);
+    nodeId = getNodeId(nodeId);
+    clockId = getClockId(clockId);
+    const buffer = utils.allocBufferUnsafe(16);
+    // Positions 0-7 Timestamp
+    writeTime(buffer, timeWithTicks.time, timeWithTicks.ticks);
+    // Position 8-9 Clock
+    clockId.copy(buffer, 8, 0);
+    // Positions 10-15 Node
+    nodeId.copy(buffer, 10, 0);
+    // Version Byte: Time based
+    // 0001xxxx
+    // turn off first 4 bits
+    buffer[6] = buffer[6] &amp; 0x0f;
+    // turn on fifth bit
+    buffer[6] = buffer[6] | 0x10;
+
+    // IETF Variant Byte: 1.0.x
+    // 10xxxxxx
+    // turn off first 2 bits
+    buffer[8] = buffer[8] &amp; 0x3f;
+    // turn on first bit
+    buffer[8] = buffer[8] | 0x80;
+    return buffer;
+}
+
+module.exports = TimeUuid;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="AuthResponseRequest.html">AuthResponseRequest</a></li><li><a href="BatchRequest.html">BatchRequest</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Connection.html">Connection</a></li><li><a href="ControlConnection.html">ControlConnection</a></li><li><a href="CredentialsRequest.html">CredentialsRequest</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecuteRequest.html">ExecuteRequest</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="FrameReader.html">FrameReader</a></li><li><a href="FrameWriter.html">FrameWriter</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostConnectionPool.html">HostConnectionPool</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="InsightsClient.html">InsightsClient</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Murmur3Tokenizer.html">Murmur3Tokenizer</a></li><li><a href="OperationState.html">OperationState</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="PrepareHandler.html">PrepareHandler</a></li><li><a href="QueryRequest.html">QueryRequest</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="RandomTokenizer.html">RandomTokenizer</a></li><li><a href="Request.html">Request</a></li><li><a href="RequestExecution.html">RequestExecution</a></li><li><a href="RequestHandler.html">RequestHandler</a></li><li><a href="StartupRequest.html">StartupRequest</a></li><li><a href="StreamIdStack.html">StreamIdStack</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="Tokenizer.html">Tokenizer</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="WriteQueue.html">WriteQueue</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-DseGssapiAuthProvider.html">DseGssapiAuthProvider</a></li><li><a href="module-auth-DsePlainTextAuthProvider.html">DsePlainTextAuthProvider</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Parser">Parser</a></li><li><a href="global.html#Protocol">Protocol</a></li><li><a href="global.html#ResultEmitter">ResultEmitter</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#defaultReleaseDelay">defaultReleaseDelay</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#errorCodes">errorCodes</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#fromSignedByte">fromSignedByte</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getDefaultOptions">getDefaultOptions</a></li><li><a href="global.html#groupSize">groupSize</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxGroupsFor2Bytes">maxGroupsFor2Bytes</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#releasableSize">releasableSize</a></li><li><a href="global.html#resultFlag">resultFlag</a></li><li><a href="global.html#rowBuffer">rowBuffer</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#shiftToGroup">shiftToGroup</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sun Nov 24 2024 15:06:54 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

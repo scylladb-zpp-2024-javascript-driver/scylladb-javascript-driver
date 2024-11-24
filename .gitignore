@@ -24,7 +24,7 @@ test/localConfig.json
 .DS_Store
 out/
 /certs
-/docs
+# /docs
 **/typescript/*.js
 **/typescript/*.js.map
 **/typescript/generated.ts
