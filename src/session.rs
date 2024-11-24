@@ -11,6 +11,8 @@ pub struct SessionOptions {
     pub connect_points: Vec<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
+    pub credentials_username: Option<String>,
+    pub credentials_password: Option<String>,
 }
 
 #[napi]
@@ -26,6 +28,8 @@ impl SessionOptions {
             connect_points: vec![],
             application_name: None,
             application_version: None,
+            credentials_username: None,
+            credentials_password: None,
         }
     }
 }
@@ -56,6 +60,12 @@ fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
     let mut builder = SessionBuilder::new();
     builder = builder.custom_identity(get_self_identity(options));
     builder = builder.known_nodes(&options.connect_points);
+    if let (Some(username), Some(password)) = (
+        options.credentials_username.as_ref(),
+        options.credentials_password.as_ref(),
+    ) {
+        builder = builder.user(username, password);
+    }
     builder
 }
 
