@@ -20,6 +20,8 @@ pub struct SessionOptions {
     pub keyspace: Option<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
+    pub credentials_username: Option<String>,
+    pub credentials_password: Option<String>,
 }
 
 #[napi]
@@ -42,6 +44,8 @@ impl SessionOptions {
             keyspace: None,
             application_name: None,
             application_version: None,
+            credentials_username: None,
+            credentials_password: None,
         }
     }
 }
@@ -166,6 +170,18 @@ fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
     builder = builder.known_nodes(&options.connect_points);
     if let Some(keyspace) = &options.keyspace {
         builder = builder.use_keyspace(keyspace, false);
+    }
+    match (
+        options.credentials_username.as_ref(),
+        options.credentials_password.as_ref(),
+    ) {
+        (Some(username), Some(password)) => {
+            builder = builder.user(username, password);
+        }
+        (None, None) => (),
+        (Some(_), None) | (None, Some(_)) => {
+            unreachable!("There is a check in JS Client constructor that should have prevented only one credential passed")
+        }
     }
     builder
 }
