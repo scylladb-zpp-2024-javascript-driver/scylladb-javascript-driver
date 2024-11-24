@@ -17,6 +17,7 @@ use crate::{
 #[napi]
 pub struct SessionOptions {
     pub connect_points: Vec<String>,
+    pub keyspace: Option<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
 }
@@ -38,6 +39,7 @@ impl SessionOptions {
     pub fn empty() -> Self {
         SessionOptions {
             connect_points: vec![],
+            keyspace: None,
             application_name: None,
             application_version: None,
         }
@@ -49,13 +51,9 @@ impl SessionWrapper {
     /// Creates session based on the provided session options.
     #[napi]
     pub async fn create_session(options: &SessionOptions) -> napi::Result<Self> {
-        let s = SessionBuilder::new()
-            .known_node(options.connect_points[0].clone())
-            .custom_identity(get_self_identity(options))
-            .build()
-            .await
-            .map_err(err_to_napi)?;
-        Ok(SessionWrapper { inner: s })
+        let builder = configure_session_builder(options);
+        let session = builder.build().await.map_err(err_to_napi)?;
+        Ok(SessionWrapper { inner: session })
     }
 
     /// Returns the name of the current keyspace
@@ -162,6 +160,16 @@ pub fn create_prepared_batch(
     Ok(BatchWrapper { inner: batch })
 }
 
+fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
+    let mut builder = SessionBuilder::new();
+    builder = builder.custom_identity(self_identity(options));
+    builder = builder.known_nodes(&options.connect_points);
+    if let Some(keyspace) = &options.keyspace {
+        builder = builder.use_keyspace(keyspace, false);
+    }
+    builder
+}
+
 /// Creates object representing unprepared batch of statements.
 #[napi]
 pub fn create_unprepared_batch(
@@ -232,7 +240,7 @@ make_apply_options!(PreparedStatement, apply_prepared_options);
 make_apply_options!(Batch, apply_batch_options);
 
 /// Provides driver self identity, filling information on application based on session options.
-fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
+fn self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
     let mut self_identity = SelfIdentity::new();
     self_identity.set_custom_driver_name(options::DEFAULT_DRIVER_NAME);
     self_identity.set_application_version(options::DEFAULT_DRIVER_VERSION);
