@@ -34,14 +34,10 @@ impl SessionOptions {
 impl SessionWrapper {
     #[napi]
     pub async fn create_session(options: &SessionOptions) -> napi::Result<Self> {
-        let sb = SessionBuilder::new()
-            .known_node(options.connect_points[0].clone())
-            .custom_identity(get_self_identity(options))
-            .build()
-            .await
-            .map_err(err_to_napi)?;
+        let builder = configure_session_builder(options);
+        let session = builder.build().await.map_err(err_to_napi)?;
         Ok(SessionWrapper {
-            internal_session: sb,
+            internal_session: session,
         })
     }
 
@@ -54,6 +50,13 @@ impl SessionWrapper {
             .map_err(err_to_napi)?;
         Ok(QueryResultWrapper::from_query(query))
     }
+}
+
+fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
+    let mut builder = SessionBuilder::new();
+    builder = builder.custom_identity(get_self_identity(options));
+    builder = builder.known_nodes(&options.connect_points);
+    builder
 }
 
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
