@@ -43,13 +43,9 @@ impl SessionOptions {
 impl SessionWrapper {
     #[napi]
     pub async fn create_session(options: &SessionOptions) -> napi::Result<Self> {
-        let s = SessionBuilder::new()
-            .known_node(options.connect_points[0].clone())
-            .custom_identity(get_self_identity(options))
-            .build()
-            .await
-            .map_err(err_to_napi)?;
-        Ok(SessionWrapper { internal: s })
+        let builder = configure_session_builder(options);
+        let session = builder.build().await.map_err(err_to_napi)?;
+        Ok(SessionWrapper { internal: session })
     }
 
     #[napi]
@@ -136,6 +132,13 @@ pub fn create_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
         .iter()
         .for_each(|q| batch.append_statement(q.prepared.clone()));
     BatchWrapper { inner: batch }
+}
+
+fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
+    let mut builder = SessionBuilder::new();
+    builder = builder.custom_identity(get_self_identity(options));
+    builder = builder.known_nodes(&options.connect_points);
+    builder
 }
 
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
