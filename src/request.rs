@@ -8,8 +8,8 @@ use scylla::{
 };
 
 use crate::{
-    result::{map_column_type_to_cql_type, CqlType},
-    types::{duration::DurationWrapper, uuid::UuidWrapper},
+    result::map_column_type_to_cql_type,
+    types::{duration::DurationWrapper, type_wrappers::ComplexType, uuid::UuidWrapper},
     utils::{bigint_to_i64, js_error},
 };
 
@@ -185,9 +185,8 @@ impl QueryParameterWrapper {
 
 #[napi]
 impl PreparedStatementWrapper {
-    /// Get array of expected types for this prepared statement.
     #[napi]
-    pub fn get_expected_types(&self) -> Vec<CqlType> {
+    pub fn get_expected_types(&self) -> Vec<ComplexType> {
         self.prepared
             .get_variable_col_specs()
             .iter()
