@@ -4,9 +4,8 @@ use napi::{
     Error, Status,
 };
 use scylla::{
-    frame::response::result::{ColumnType, CqlValue},
-    transport::legacy_query_result::IntoLegacyQueryResultError,
-    LegacyQueryResult, QueryResult,
+    frame::response::result::{ColumnType, CqlValue, Row},
+    QueryResult,
 };
 
 use crate::types::duration::DurationWrapper;
@@ -15,7 +14,7 @@ use crate::utils::js_error;
 
 #[napi]
 pub struct QueryResultWrapper {
-    internal: LegacyQueryResult,
+    internal: QueryResult,
 }
 
 #[napi]
@@ -69,29 +68,31 @@ pub enum CqlType {
 
 #[napi]
 impl QueryResultWrapper {
-    pub fn from_query(
-        internal: QueryResult,
-    ) -> Result<QueryResultWrapper, IntoLegacyQueryResultError> {
-        Ok(QueryResultWrapper {
-            internal: internal.into_legacy_result()?,
-        })
+    pub fn from_query(internal: QueryResult) -> QueryResultWrapper {
+        QueryResultWrapper { internal }
     }
 
     #[napi]
     pub fn get_rows(&self) -> Option<Vec<RowWrapper>> {
-        let rows = match &self.internal.rows {
-            Some(r) => r,
-            None => {
+        let r2 = &self.internal.clone().into_rows_result();
+        let r2 = match r2 {
+            Ok(v) => v,
+            Err(_) => {
                 return None;
             }
         };
-
+        let rows = match r2.rows::<Row>() {
+            Ok(v) => v,
+            Err(_) => {
+                return None;
+            }
+        }
+        .flatten();
         Some(
-            rows.iter()
-                .map(|f| RowWrapper {
-                    internal: f.columns.clone(),
-                })
-                .collect(),
+            rows.map(|f| RowWrapper {
+                internal: f.columns.clone(),
+            })
+            .collect(),
         )
     }
 
@@ -99,7 +100,10 @@ impl QueryResultWrapper {
     /// Get the names of the columns in order
     pub fn get_columns_names(&self) -> Vec<String> {
         self.internal
-            .col_specs()
+            .clone()
+            .into_rows_result()
+            .unwrap()
+            .column_specs()
             .iter()
             .map(|f| f.name().to_owned())
             .collect()
@@ -107,26 +111,31 @@ impl QueryResultWrapper {
 
     #[napi]
     pub fn get_columns_specs(&self) -> Vec<MetaColumnWrapper> {
-        self.internal
-            .col_specs()
-            .iter()
-            .map(|f| MetaColumnWrapper {
-                ksname: f.table_spec().ks_name().to_owned(),
-                tablename: f.table_spec().table_name().to_owned(),
-                name: f.name().to_owned(),
-                type_code: map_column_type_to_cql_type(&f.typ()),
-            })
-            .collect()
+        match self.internal.clone().into_rows_result() {
+            Ok(v) => v,
+            Err(_) => {
+                return vec![];
+            }
+        }
+        .column_specs()
+        .iter()
+        .map(|f| MetaColumnWrapper {
+            ksname: f.table_spec().ks_name().to_owned(),
+            tablename: f.table_spec().table_name().to_owned(),
+            name: f.name().to_owned(),
+            type_code: map_column_type_to_cql_type(f.typ()),
+        })
+        .collect()
     }
 
     #[napi]
     pub fn get_warnings(&self) -> Vec<String> {
-        self.internal.warnings.clone()
+        self.internal.warnings().map(|e| e.to_owned()).collect()
     }
 
     #[napi]
     pub fn get_trace_id(&self) -> Option<UuidWrapper> {
-        self.internal.tracing_id.map(UuidWrapper::from_cql_uuid)
+        self.internal.tracing_id().map(UuidWrapper::from_cql_uuid)
     }
 }
 

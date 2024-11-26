@@ -45,7 +45,7 @@ impl SessionWrapper {
             .query_unpaged(query, &[])
             .await
             .map_err(err_to_napi)?;
-        Ok(QueryResultWrapper::from_query(query).map_err(err_to_napi)?)
+        Ok(QueryResultWrapper::from_query(query))
     }
 
     #[napi]
