@@ -1,12 +1,15 @@
-use crate::types::{time_uuid::TimeUuidWrapper, uuid::UuidWrapper};
+use crate::{
+    types::{time_uuid::TimeUuidWrapper, uuid::UuidWrapper},
+    utils::err_to_napi,
+};
 use napi::{
     bindgen_prelude::{BigInt, Buffer},
     Error, Status,
 };
 use scylla::{
-    frame::response::result::{ColumnType, CqlValue},
-    transport::legacy_query_result::IntoLegacyQueryResultError,
-    LegacyQueryResult, QueryResult,
+    frame::response::result::{ColumnType, CqlValue, Row},
+    transport::query_result::IntoRowsResultError,
+    QueryResult, QueryRowsResult,
 };
 
 use crate::types::duration::DurationWrapper;
@@ -14,9 +17,14 @@ use crate::types::inet::InetAddressWrapper;
 use crate::types::local_time::LocalTimeWrapper;
 use crate::utils::js_error;
 
+enum QueryResultVariant {
+    EmptyResult(QueryResult),
+    RowsResult(QueryRowsResult),
+}
+
 #[napi]
 pub struct QueryResultWrapper {
-    internal: LegacyQueryResult,
+    internal: QueryResultVariant,
 }
 
 #[napi]
@@ -70,64 +78,85 @@ pub enum CqlType {
 
 #[napi]
 impl QueryResultWrapper {
-    pub fn from_query(
-        internal: QueryResult,
-    ) -> Result<QueryResultWrapper, IntoLegacyQueryResultError> {
-        Ok(QueryResultWrapper {
-            internal: internal.into_legacy_result()?,
-        })
+    pub fn from_query(internal: QueryResult) -> napi::Result<QueryResultWrapper> {
+        let value = match internal.into_rows_result() {
+            Ok(v) => QueryResultVariant::RowsResult(v),
+            Err(IntoRowsResultError::ResultNotRows(v)) => QueryResultVariant::EmptyResult(v),
+            Err(IntoRowsResultError::ResultMetadataLazyDeserializationError(e)) => {
+                return Err(err_to_napi(e));
+            }
+        };
+        Ok(QueryResultWrapper { internal: value })
     }
 
     #[napi]
-    pub fn get_rows(&self) -> Option<Vec<RowWrapper>> {
-        let rows = match &self.internal.rows {
-            Some(r) => r,
-            None => {
-                return None;
+    pub fn get_rows(&self) -> napi::Result<Option<Vec<RowWrapper>>> {
+        let r2 = match &self.internal {
+            QueryResultVariant::RowsResult(v) => v,
+            QueryResultVariant::EmptyResult(_) => {
+                return Ok(None);
             }
         };
 
-        Some(
-            rows.iter()
-                .map(|f| RowWrapper {
-                    internal: f.columns.clone(),
-                })
-                .collect(),
-        )
+        let rows = r2.rows::<Row>()
+            .expect("Type check against the Row type has failed; this is a bug in the underlying Rust driver");
+        Ok(Some(
+            rows.map(|f| RowWrapper {
+                // TODO: Correctly handle such errors
+                internal: f.expect("Unhandled row Deserialization Error ").columns,
+            })
+            .collect(),
+        ))
     }
 
     #[napi]
     /// Get the names of the columns in order
     pub fn get_columns_names(&self) -> Vec<String> {
-        self.internal
-            .col_specs()
-            .iter()
-            .map(|f| f.name().to_owned())
-            .collect()
+        match &self.internal {
+            QueryResultVariant::RowsResult(v) => v,
+            QueryResultVariant::EmptyResult(_) => {
+                return vec![];
+            }
+        }
+        .column_specs()
+        .iter()
+        .map(|f| f.name().to_owned())
+        .collect()
     }
 
     #[napi]
     pub fn get_columns_specs(&self) -> Vec<MetaColumnWrapper> {
-        self.internal
-            .col_specs()
-            .iter()
-            .map(|f| MetaColumnWrapper {
-                ksname: f.table_spec().ks_name().to_owned(),
-                tablename: f.table_spec().table_name().to_owned(),
-                name: f.name().to_owned(),
-                type_code: map_column_type_to_cql_type(f.typ()),
-            })
-            .collect()
+        match &self.internal {
+            QueryResultVariant::RowsResult(v) => v,
+            QueryResultVariant::EmptyResult(_) => {
+                return vec![];
+            }
+        }
+        .column_specs()
+        .iter()
+        .map(|f| MetaColumnWrapper {
+            ksname: f.table_spec().ks_name().to_owned(),
+            tablename: f.table_spec().table_name().to_owned(),
+            name: f.name().to_owned(),
+            type_code: map_column_type_to_cql_type(f.typ()),
+        })
+        .collect()
     }
 
     #[napi]
     pub fn get_warnings(&self) -> Vec<String> {
-        self.internal.warnings.clone()
+        match &self.internal {
+            QueryResultVariant::RowsResult(v) => v.warnings().map(|e| e.to_owned()).collect(),
+            QueryResultVariant::EmptyResult(v) => v.warnings().map(|e| e.to_owned()).collect(),
+        }
     }
 
     #[napi]
     pub fn get_trace_id(&self) -> Option<UuidWrapper> {
-        self.internal.tracing_id.map(UuidWrapper::from_cql_uuid)
+        match &self.internal {
+            QueryResultVariant::RowsResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
+            QueryResultVariant::EmptyResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
+        }
     }
 }
 
