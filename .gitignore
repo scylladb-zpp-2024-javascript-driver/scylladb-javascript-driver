@@ -2,6 +2,8 @@
 index.js
 index.d.ts
 
+npm/
+
 lib-cov
 *.seed
 *.log
