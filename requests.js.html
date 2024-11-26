@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: requests.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: requests.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+const util = require("util");
+
+const { FrameWriter } = require("./writers");
+const types = require("./types");
+const utils = require("./utils");
+const { ExecutionOptions } = require("./execution-options");
+const packageInfo = require("../package.json");
+
+/**
+ * Options for the execution of the query / prepared statement
+ * @private
+ */
+const queryFlag = {
+    values: 0x01,
+    skipMetadata: 0x02,
+    pageSize: 0x04,
+    withPagingState: 0x08,
+    withSerialConsistency: 0x10,
+    withDefaultTimestamp: 0x20,
+    withNameForValues: 0x40,
+    withKeyspace: 0x80,
+    withPageSizeBytes: 0x40000000,
+    withContinuousPaging: 0x80000000,
+};
+
+/**
+ * Options for the execution of a batch request from protocol v3 and above
+ * @private
+ */
+const batchFlag = {
+    withSerialConsistency: 0x10,
+    withDefaultTimestamp: 0x20,
+    withNameForValues: 0x40,
+    withKeyspace: 0x80,
+};
+
+/**
+ * Options for execution of a prepare request from protocol DSE_V2 and above
+ * @private
+ */
+const prepareFlag = {
+    withKeyspace: 0x01,
+};
+
+const batchType = {
+    logged: 0,
+    unlogged: 1,
+    counter: 2,
+};
+
+/**
+ * Abstract class Request
+ */
+class Request {
+    constructor() {
+        this.length = 0;
+    }
+
+    /**
+     * @abstract
+     * @param {Encoder} encoder
+     * @param {Number} streamId
+     * @throws {TypeError}
+     * @returns {Buffer}
+     */
+    write(encoder, streamId) {
+        throw new Error("Method must be implemented");
+    }
+
+    /**
+     * Creates a new instance using the same constructor as the current instance, copying the properties.
+     * @return {Request}
+     */
+    clone() {
+        const newRequest = new this.constructor();
+        const keysArray = Object.keys(this);
+        for (let i = 0; i &lt; keysArray.length; i++) {
+            const key = keysArray[i];
+            newRequest[key] = this[key];
+        }
+        return newRequest;
+    }
+}
+
+/**
+ * Writes a execute query (given a prepared queryId)
+ * @param {String} query
+ * @param {Buffer} queryId
+ * @param {Array} params
+ * @param options
+ */
+class ExecuteRequest extends Request {
+    /**
+     * @param {String} query
+     * @param queryId
+     * @param params
+     * @param {ExecutionOptions} execOptions
+     * @param meta
+     */
+    constructor(query, queryId, params, execOptions, meta) {
+        super();
+
+        this.query = query;
+        this.queryId = queryId;
+        this.params = params;
+        this.meta = meta;
+        this.options = execOptions || ExecutionOptions.empty();
+        this.consistency =
+            this.options.getConsistency() || types.consistencies.one;
+        // Only QUERY request parameters are encoded as named parameters
+        // EXECUTE request parameters are always encoded as positional parameters
+        this.namedParameters = false;
+    }
+
+    getParamType(index) {
+        const columnInfo = this.meta.columns[index];
+        return columnInfo ? columnInfo.type : null;
+    }
+
+    write(encoder, streamId) {
+        // v1: &lt;queryId>
+        //      &lt;n>&lt;value_1>....&lt;value_n>&lt;consistency>
+        // v2: &lt;queryId>
+        //      &lt;consistency>&lt;flags>[&lt;n>&lt;value_1>...&lt;value_n>][&lt;result_page_size>][&lt;paging_state>][&lt;serial_consistency>]
+        // v3: &lt;queryId>
+        //      &lt;consistency>&lt;flags>[&lt;n>[name_1]&lt;value_1>...[name_n]&lt;value_n>][&lt;result_page_size>][&lt;paging_state>][&lt;serial_consistency>][&lt;timestamp>]
+        const frameWriter = new FrameWriter(types.opcodes.execute);
+        let headerFlags = this.options.isQueryTracing()
+            ? types.frameFlags.tracing
+            : 0;
+        if (this.options.getCustomPayload()) {
+            // The body may contain the custom payload
+            headerFlags |= types.frameFlags.customPayload;
+            frameWriter.writeCustomPayload(this.options.getCustomPayload());
+        }
+        frameWriter.writeShortBytes(this.queryId);
+        if (
+            types.protocolVersion.supportsResultMetadataId(
+                encoder.protocolVersion,
+            )
+        ) {
+            frameWriter.writeShortBytes(this.meta.resultId);
+        }
+        this.writeQueryParameters(frameWriter, encoder);
+
+        // Record the length of the body of the request before writing it
+        this.length = frameWriter.bodyLength;
+
+        return frameWriter.write(
+            encoder.protocolVersion,
+            streamId,
+            headerFlags,
+        );
+    }
+
+    /**
+     * Writes v1 and v2 execute query parameters
+     * @param {FrameWriter} frameWriter
+     * @param {Encoder} encoder
+     * @param {Boolean} [isQuery] True if query, otherwise assumed to be execute request.
+     */
+    writeQueryParameters(frameWriter, encoder, isQuery) {
+        // v1: &lt;n>&lt;value_1>....&lt;value_n>&lt;consistency>
+        // v2: &lt;consistency>&lt;flags>[&lt;n>&lt;value_1>...&lt;value_n>][&lt;result_page_size>][&lt;paging_state>][&lt;serial_consistency>]
+        // v3: &lt;consistency>&lt;flags>[&lt;n>[name_1]&lt;value_1>...[name_n]&lt;value_n>][&lt;result_page_size>][&lt;paging_state>][&lt;serial_consistency>][&lt;timestamp>]
+        // dse_v1: &lt;consistency>&lt;flags>[&lt;n>[name_1]&lt;value_1>...[name_n]&lt;value_n>][&lt;result_page_size>][&lt;paging_state>]
+        //          [&lt;serial_consistency>][&lt;timestamp>][continuous_paging_options]
+        // dse_v2: &lt;consistency>&lt;flags>[&lt;n>[name_1]&lt;value_1>...[name_n]&lt;value_n>][&lt;result_page_size>][&lt;paging_state>]
+        //          [&lt;serial_consistency>][&lt;timestamp>][keyspace][continuous_paging_options]
+        let flags = 0;
+
+        const timestamp = this.options.getOrGenerateTimestamp();
+
+        if (types.protocolVersion.supportsPaging(encoder.protocolVersion)) {
+            flags |= this.params &amp;&amp; this.params.length ? queryFlag.values : 0;
+            flags |= this.options.getFetchSize() > 0 ? queryFlag.pageSize : 0;
+            flags |= this.options.getPageState()
+                ? queryFlag.withPagingState
+                : 0;
+            flags |= this.options.getSerialConsistency()
+                ? queryFlag.withSerialConsistency
+                : 0;
+            flags |=
+                timestamp !== null &amp;&amp; timestamp !== undefined
+                    ? queryFlag.withDefaultTimestamp
+                    : 0;
+            flags |= this.namedParameters ? queryFlag.withNameForValues : 0;
+
+            // Don't inject keyspace for EXECUTE requests as inherited from prepared statement.
+            const supportsKeyspace =
+                isQuery &amp;&amp;
+                types.protocolVersion.supportsKeyspaceInRequest(
+                    encoder.protocolVersion,
+                );
+            flags |=
+                supportsKeyspace &amp;&amp; this.options.getKeyspace()
+                    ? queryFlag.withKeyspace
+                    : 0;
+
+            frameWriter.writeShort(this.consistency);
+            if (
+                types.protocolVersion.uses4BytesQueryFlags(
+                    encoder.protocolVersion,
+                )
+            ) {
+                frameWriter.writeInt(flags);
+            } else {
+                frameWriter.writeByte(flags);
+            }
+        }
+
+        if (this.params &amp;&amp; this.params.length) {
+            frameWriter.writeShort(this.params.length);
+            for (let i = 0; i &lt; this.params.length; i++) {
+                let paramValue = this.params[i];
+                if (flags &amp; queryFlag.withNameForValues) {
+                    // parameter is composed by name / value
+                    frameWriter.writeString(paramValue.name);
+                    paramValue = paramValue.value;
+                }
+                frameWriter.writeBytes(
+                    encoder.encode(paramValue, this.getParamType(i)),
+                );
+            }
+        }
+
+        if (!types.protocolVersion.supportsPaging(encoder.protocolVersion)) {
+            if (!this.params || !this.params.length) {
+                // zero parameters
+                frameWriter.writeShort(0);
+            }
+            frameWriter.writeShort(this.consistency);
+            return;
+        }
+        if (flags &amp; queryFlag.pageSize) {
+            frameWriter.writeInt(this.options.getFetchSize());
+        }
+        if (flags &amp; queryFlag.withPagingState) {
+            frameWriter.writeBytes(this.options.getPageState());
+        }
+        if (flags &amp; queryFlag.withSerialConsistency) {
+            frameWriter.writeShort(this.options.getSerialConsistency());
+        }
+        if (flags &amp; queryFlag.withDefaultTimestamp) {
+            frameWriter.writeLong(timestamp);
+        }
+        if (flags &amp; queryFlag.withKeyspace) {
+            frameWriter.writeString(this.options.getKeyspace());
+        }
+    }
+}
+
+class QueryRequest extends ExecuteRequest {
+    /**
+     * @param {String} query
+     * @param params
+     * @param {ExecutionOptions} [execOptions]
+     * @param {Boolean} [namedParameters]
+     */
+    constructor(query, params, execOptions, namedParameters) {
+        super(query, null, params, execOptions, null);
+        this.hints = this.options.getHints() || utils.emptyArray;
+        this.namedParameters = namedParameters;
+    }
+
+    getParamType(index) {
+        return this.hints[index];
+    }
+
+    write(encoder, streamId) {
+        // v1: &lt;query>&lt;consistency>
+        // v2: &lt;query>
+        //      &lt;consistency>&lt;flags>[&lt;n>&lt;value_1>...&lt;value_n>][&lt;result_page_size>][&lt;paging_state>][&lt;serial_consistency>]
+        // v3: &lt;query>
+        //      &lt;consistency>&lt;flags>[&lt;n>[name_1]&lt;value_1>...[name_n]&lt;value_n>][&lt;result_page_size>][&lt;paging_state>][&lt;serial_consistency>][&lt;timestamp>]
+        const frameWriter = new FrameWriter(types.opcodes.query);
+        let headerFlags = this.options.isQueryTracing()
+            ? types.frameFlags.tracing
+            : 0;
+        if (this.options.getCustomPayload()) {
+            // The body may contain the custom payload
+            headerFlags |= types.frameFlags.customPayload;
+            frameWriter.writeCustomPayload(this.options.getCustomPayload());
+        }
+
+        frameWriter.writeLString(this.query);
+
+        if (!types.protocolVersion.supportsPaging(encoder.protocolVersion)) {
+            frameWriter.writeShort(this.consistency);
+        } else {
+            // Use the same fields as the execute writer
+            this.writeQueryParameters(frameWriter, encoder, true);
+        }
+
+        // Record the length of the body of the request before writing it
+        this.length = frameWriter.bodyLength;
+
+        return frameWriter.write(
+            encoder.protocolVersion,
+            streamId,
+            headerFlags,
+        );
+    }
+}
+
+class PrepareRequest extends Request {
+    constructor(query, keyspace) {
+        super();
+        this.query = query;
+        this.keyspace = keyspace;
+    }
+
+    write(encoder, streamId) {
+        const frameWriter = new FrameWriter(types.opcodes.prepare);
+        frameWriter.writeLString(this.query);
+        if (
+            types.protocolVersion.supportsPrepareFlags(encoder.protocolVersion)
+        ) {
+            const flags =
+                this.keyspace &amp;&amp;
+                types.protocolVersion.supportsKeyspaceInRequest(
+                    encoder.protocolVersion,
+                )
+                    ? prepareFlag.withKeyspace
+                    : 0;
+            frameWriter.writeInt(flags);
+            if (flags &amp; prepareFlag.withKeyspace) {
+                frameWriter.writeString(this.keyspace);
+            }
+        }
+        return frameWriter.write(encoder.protocolVersion, streamId);
+    }
+}
+
+class StartupRequest extends Request {
+    /**
+     * Creates a new instance of {@link StartupRequest}.
+     * @param {Object} [options]
+     * @param [options.cqlVersion]
+     * @param [options.noCompact]
+     * @param [options.clientId]
+     * @param [options.applicationName]
+     * @param [options.applicationVersion]
+     */
+    constructor(options) {
+        super();
+        this.options = options || {};
+    }
+
+    write(encoder, streamId) {
+        const frameWriter = new FrameWriter(types.opcodes.startup);
+
+        const startupOptions = {
+            CQL_VERSION: this.options.cqlVersion || "3.0.0",
+            DRIVER_NAME: packageInfo.description,
+            DRIVER_VERSION: packageInfo.version,
+        };
+
+        if (this.options.noCompact) {
+            startupOptions["NO_COMPACT"] = "true";
+        }
+
+        if (this.options.clientId) {
+            startupOptions["CLIENT_ID"] = this.options.clientId.toString();
+        }
+
+        if (this.options.applicationName) {
+            startupOptions["APPLICATION_NAME"] = this.options.applicationName;
+        }
+
+        if (this.options.applicationVersion) {
+            startupOptions["APPLICATION_VERSION"] =
+                this.options.applicationVersion;
+        }
+
+        frameWriter.writeStringMap(startupOptions);
+        return frameWriter.write(encoder.protocolVersion, streamId);
+    }
+}
+
+class RegisterRequest extends Request {
+    constructor(events) {
+        super();
+        this.events = events;
+    }
+
+    write(encoder, streamId) {
+        const frameWriter = new FrameWriter(types.opcodes.register);
+        frameWriter.writeStringList(this.events);
+        return frameWriter.write(encoder.protocolVersion, streamId);
+    }
+}
+
+/**
+ * Represents an AUTH_RESPONSE request
+ * @param {Buffer} token
+ */
+class AuthResponseRequest extends Request {
+    constructor(token) {
+        super();
+        this.token = token;
+    }
+
+    write(encoder, streamId) {
+        const frameWriter = new FrameWriter(types.opcodes.authResponse);
+        frameWriter.writeBytes(this.token);
+        return frameWriter.write(encoder.protocolVersion, streamId);
+    }
+}
+
+/**
+ * Represents a protocol v1 CREDENTIALS request message
+ */
+class CredentialsRequest extends Request {
+    constructor(username, password) {
+        super();
+        this.username = username;
+        this.password = password;
+    }
+
+    write(encoder, streamId) {
+        const frameWriter = new FrameWriter(types.opcodes.credentials);
+        frameWriter.writeStringMap({
+            username: this.username,
+            password: this.password,
+        });
+        return frameWriter.write(encoder.protocolVersion, streamId);
+    }
+}
+
+class BatchRequest extends Request {
+    /**
+     * Creates a new instance of BatchRequest.
+     * @param {Array.&lt;{query, params, info}>} queries Array of objects with the properties query and params
+     * @param {ExecutionOptions} execOptions
+     */
+    constructor(queries, execOptions) {
+        super();
+        this.queries = queries;
+        this.options = execOptions;
+        this.hints = execOptions.getHints() || utils.emptyArray;
+        this.type = batchType.logged;
+
+        if (execOptions.isBatchCounter()) {
+            this.type = batchType.counter;
+        } else if (!execOptions.isBatchLogged()) {
+            this.type = batchType.unlogged;
+        }
+    }
+
+    /**
+     * Writes a batch request
+     */
+    write(encoder, streamId) {
+        // v2: &lt;type>&lt;n>&lt;query_1>...&lt;query_n>&lt;consistency>
+        // v3: &lt;type>&lt;n>&lt;query_1>...&lt;query_n>&lt;consistency>&lt;flags>[&lt;serial_consistency>][&lt;timestamp>]
+        // dseV1+: similar to v3/v4, flags is an int instead of a byte
+        if (!this.queries || !(this.queries.length > 0)) {
+            throw new TypeError(
+                util.format("Invalid queries provided %s", this.queries),
+            );
+        }
+        const frameWriter = new FrameWriter(types.opcodes.batch);
+        let headerFlags = this.options.isQueryTracing()
+            ? types.frameFlags.tracing
+            : 0;
+        if (this.options.getCustomPayload()) {
+            // The body may contain the custom payload
+            headerFlags |= types.frameFlags.customPayload;
+            frameWriter.writeCustomPayload(this.options.getCustomPayload());
+        }
+        frameWriter.writeByte(this.type);
+        frameWriter.writeShort(this.queries.length);
+        const self = this;
+        this.queries.forEach(function eachQuery(item, i) {
+            const hints = self.hints[i];
+            const params = item.params || utils.emptyArray;
+            let getParamType;
+            if (item.queryId) {
+                // Contains prepared queries
+                frameWriter.writeByte(1);
+                frameWriter.writeShortBytes(item.queryId);
+                getParamType = (i) => item.meta.columns[i].type;
+            } else {
+                // Contains string queries
+                frameWriter.writeByte(0);
+                frameWriter.writeLString(item.query);
+                getParamType = hints ? (i) => hints[i] : () => null;
+            }
+
+            frameWriter.writeShort(params.length);
+            params.forEach((param, index) =>
+                frameWriter.writeBytes(
+                    encoder.encode(param, getParamType(index)),
+                ),
+            );
+        }, this);
+
+        frameWriter.writeShort(this.options.getConsistency());
+
+        if (types.protocolVersion.supportsTimestamp(encoder.protocolVersion)) {
+            // Batch flags
+            let flags = this.options.getSerialConsistency()
+                ? batchFlag.withSerialConsistency
+                : 0;
+            const timestamp = this.options.getOrGenerateTimestamp();
+            flags |=
+                timestamp !== null &amp;&amp; timestamp !== undefined
+                    ? batchFlag.withDefaultTimestamp
+                    : 0;
+
+            flags |=
+                this.options.getKeyspace() &amp;&amp;
+                types.protocolVersion.supportsKeyspaceInRequest(
+                    encoder.protocolVersion,
+                )
+                    ? batchFlag.withKeyspace
+                    : 0;
+
+            if (
+                types.protocolVersion.uses4BytesQueryFlags(
+                    encoder.protocolVersion,
+                )
+            ) {
+                frameWriter.writeInt(flags);
+            } else {
+                frameWriter.writeByte(flags);
+            }
+
+            if (flags &amp; batchFlag.withSerialConsistency) {
+                frameWriter.writeShort(this.options.getSerialConsistency());
+            }
+
+            if (flags &amp; batchFlag.withDefaultTimestamp) {
+                frameWriter.writeLong(timestamp);
+            }
+
+            if (flags &amp; batchFlag.withKeyspace) {
+                frameWriter.writeString(this.options.getKeyspace());
+            }
+        }
+
+        // Set the length of the body of the request before writing it
+        this.length = frameWriter.bodyLength;
+
+        return frameWriter.write(
+            encoder.protocolVersion,
+            streamId,
+            headerFlags,
+        );
+    }
+
+    clone() {
+        return new BatchRequest(this.queries, this.options);
+    }
+}
+
+function CancelRequest(operationId) {
+    this.streamId = null;
+    this.operationId = operationId;
+}
+
+util.inherits(CancelRequest, Request);
+
+CancelRequest.prototype.write = function (encoder, streamId) {
+    const frameWriter = new FrameWriter(types.opcodes.cancel);
+    frameWriter.writeInt(1);
+    frameWriter.writeInt(this.operationId);
+    return frameWriter.write(encoder.protocolVersion, streamId);
+};
+
+class OptionsRequest extends Request {
+    write(encoder, streamId) {
+        const frameWriter = new FrameWriter(types.opcodes.options);
+        return frameWriter.write(encoder.protocolVersion, streamId, 0);
+    }
+
+    clone() {
+        // since options has no unique state, simply return self.
+        return this;
+    }
+}
+
+const options = new OptionsRequest();
+
+exports.AuthResponseRequest = AuthResponseRequest;
+exports.BatchRequest = BatchRequest;
+exports.CancelRequest = CancelRequest;
+exports.CredentialsRequest = CredentialsRequest;
+exports.ExecuteRequest = ExecuteRequest;
+exports.PrepareRequest = PrepareRequest;
+exports.QueryRequest = QueryRequest;
+exports.Request = Request;
+exports.RegisterRequest = RegisterRequest;
+exports.StartupRequest = StartupRequest;
+exports.options = options;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="AuthResponseRequest.html">AuthResponseRequest</a></li><li><a href="BatchRequest.html">BatchRequest</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Connection.html">Connection</a></li><li><a href="ControlConnection.html">ControlConnection</a></li><li><a href="CredentialsRequest.html">CredentialsRequest</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecuteRequest.html">ExecuteRequest</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="FrameReader.html">FrameReader</a></li><li><a href="FrameWriter.html">FrameWriter</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostConnectionPool.html">HostConnectionPool</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="InsightsClient.html">InsightsClient</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Murmur3Tokenizer.html">Murmur3Tokenizer</a></li><li><a href="OperationState.html">OperationState</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="PrepareHandler.html">PrepareHandler</a></li><li><a href="QueryRequest.html">QueryRequest</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="RandomTokenizer.html">RandomTokenizer</a></li><li><a href="Request.html">Request</a></li><li><a href="RequestExecution.html">RequestExecution</a></li><li><a href="RequestHandler.html">RequestHandler</a></li><li><a href="StartupRequest.html">StartupRequest</a></li><li><a href="StreamIdStack.html">StreamIdStack</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="Tokenizer.html">Tokenizer</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="WriteQueue.html">WriteQueue</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-DseGssapiAuthProvider.html">DseGssapiAuthProvider</a></li><li><a href="module-auth-DsePlainTextAuthProvider.html">DsePlainTextAuthProvider</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Parser">Parser</a></li><li><a href="global.html#Protocol">Protocol</a></li><li><a href="global.html#ResultEmitter">ResultEmitter</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#defaultReleaseDelay">defaultReleaseDelay</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#errorCodes">errorCodes</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#fromSignedByte">fromSignedByte</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getDefaultOptions">getDefaultOptions</a></li><li><a href="global.html#groupSize">groupSize</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxGroupsFor2Bytes">maxGroupsFor2Bytes</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#releasableSize">releasableSize</a></li><li><a href="global.html#resultFlag">resultFlag</a></li><li><a href="global.html#rowBuffer">rowBuffer</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#shiftToGroup">shiftToGroup</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Tue Nov 26 2024 17:18:11 GMT+0000 (Coordinated Universal Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

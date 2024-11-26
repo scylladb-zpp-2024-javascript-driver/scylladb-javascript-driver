@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: mapping/query-generator.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: mapping/query-generator.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+
+const vm = require("vm");
+const qModule = require("./q");
+const QueryOperator = qModule.QueryOperator;
+const QueryAssignment = qModule.QueryAssignment;
+const types = require("../types");
+const dataTypes = types.dataTypes;
+
+const vmFileName = "gen-param-getter.js";
+
+/**
+ * Provides methods to generate a query and parameter handlers.
+ * @ignore
+ */
+class QueryGenerator {
+    /**
+     * Gets the SELECT query given the doc.
+     * @param {String} tableName
+     * @param {String} keyspace
+     * @param {Array} propertiesInfo
+     * @param {Array} fieldsInfo
+     * @param {Array} orderByColumns
+     * @param {Number|undefined} limit
+     * @return {string}
+     */
+    static getSelect(
+        tableName,
+        keyspace,
+        propertiesInfo,
+        fieldsInfo,
+        orderByColumns,
+        limit,
+    ) {
+        let query = "SELECT ";
+        query +=
+            fieldsInfo.length > 0
+                ? fieldsInfo.map((p) => `"${p.columnName}"`).join(", ")
+                : "*";
+        query += ` FROM ${keyspace}.${tableName}`;
+
+        if (propertiesInfo.length > 0) {
+            query += " WHERE ";
+            query += QueryGenerator._getConditionWithOperators(propertiesInfo);
+        }
+
+        if (orderByColumns.length > 0) {
+            query += " ORDER BY ";
+            query += orderByColumns
+                .map((order) => `"${order[0]}" ${order[1]}`)
+                .join(", ");
+        }
+
+        if (typeof limit === "number") {
+            query += " LIMIT ?";
+        }
+
+        return query;
+    }
+
+    static selectParamsGetter(propertiesInfo, limit) {
+        let scriptText =
+            "(function getParametersSelect(doc, docInfo, mappingInfo) {\n";
+        scriptText += "  return [";
+
+        scriptText += QueryGenerator._valueGetterExpression(propertiesInfo);
+
+        if (typeof limit === "number") {
+            if (propertiesInfo.length > 0) {
+                scriptText += ", ";
+            }
+            scriptText += `docInfo['limit']`;
+        }
+
+        // Finish return statement
+        scriptText += "];\n})";
+
+        const script = new vm.Script(scriptText, { filename: vmFileName });
+        return script.runInThisContext();
+    }
+
+    /**
+     * Gets the INSERT query and function to obtain the parameters, given the doc.
+     * @param {TableMetadata} table
+     * @param {String} keyspace
+     * @param {Array} propertiesInfo
+     * @param {Object} docInfo
+     * @param {Boolean|undefined} ifNotExists
+     * @return {{query: String, paramsGetter: Function, isIdempotent: Boolean}}
+     */
+    static getInsert(table, keyspace, propertiesInfo, docInfo, ifNotExists) {
+        const ttl = docInfo &amp;&amp; docInfo.ttl;
+
+        // Not all columns are contained in the table
+        const filteredPropertiesInfo = propertiesInfo.filter(
+            (pInfo) => table.columnsByName[pInfo.columnName] !== undefined,
+        );
+
+        return {
+            query: QueryGenerator._getInsertQuery(
+                table.name,
+                keyspace,
+                filteredPropertiesInfo,
+                ifNotExists,
+                ttl,
+            ),
+            paramsGetter: QueryGenerator._insertParamsGetter(
+                filteredPropertiesInfo,
+                docInfo,
+            ),
+            isIdempotent: !ifNotExists,
+        };
+    }
+
+    /**
+     * Gets the query for an insert statement.
+     * @param {String} tableName
+     * @param {String} keyspace
+     * @param {Array} propertiesInfo
+     * @param {Boolean} ifNotExists
+     * @param {Number|undefined} ttl
+     * @return {String}
+     */
+    static _getInsertQuery(
+        tableName,
+        keyspace,
+        propertiesInfo,
+        ifNotExists,
+        ttl,
+    ) {
+        let query = `INSERT INTO ${keyspace}.${tableName} (`;
+        query += propertiesInfo
+            .map((pInfo) => `"${pInfo.columnName}"`)
+            .join(", ");
+        query += ") VALUES (";
+        query += propertiesInfo.map(() => "?").join(", ");
+        query += ")";
+
+        if (ifNotExists === true) {
+            query += " IF NOT EXISTS";
+        }
+
+        if (typeof ttl === "number") {
+            query += " USING TTL ?";
+        }
+        return query;
+    }
+
+    static _insertParamsGetter(propertiesInfo, docInfo) {
+        let scriptText =
+            "(function getParametersInsert(doc, docInfo, mappingInfo) {\n";
+        scriptText += "  return [";
+
+        scriptText += QueryGenerator._valueGetterExpression(propertiesInfo);
+
+        if (docInfo &amp;&amp; typeof docInfo.ttl === "number") {
+            scriptText += `, docInfo['ttl']`;
+        }
+
+        // Finish return statement
+        scriptText += "];\n})";
+
+        const script = new vm.Script(scriptText, { filename: vmFileName });
+        return script.runInThisContext();
+    }
+
+    /**
+     * Gets the UPDATE query and function to obtain the parameters, given the doc.
+     * @param {TableMetadata} table
+     * @param {String} keyspace
+     * @param {Array} propertiesInfo
+     * @param {Object} docInfo
+     * @param {Array} when
+     * @param {Boolean|undefined} ifExists
+     * @return {{query: String, paramsGetter: Function, isIdempotent: Boolean, isCounter}}
+     */
+    static getUpdate(table, keyspace, propertiesInfo, docInfo, when, ifExists) {
+        const ttl = docInfo &amp;&amp; docInfo.ttl;
+        const primaryKeys = new Set(
+            table.partitionKeys.concat(table.clusteringKeys).map((c) => c.name),
+        );
+        let isIdempotent = true;
+        let isCounter = false;
+
+        // Not all columns are contained in the table
+        const filteredPropertiesInfo = propertiesInfo.filter((pInfo) => {
+            const column = table.columnsByName[pInfo.columnName];
+            if (column === undefined) {
+                return false;
+            }
+
+            if (
+                column.type.code === dataTypes.list &amp;&amp;
+                pInfo.value instanceof QueryAssignment
+            ) {
+                // Its not idempotent when list append/prepend
+                isIdempotent = false;
+            } else if (column.type.code === dataTypes.counter) {
+                // Any update on a counter table is not idempotent
+                isIdempotent = false;
+                isCounter = true;
+            }
+
+            return true;
+        });
+
+        return {
+            query: QueryGenerator._getUpdateQuery(
+                table.name,
+                keyspace,
+                primaryKeys,
+                filteredPropertiesInfo,
+                when,
+                ifExists,
+                ttl,
+            ),
+            isIdempotent: isIdempotent &amp;&amp; when.length === 0 &amp;&amp; !ifExists,
+            paramsGetter: QueryGenerator._updateParamsGetter(
+                primaryKeys,
+                filteredPropertiesInfo,
+                when,
+                ttl,
+            ),
+            isCounter,
+        };
+    }
+
+    /**
+     * Gets the query for an UPDATE statement.
+     * @param {String} tableName
+     * @param {String} keyspace
+     * @param {Set} primaryKeys
+     * @param {Array} propertiesInfo
+     * @param {Object} when
+     * @param {Boolean} ifExists
+     * @param {Number|undefined} ttl
+     */
+    static _getUpdateQuery(
+        tableName,
+        keyspace,
+        primaryKeys,
+        propertiesInfo,
+        when,
+        ifExists,
+        ttl,
+    ) {
+        let query = `UPDATE ${keyspace}.${tableName} `;
+
+        if (typeof ttl === "number") {
+            query += "USING TTL ? ";
+        }
+
+        query += "SET ";
+
+        query += propertiesInfo
+            .filter((p) => !primaryKeys.has(p.columnName))
+            .map((p) => {
+                if (p.value instanceof QueryAssignment) {
+                    if (p.value.inverted) {
+                        // e.g: prepend "col1 = ? + col1"
+                        return `"${p.columnName}" = ? ${p.value.sign} "${p.columnName}"`;
+                    }
+                    // e.g: increment "col1 = col1 + ?"
+                    return `"${p.columnName}" = "${p.columnName}" ${p.value.sign} ?`;
+                }
+
+                return `"${p.columnName}" = ?`;
+            })
+            .join(", ");
+
+        query += " WHERE ";
+        query += propertiesInfo
+            .filter((p) => primaryKeys.has(p.columnName))
+            .map((p) => `"${p.columnName}" = ?`)
+            .join(" AND ");
+
+        if (ifExists === true) {
+            query += " IF EXISTS";
+        } else if (when.length > 0) {
+            query += " IF " + QueryGenerator._getConditionWithOperators(when);
+        }
+
+        return query;
+    }
+
+    /**
+     * Returns a function to obtain the parameter values from a doc for an UPDATE statement.
+     * @param {Set} primaryKeys
+     * @param {Array} propertiesInfo
+     * @param {Array} when
+     * @param {Number|undefined} ttl
+     * @returns {Function}
+     */
+    static _updateParamsGetter(primaryKeys, propertiesInfo, when, ttl) {
+        let scriptText =
+            "(function getParametersUpdate(doc, docInfo, mappingInfo) {\n";
+        scriptText += "  return [";
+
+        if (typeof ttl === "number") {
+            scriptText += `docInfo['ttl'], `;
+        }
+
+        // Assignment clause
+        scriptText += QueryGenerator._assignmentGetterExpression(
+            propertiesInfo.filter((p) => !primaryKeys.has(p.columnName)),
+        );
+        scriptText += ", ";
+
+        // Where clause
+        scriptText += QueryGenerator._valueGetterExpression(
+            propertiesInfo.filter((p) => primaryKeys.has(p.columnName)),
+        );
+
+        // Condition clause
+        if (when.length > 0) {
+            scriptText +=
+                ", " +
+                QueryGenerator._valueGetterExpression(when, "docInfo.when");
+        }
+
+        // Finish return statement
+        scriptText += "];\n})";
+
+        const script = new vm.Script(scriptText, { filename: vmFileName });
+        return script.runInThisContext();
+    }
+
+    /**
+     * Gets the DELETE query and function to obtain the parameters, given the doc.
+     * @param {TableMetadata} table
+     * @param {String} keyspace
+     * @param {Array} propertiesInfo
+     * @param {Object} docInfo
+     * @param {Array} when
+     * @param {Boolean|undefined} ifExists
+     * @return {{query: String, paramsGetter: Function, isIdempotent}}
+     */
+    static getDelete(table, keyspace, propertiesInfo, docInfo, when, ifExists) {
+        const deleteOnlyColumns = docInfo &amp;&amp; docInfo.deleteOnlyColumns;
+        const primaryKeys = new Set(
+            table.partitionKeys.concat(table.clusteringKeys).map((c) => c.name),
+        );
+
+        const filteredPropertiesInfo = propertiesInfo.filter(
+            (pInfo) => table.columnsByName[pInfo.columnName] !== undefined,
+        );
+
+        return {
+            query: QueryGenerator._getDeleteQuery(
+                table.name,
+                keyspace,
+                primaryKeys,
+                filteredPropertiesInfo,
+                when,
+                ifExists,
+                deleteOnlyColumns,
+            ),
+            paramsGetter: QueryGenerator._deleteParamsGetter(
+                primaryKeys,
+                filteredPropertiesInfo,
+                when,
+            ),
+            isIdempotent: when.length === 0 &amp;&amp; !ifExists,
+        };
+    }
+
+    /**
+     * Gets the query for an UPDATE statement.
+     * @param {String} tableName
+     * @param {String} keyspace
+     * @param {Set} primaryKeys
+     * @param {Array} propertiesInfo
+     * @param {Array} when
+     * @param {Boolean} ifExists
+     * @param {Boolean} deleteOnlyColumns
+     * @private
+     * @return {String}
+     */
+    static _getDeleteQuery(
+        tableName,
+        keyspace,
+        primaryKeys,
+        propertiesInfo,
+        when,
+        ifExists,
+        deleteOnlyColumns,
+    ) {
+        let query = "DELETE";
+
+        if (deleteOnlyColumns) {
+            const columnsToDelete = propertiesInfo
+                .filter((p) => !primaryKeys.has(p.columnName))
+                .map((p) => `"${p.columnName}"`)
+                .join(", ");
+
+            if (columnsToDelete !== "") {
+                query += " " + columnsToDelete;
+            }
+        }
+
+        query += ` FROM ${keyspace}.${tableName} WHERE `;
+        query += propertiesInfo
+            .filter((p) => primaryKeys.has(p.columnName))
+            .map((p) => `"${p.columnName}" = ?`)
+            .join(" AND ");
+
+        if (ifExists === true) {
+            query += " IF EXISTS";
+        } else if (when.length > 0) {
+            query += " IF " + QueryGenerator._getConditionWithOperators(when);
+        }
+
+        return query;
+    }
+    /**
+     * Returns a function to obtain the parameter values from a doc for an UPDATE statement.
+     * @param {Set} primaryKeys
+     * @param {Array} propertiesInfo
+     * @param {Array} when
+     * @returns {Function}
+     */
+    static _deleteParamsGetter(primaryKeys, propertiesInfo, when) {
+        let scriptText =
+            "(function getParametersDelete(doc, docInfo, mappingInfo) {\n";
+        scriptText += "  return [";
+
+        // Where clause
+        scriptText += QueryGenerator._valueGetterExpression(
+            propertiesInfo.filter((p) => primaryKeys.has(p.columnName)),
+        );
+
+        // Condition clause
+        if (when.length > 0) {
+            scriptText +=
+                ", " +
+                QueryGenerator._valueGetterExpression(when, "docInfo.when");
+        }
+
+        // Finish return statement
+        scriptText += "];\n})";
+
+        const script = new vm.Script(scriptText, { filename: vmFileName });
+        return script.runInThisContext();
+    }
+
+    /**
+     * Gets a string containing the doc properties to get.
+     * @param {Array} propertiesInfo
+     * @param {String} [objectName='doc']
+     * @return {string}
+     * @private
+     */
+    static _valueGetterExpression(propertiesInfo, objectName) {
+        objectName = objectName || "doc";
+
+        return propertiesInfo
+            .map((p) =>
+                QueryGenerator._valueGetterSingle(
+                    `${objectName}['${p.propertyName}']`,
+                    p.propertyName,
+                    p.value,
+                    p.fromModel,
+                ),
+            )
+            .join(", ");
+    }
+
+    static _valueGetterSingle(prefix, propName, value, fromModelFn) {
+        let valueGetter = prefix;
+
+        if (value instanceof QueryOperator) {
+            if (value.hasChildValues) {
+                return (
+                    `${QueryGenerator._valueGetterSingle(`${prefix}.value[0]`, propName, value.value[0], fromModelFn)}` +
+                    `, ${QueryGenerator._valueGetterSingle(`${prefix}.value[1]`, propName, value.value[1], fromModelFn)}`
+                );
+            }
+
+            valueGetter = `${prefix}.value`;
+
+            if (value.isInOperator &amp;&amp; fromModelFn) {
+                // Transform each individual value
+                return `${valueGetter}.map(v => ${QueryGenerator._getMappingFunctionCall(propName, "v")})`;
+            }
+        }
+
+        return !fromModelFn
+            ? valueGetter
+            : QueryGenerator._getMappingFunctionCall(propName, valueGetter);
+    }
+
+    /**
+     * Gets a string containing the doc properties to SET, considering QueryAssignment instances.
+     * @param {Array} propertiesInfo
+     * @param {String} [prefix='doc']
+     * @return {string}
+     * @private
+     */
+    static _assignmentGetterExpression(propertiesInfo, prefix) {
+        prefix = prefix || "doc";
+
+        return propertiesInfo
+            .map((p) => {
+                const valueGetter = `${prefix}['${p.propertyName}']${p.value instanceof QueryAssignment ? ".value" : ""}`;
+                if (p.fromModel) {
+                    return QueryGenerator._getMappingFunctionCall(
+                        p.propertyName,
+                        valueGetter,
+                    );
+                }
+                return valueGetter;
+            })
+            .join(", ");
+    }
+
+    static _getConditionWithOperators(propertiesInfo) {
+        return propertiesInfo
+            .map((p) =>
+                QueryGenerator._getSingleCondition(p.columnName, p.value),
+            )
+            .join(" AND ");
+    }
+
+    static _getMappingFunctionCall(propName, valueGetter) {
+        return `mappingInfo.getFromModelFn('${propName}')(${valueGetter})`;
+    }
+
+    static _getSingleCondition(columnName, value) {
+        if (value instanceof QueryOperator) {
+            if (value.hasChildValues) {
+                return (
+                    `${QueryGenerator._getSingleCondition(columnName, value.value[0])}` +
+                    ` ${value.key} ${QueryGenerator._getSingleCondition(columnName, value.value[1])}`
+                );
+            }
+            return `"${columnName}" ${value.key} ?`;
+        }
+        return `"${columnName}" = ?`;
+    }
+}
+
+module.exports = QueryGenerator;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="AuthResponseRequest.html">AuthResponseRequest</a></li><li><a href="BatchRequest.html">BatchRequest</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Connection.html">Connection</a></li><li><a href="ControlConnection.html">ControlConnection</a></li><li><a href="CredentialsRequest.html">CredentialsRequest</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecuteRequest.html">ExecuteRequest</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="FrameReader.html">FrameReader</a></li><li><a href="FrameWriter.html">FrameWriter</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostConnectionPool.html">HostConnectionPool</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="InsightsClient.html">InsightsClient</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Murmur3Tokenizer.html">Murmur3Tokenizer</a></li><li><a href="OperationState.html">OperationState</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="PrepareHandler.html">PrepareHandler</a></li><li><a href="QueryRequest.html">QueryRequest</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="RandomTokenizer.html">RandomTokenizer</a></li><li><a href="Request.html">Request</a></li><li><a href="RequestExecution.html">RequestExecution</a></li><li><a href="RequestHandler.html">RequestHandler</a></li><li><a href="StartupRequest.html">StartupRequest</a></li><li><a href="StreamIdStack.html">StreamIdStack</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="Tokenizer.html">Tokenizer</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="WriteQueue.html">WriteQueue</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-DseGssapiAuthProvider.html">DseGssapiAuthProvider</a></li><li><a href="module-auth-DsePlainTextAuthProvider.html">DsePlainTextAuthProvider</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Parser">Parser</a></li><li><a href="global.html#Protocol">Protocol</a></li><li><a href="global.html#ResultEmitter">ResultEmitter</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#defaultReleaseDelay">defaultReleaseDelay</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#errorCodes">errorCodes</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#fromSignedByte">fromSignedByte</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getDefaultOptions">getDefaultOptions</a></li><li><a href="global.html#groupSize">groupSize</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxGroupsFor2Bytes">maxGroupsFor2Bytes</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#releasableSize">releasableSize</a></li><li><a href="global.html#resultFlag">resultFlag</a></li><li><a href="global.html#rowBuffer">rowBuffer</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#shiftToGroup">shiftToGroup</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Tue Nov 26 2024 17:18:11 GMT+0000 (Coordinated Universal Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
