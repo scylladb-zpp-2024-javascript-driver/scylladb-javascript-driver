@@ -6,3 +6,4 @@ pub mod time_uuid;
 pub mod type_hints;
 pub mod type_wrappers;
 pub mod uuid;
+pub mod tuple;
