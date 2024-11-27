@@ -52,6 +52,7 @@
     "build": "napi build --platform --release",
     "all-tests": "npm run unit && npm run integration_short && npm run integration_long",
     "unit": "./node_modules/.bin/mocha test/unit -t 5000 --recursive",
+    "unit-not-supported": "./node_modules/.bin/mocha test/unit-not-supported -t 5000 --recursive",
     "examples": "node ./examples/runner.js",
     "integration": "./node_modules/.bin/mocha test/integration/supported --recursive --exit",
     "integration-not-supported": "./node_modules/.bin/mocha test/integration/not-supported --recursive --exit",

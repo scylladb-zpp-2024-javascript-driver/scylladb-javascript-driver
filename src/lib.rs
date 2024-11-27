@@ -20,3 +20,8 @@ pub async fn test_connection(uri: String) -> String {
 
 // Link other file
 pub mod auth;
+pub mod options;
+pub mod result;
+pub mod session;
+pub mod tests;
+pub mod utils;
