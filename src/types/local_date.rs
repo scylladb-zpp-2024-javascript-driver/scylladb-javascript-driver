@@ -1,5 +1,6 @@
 use crate::utils::js_error;
 use scylla::frame::value::CqlDate;
+use std::{cmp::max, fmt};
 
 // Max and min date range of the Date class in JS.
 const MAX_JS_DATE: i32 = 100_000_000;
@@ -81,6 +82,11 @@ impl LocalDateWrapper {
         })
     }
 
+    #[napi(js_name = "toString")]
+    pub fn to_format(&self) -> String {
+        self.to_string()
+    }
+
     pub fn get_cql_date(&self) -> CqlDate {
         CqlDate(((1 << 31) + self.value) as u32)
     }
@@ -96,6 +102,43 @@ impl LocalDateWrapper {
             month: date.1,
             day: date.2,
             in_date: (MIN_JS_DATE..=MAX_JS_DATE).contains(&value),
+        }
+    }
+}
+
+impl fmt::Display for LocalDateWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.in_date {
+            if self.year.unwrap() < 0 {
+                let year_string = (self.year.unwrap().unsigned_abs()).to_string();
+                write!(
+                    f,
+                    "-{}{}",
+                    "0".repeat(max(4 - year_string.len() as i8, 0) as usize),
+                    year_string
+                )?;
+            } else {
+                let year_string = self.year.unwrap().to_string();
+                write!(
+                    f,
+                    "{}{}",
+                    "0".repeat(max(4 - year_string.len() as i8, 0) as usize),
+                    year_string
+                )?;
+            }
+            if self.month.unwrap() < 10 {
+                write!(f, "-0{}", self.month.unwrap())?;
+            } else {
+                write!(f, "-{}", self.month.unwrap())?;
+            }
+            if self.day.unwrap() < 10 {
+                write!(f, "-0{}", self.day.unwrap())?;
+            } else {
+                write!(f, "-{}", self.day.unwrap())?;
+            }
+            Ok(())
+        } else {
+            write!(f, "{}", self.value)
         }
     }
 }
