@@ -1,7 +1,6 @@
-use std::fmt;
-
 use crate::utils::js_error;
 use scylla::frame::value::CqlDate;
+use std::{cmp::max, fmt};
 
 // Max and min date range of the Date class in JS.
 const MAX_JS_DATE: i32 = 100_000_000;
@@ -26,7 +25,6 @@ impl LocalDateWrapper {
     /// Create a new object from the day, month and year.
     #[napi]
     pub fn new(day: i8, month: i8, year: i32) -> napi::Result<Self> {
-
         let date = Ymd::new(year, month, day)?;
 
         let value = date.to_days();
@@ -36,13 +34,12 @@ impl LocalDateWrapper {
             value,
             in_date: (MIN_JS_DATE..=MAX_JS_DATE).contains(&value),
         })
-
     }
 
     /// Create a new object from number of days since 01.01.1970.
     #[napi]
     pub fn new_day(value: i32) -> napi::Result<Self> {
-        let date = Ymd::from_days(value.into()).transpose()?;
+        let date = Ymd::from_days(value.into());
         Ok(LocalDateWrapper {
             value,
             date,
@@ -50,6 +47,10 @@ impl LocalDateWrapper {
         })
     }
 
+    #[napi(js_name = "toString")]
+    pub fn to_format(&self) -> String {
+        self.to_string()
+    }
 
     pub fn get_cql_date(&self) -> CqlDate {
         CqlDate(((1 << 31) + self.value) as u32)
@@ -57,11 +58,47 @@ impl LocalDateWrapper {
 
     pub fn from_cql_date(date: CqlDate) -> Self {
         let value: i32 = date.0 as i32 - (1 << 31);
-        let date = Ymd::from_days(value.into()).transpose();
+        let date = Ymd::from_days(value.into());
         LocalDateWrapper {
             value,
             date,
             in_date: (MIN_JS_DATE..=MAX_JS_DATE).contains(&value),
+        }
+    }
+}
+
+impl fmt::Display for LocalDateWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.date {
+            Some(date) => {
+                if date.year < 0 {
+                    write!(f, "-")?;
+                }
+                write!(
+                    f,
+                    "{}{}",
+                    "0".repeat(max(
+                        // source of code for number of digits: https://stackoverflow.com/a/69298721
+                        4 - (date.year.abs().checked_ilog10().unwrap_or(0) + 1) as i8,
+                        0
+                    ) as usize),
+                    date.year.abs()
+                )?;
+                if date.month < 10 {
+                    write!(f, "-0{}", date.month)?;
+                } else {
+                    write!(f, "-{}", date.month)?;
+                }
+                if date.day < 10 {
+                    write!(f, "-0{}", date.day)?;
+                } else {
+                    write!(f, "-{}", date.day)?;
+                }
+                Ok(())
+            }
+            None => {
+                write!(f, "{}", self.value)
+            }
         }
     }
 }
@@ -84,9 +121,7 @@ pub struct Ymd {
 }
 
 impl Ymd {
-
-    fn new(year: i32, month: i8, day: i8) -> Result<Ymd, DateError>
-    {
+    fn new(year: i32, month: i8, day: i8) -> Result<Ymd, DateError> {
         if !(1..=12).contains(&month) {
             return Err(DateError::InvalidMonth);
         }
@@ -130,7 +165,7 @@ impl Ymd {
     }
 
     /// Create a Ymd from the number of days since 01.01.1970.
-    fn from_days(mut n: i64) -> Option<Result<Self, DateError>> {
+    fn from_days(mut n: i64) -> Option<Self> {
         if !(MIN_JS_DATE..=MAX_JS_DATE).contains(&(n as i32)) {
             None
         } else {
@@ -161,7 +196,11 @@ impl Ymd {
             if is_leap_year(year) && n >= 60 {
                 n -= 1;
             } else if is_leap_year(year) && n > 31 {
-                return Some(Self::new( year, 2, (n - 30) as i8));
+                return Some(Ymd {
+                    year,
+                    month: 2,
+                    day: (n - 30) as i8,
+                });
             }
 
             let q = DAY_IN_MONTH // Find month.
@@ -172,12 +211,16 @@ impl Ymd {
                 .map(|(index, &_value)| index + 1)
                 .unwrap();
 
-            Some(Self::new(year, q as i8, (n - DAY_IN_MONTH[q - 1] as i64) as i8 + 1))
+            Some(Ymd {
+                year,
+                month: q as i8,
+                day: (n - DAY_IN_MONTH[q - 1] as i64) as i8 + 1,
+            })
         }
     }
 
-     /// Returns the number of days in a month.
-     fn days_in_month(month: i8, year: i32) -> i8 {
+    /// Returns the number of days in a month.
+    fn days_in_month(month: i8, year: i32) -> i8 {
         match month {
             1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
             4 | 6 | 9 | 11 => 30,
@@ -200,17 +243,19 @@ enum DateError {
 
 impl fmt::Display for DateError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-       write!(f, "{}", 
-        match self {
-            DateError::InvalidDay => "Invalid number of day",
-            DateError::InvalidMonth => "Invalid month",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                DateError::InvalidDay => "Invalid number of day",
+                DateError::InvalidMonth => "Invalid month",
+            }
+        )
     }
 }
 
 impl From<DateError> for napi::Error {
-    fn from(value: DateError) -> Self
-    {
+    fn from(value: DateError) -> Self {
         js_error(value)
     }
 }
