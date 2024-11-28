@@ -1,5 +1,9 @@
-use crate::utils::js_error;
+use crate::utils::{js_error, CharCounter};
 use scylla::frame::value::CqlDate;
+use std::{
+    cmp::max,
+    fmt::{self, Write},
+};
 use thiserror::Error;
 
 // Max and min date range of the Date class in JS.
@@ -51,6 +55,11 @@ impl LocalDateWrapper {
         })
     }
 
+    #[napi(js_name = "toString")]
+    pub fn to_format(&self) -> String {
+        self.to_string()
+    }
+
     pub fn get_cql_date(&self) -> CqlDate {
         CqlDate(((1 << 31) + self.value) as u32)
     }
@@ -62,6 +71,41 @@ impl LocalDateWrapper {
             value,
             date,
             in_date: (MIN_JS_DATE..=MAX_JS_DATE).contains(&value),
+        }
+    }
+}
+
+impl fmt::Display for LocalDateWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.date {
+            Some(date) => {
+                if date.year < 0 {
+                    write!(f, "-")?;
+                }
+
+                let mut counter = CharCounter::new();
+                write!(&mut counter, "{}", date.year.abs())?;
+
+                for _ in 0..(max(4 - counter.count() as i8, 0)) {
+                    write!(f, "0")?;
+                }
+                write!(f, "{}", date.year.abs())?;
+
+                if date.month < 10 {
+                    write!(f, "-0{}", date.month)?;
+                } else {
+                    write!(f, "-{}", date.month)?;
+                }
+                if date.day < 10 {
+                    write!(f, "-0{}", date.day)?;
+                } else {
+                    write!(f, "-{}", date.day)?;
+                }
+                Ok(())
+            }
+            None => {
+                write!(f, "{}", self.value)
+            }
         }
     }
 }
