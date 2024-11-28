@@ -123,6 +123,11 @@ impl LocalDateWrapper {
         (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
     }
 
+    #[napi(js_name = "toString")]
+    pub fn to_format(&self) -> String {
+        self.to_string()
+    }
+
     /// Returns the number of days in a month.
     fn days_in_month(month: i8, year: i32) -> i8 {
         match month {
@@ -198,20 +203,18 @@ impl fmt::Display for LocalDateWrapper {
             write!(
                 f,
                 "{}-{}-{}",
-                if self.year.unwrap() >= 1000 || self.year.unwrap() <= -1000 {
-                    format!("{}", self.year.unwrap())
-                } else if self.year.unwrap() < 0 {
-                    let year_string = (-(self.year.unwrap())).to_string();
+                if self.year.unwrap() < 0 {
+                    let year_string = (self.year.unwrap().unsigned_abs()).to_string();
                     format!(
                         "-{}{}",
-                        "0".repeat(max(4 - year_string.len(), 0)),
+                        "0".repeat(max(4 - year_string.len() as i8, 0) as usize),
                         year_string
                     )
                 } else {
                     let year_string = self.year.unwrap().to_string();
                     format!(
                         "{}{}",
-                        "0".repeat(max(4 - year_string.len(), 0)),
+                        "0".repeat(max(4 - year_string.len() as i8, 0) as usize),
                         year_string
                     )
                 },
