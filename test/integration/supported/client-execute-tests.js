@@ -211,7 +211,8 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // No support for lists
+        // No support for custom Row (#117)
+        // TODO: Fix this test
         /* vit("2.0", "should guess known types", function (done) {
             const client = setupInfo.client;
             const columns =
