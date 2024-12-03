@@ -1,4 +1,4 @@
-use crate::types::{time_uuid::TimeUuidWrapper, uuid::UuidWrapper};
+use crate::types::{local_date::LocalDateWrapper, time_uuid::TimeUuidWrapper, uuid::UuidWrapper};
 use napi::{
     bindgen_prelude::{BigInt, Buffer},
     Error, Status,
@@ -158,7 +158,7 @@ impl CqlValueWrapper {
             CqlValue::Blob(_) => CqlType::Blob,
             CqlValue::Counter(_) => CqlType::Counter,
             CqlValue::Decimal(_) => CqlType::Decimal, // NOI
-            CqlValue::Date(_) => CqlType::Date,       // NOI
+            CqlValue::Date(_) => CqlType::Date,
             CqlValue::Double(_) => CqlType::Double,
             CqlValue::Duration(_) => CqlType::Duration,
             CqlValue::Empty => CqlType::Empty,
@@ -217,6 +217,14 @@ impl CqlValueWrapper {
         match self.inner.as_counter() {
             Some(r) => Ok(r.0.into()),
             None => Err(Self::generic_error("counter")),
+        }
+    }
+
+    #[napi]
+    pub fn get_local_date(&self) -> napi::Result<LocalDateWrapper> {
+        match self.inner.as_cql_date() {
+            Some(r) => Ok(LocalDateWrapper::from_cql_date(r)),
+            None => Err(Self::generic_error("local_date")),
         }
     }
 
