@@ -311,3 +311,202 @@ impl From<DateInvalid> for napi::Error {
         js_error(value)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_ymd_new() {
+        // correct date
+        assert!(Ymd::new(2025, 3, 1).is_ok());
+        // invalid month
+        let invalid_month_list: [Result<Ymd, DateInvalid>; 3] = [
+            Ymd::new(2028, 30, 10),
+            Ymd::new(0, 0, 0),
+            Ymd::new(12, 15, 13),
+        ];
+        for record in invalid_month_list {
+            assert!(record.is_err());
+            assert!(matches!(record, Err(DateInvalid::Month)));
+        }
+
+        // invalid day
+        let invalid_month_list: [Result<Ymd, DateInvalid>; 3] = [
+            Ymd::new(2025, 2, 29),
+            Ymd::new(0, 1, 0),
+            Ymd::new(2137, 12, 37),
+        ];
+        for record in invalid_month_list {
+            assert!(record.is_err());
+            assert!(matches!(record, Err(DateInvalid::Day)));
+        }
+    }
+
+    #[test]
+    fn test_ymd_days() {
+        // Values from previous logic in JS.
+        let tests: [(Ymd, i32); 19] = [
+            // simple examples
+            (
+                Ymd {
+                    year: 1970,
+                    month: 1,
+                    day: 1,
+                },
+                0,
+            ),
+            (
+                Ymd {
+                    year: 2025,
+                    month: 3,
+                    day: 1,
+                },
+                20148,
+            ),
+            (
+                Ymd {
+                    year: 1975,
+                    month: 11,
+                    day: 8,
+                },
+                2137,
+            ),
+            (
+                Ymd {
+                    year: 150196,
+                    month: 12,
+                    day: 26,
+                },
+                54138795,
+            ),
+            (
+                Ymd {
+                    year: 2005,
+                    month: 4,
+                    day: 2,
+                },
+                12875,
+            ),
+            (
+                Ymd {
+                    year: 44444,
+                    month: 3,
+                    day: 1,
+                },
+                15513370,
+            ),
+            (
+                Ymd {
+                    year: 21,
+                    month: 2,
+                    day: 1,
+                },
+                -711826,
+            ),
+            // Negative number of days.
+            (
+                Ymd {
+                    year: -3881,
+                    month: 2,
+                    day: 4,
+                },
+                -2137000,
+            ),
+            (
+                Ymd {
+                    year: 1969,
+                    month: 12,
+                    day: 31,
+                },
+                -1,
+            ),
+            (
+                Ymd {
+                    year: 0,
+                    month: 1,
+                    day: 1,
+                },
+                -719528,
+            ),
+            (
+                Ymd {
+                    year: 1968,
+                    month: 9,
+                    day: 27,
+                },
+                -461,
+            ),
+            (
+                Ymd {
+                    year: 1964,
+                    month: 2,
+                    day: 25,
+                },
+                -2137,
+            ),
+            (
+                Ymd {
+                    year: 404,
+                    month: 5,
+                    day: 3,
+                },
+                -571847,
+            ),
+            (
+                Ymd {
+                    year: 944,
+                    month: 2,
+                    day: 2,
+                },
+                -374707,
+            ),
+            // 29.02 before the epoch (negative and positive year) and after the epoch.
+            (
+                Ymd {
+                    year: -4,
+                    month: 2,
+                    day: 29,
+                },
+                -720930,
+            ),
+            (
+                Ymd {
+                    year: 4,
+                    month: 2,
+                    day: 29,
+                },
+                -718008,
+            ),
+            (
+                Ymd {
+                    year: 404,
+                    month: 2,
+                    day: 29,
+                },
+                -571911,
+            ),
+            (
+                Ymd {
+                    year: 2044,
+                    month: 2,
+                    day: 29,
+                },
+                27087,
+            ),
+            (
+                Ymd {
+                    year: 2048,
+                    month: 2,
+                    day: 29,
+                },
+                28548,
+            ),
+        ];
+
+        for test in tests {
+            assert_eq!(test.0.to_days(), test.1);
+            assert_eq!(Ymd::from_days(test.1.into()), Some(test.0));
+        }
+    }
+}
