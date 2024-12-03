@@ -4,7 +4,6 @@ const types = require("../../lib/types");
 const LocalDate = types.LocalDate;
 
 describe("LocalDate", function () {
-    const LocalDate = types.LocalDate;
     describe("new LocalDate", function () {
         it("should refuse to create LocalDate from invalid values.", function () {
             assert.throws(() => new types.LocalDate(), Error);
