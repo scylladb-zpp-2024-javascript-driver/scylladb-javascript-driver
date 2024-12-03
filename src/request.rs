@@ -9,7 +9,7 @@ use scylla::{
 
 use crate::{
     result::{map_column_type_to_cql_type, CqlType},
-    types::{duration::DurationWrapper, uuid::UuidWrapper},
+    types::{duration::DurationWrapper, local_date::LocalDateWrapper, uuid::UuidWrapper},
     utils::{bigint_to_i64, js_error},
 };
 
@@ -56,6 +56,13 @@ impl QueryParameterWrapper {
                 "Value casted into counter type shouldn't overflow i64",
             )?)),
         })
+    }
+
+    #[napi]
+    pub fn from_local_date(val: &LocalDateWrapper) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Date(val.get_cql_date()),
+        }
     }
 
     #[napi]
