@@ -1,6 +1,6 @@
 use crate::utils::js_error;
 use scylla::frame::value::CqlDate;
-use std::{cmp::max, fmt};
+use std::{cmp::max, fmt, num::ParseIntError};
 
 // Max and min date range of the Date class in JS.
 const MAX_JS_DATE: i32 = 100_000_000;
@@ -146,6 +146,41 @@ impl LocalDateWrapper {
 
     fn number_leap_years(n: i32) -> i32 {
         n / 4 - n / 100 + n / 400
+    }
+
+    /// Returns the number of days since 01.01.1970 based on a String representing the date.
+    #[napi]
+    pub fn from_string(value: String) -> napi::Result<i32> {
+        match value.chars().filter(|c| *c == '-').count() {
+            d if d < 2 => match value.parse::<i32>() {
+                Ok(val) => Ok(val),
+                Err(_) => Err(js_error("Invalid format of string")),
+            },
+            2 | 3 => {
+                let lambda = |s: String| -> Result<(i8, i8, i32), ParseIntError> {
+                    let mut cut: usize = 0;
+                    if s.starts_with('-') {
+                        cut = 1;
+                    }
+
+                    let parts: Vec<&str> = s.get(cut..).unwrap().split('-').collect();
+                    Ok((
+                        parts[2].parse::<i8>()?,
+                        parts[1].parse::<i8>()?,
+                        match cut {
+                            0 => parts[0].parse::<i32>()?,
+                            _ => -parts[0].parse::<i32>()?,
+                        },
+                    ))
+                };
+
+                match lambda(value) {
+                    Ok(s) => Ok(Self::days_since_epoch(s.0, s.1, s.2)),
+                    Err(_) => Err(js_error("Invalid parse of string")),
+                }
+            }
+            _ => Err(js_error("Invalid format of string")),
+        }
     }
 
     /// Checks if the given date is correct and returns Self.
