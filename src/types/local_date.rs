@@ -1,6 +1,7 @@
 use crate::utils::js_error;
+use regex::Regex;
 use scylla::frame::value::CqlDate;
-use std::{cmp::max, fmt};
+use std::{cmp::max, fmt, num::ParseIntError};
 
 // Max and min date range of the Date class in JS.
 const MAX_JS_DATE: i32 = 100_000_000;
@@ -63,6 +64,53 @@ impl LocalDateWrapper {
             value,
             date,
             in_date: (MIN_JS_DATE..=MAX_JS_DATE).contains(&value),
+        }
+    }
+
+    /// Returns the number of days since 01.01.1970 based on a String representing the date.
+    #[napi]
+    pub fn from_string(value: String) -> napi::Result<i32> {
+        match value.chars().filter(|c| *c == '-').count() {
+            d if d < 2 => match value.parse::<i32>() {
+                Ok(val) => Ok(val),
+                Err(_) => Err(js_error("Invalid format of string")),
+            },
+            2 | 3 => {
+                // based on https://stackoverflow.com/a/22061879
+                let pattern = r"^-?\d{1}\d*-(0?[1-9]|1[012])-(0?[1-9]|[12][0-9]|3[01])$";
+                let re = Regex::new(pattern).unwrap();
+                if !re.is_match(&value) {
+                    return Err(js_error("Invalid format of string"));
+                }
+
+                let lambda = |s: String| -> Result<(i32, i8, i8), ParseIntError> {
+                    let cut: usize = if s.starts_with('-') { 1 } else { 0 };
+
+                    let mut parts = s.get(cut..).unwrap().split('-');
+                    let year = parts.next().unwrap().parse::<i32>()?;
+                    Ok((
+                        match cut {
+                            0 => year,
+                            _ => -year,
+                        },
+                        parts.next().unwrap().parse::<i8>()?,
+                        parts.next().unwrap().parse::<i8>()?,
+                    ))
+                };
+
+                match lambda(value) {
+                    Ok(s) => {
+                        let date = Ymd {
+                            year: s.0,
+                            month: s.1,
+                            day: s.2,
+                        };
+                        Ok(date.to_days())
+                    }
+                    Err(_) => Err(js_error("Invalid parse of string")),
+                }
+            }
+            _ => Err(js_error("Invalid format of string")),
         }
     }
 }
