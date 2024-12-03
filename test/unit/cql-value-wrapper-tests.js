@@ -8,6 +8,7 @@ const Duration = require("../../lib/types/duration");
 const LocalTime = require("../../lib/types/local-time");
 const Long = require("long");
 const InetAddress = require("../../lib/types/inet-address");
+const LocalDate = require("../../lib/types/local-date");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -62,6 +63,18 @@ describe("Cql value wrapper", function () {
         /* Corresponding value:
         let element = CqlValue::Counter(Counter(i64::MAX)); */
         assert.strictEqual(value, maxI64);
+    });
+
+    it("should get LocalDate type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperDate();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Date);
+        let value = getCqlObject(element);
+        assert.instanceOf(value, LocalDate);
+        /* Corresponding value: 
+        let element = CqlValue::Date(CqlDate((1 << 31) + 7)); */
+        let expectedLocalDate = new LocalDate(7);
+        assert.equal(value.equals(expectedLocalDate), true);
     });
 
     it("should get double type correctly from napi", function () {
