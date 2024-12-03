@@ -1,5 +1,7 @@
 use crate::utils::{js_error, CharCounter};
+use regex::Regex;
 use scylla::frame::value::CqlDate;
+use std::sync::LazyLock;
 use std::{
     cmp::max,
     fmt::{self, Write},
@@ -15,6 +17,12 @@ const LEAP_YEAR_1970: i32 = 477;
 
 // Number of days to the beginning of each month.
 const DAY_IN_MONTH: [i32; 12] = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+
+// based on https://stackoverflow.com/a/22061879
+static DATE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^-?\d{1}\d*-(0?[1-9]|1[012])-(0?[1-9]|[12][0-9]|3[01])$")
+        .expect("Invalid regex pattern")
+});
 
 /// LocalDateWrapper holds two data representations - value and day, month, year.
 /// The class in JS has getters for both representations.
@@ -71,6 +79,50 @@ impl LocalDateWrapper {
             value,
             date,
             in_date: (MIN_JS_DATE..=MAX_JS_DATE).contains(&value),
+        }
+    }
+
+    /// Returns the number of days since 01.01.1970 based on a String representing the date.
+    #[napi]
+    pub fn from_string(value: String) -> napi::Result<i32> {
+        match value.chars().filter(|c| *c == '-').count() {
+            d if d < 2 => match value.parse::<i32>() {
+                Ok(val) => Ok(val),
+                Err(_) => Err(DateInvalid::Format.into()),
+            },
+            2 | 3 => {
+                if !DATE_REGEX.is_match(&value) {
+                    return Err(DateInvalid::Format.into());
+                }
+
+                let lambda = |s: String| -> Result<(i32, i8, i8), DateInvalid> {
+                    // From checking the regex and from removing the first '-',
+                    // it is clear that the date string has three '-'.
+                    let date = s.strip_prefix('-').unwrap_or(&s);
+
+                    let mut parts = date.split('-');
+                    let y = parts.next().and_then(|q| q.parse::<i32>().ok());
+                    let m = parts.next().and_then(|q| q.parse::<i8>().ok());
+                    let d = parts.next().and_then(|q| q.parse::<i8>().ok());
+                    let (Some(y), Some(m), Some(d)) = (y, m, d) else {
+                        return Err(DateInvalid::Format);
+                    };
+                    Ok((if s.starts_with('-') { -1 } else { 1 } * y, m, d))
+                };
+
+                match lambda(value) {
+                    Ok(s) => {
+                        let date = Ymd {
+                            year: s.0,
+                            month: s.1,
+                            day: s.2,
+                        };
+                        Ok(date.to_days())
+                    }
+                    Err(e) => Err(e.into()),
+                }
+            }
+            _ => Err(DateInvalid::Format.into()),
         }
     }
 }
@@ -250,6 +302,8 @@ enum DateInvalid {
     Month,
     #[error("Invalid number of day")]
     Day,
+    #[error("Invalid format of string")]
+    Format,
 }
 
 impl From<DateInvalid> for napi::Error {
