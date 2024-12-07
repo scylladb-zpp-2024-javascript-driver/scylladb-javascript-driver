@@ -1,6 +1,51 @@
-use std::{error::Error, fmt::Display};
+use std::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 use napi::{bindgen_prelude::BigInt, Status};
+
+/// Enum representing possible JavaScript error types.
+/// Error, RangeError, ReferenceError, SyntaxError, TypeError
+/// are native JavaScript error types and the rest are custom
+/// Datastax driver error types.
+pub enum ErrorType {
+    ArgumentError,
+    AuthenticationError,
+    BusyConnectionError,
+    DriverError,
+    DriverInternalError,
+    NoHostAvailableError,
+    NotSupportedError,
+    OperationTimedOutError,
+    ResponseError,
+    Error,
+    RangeError,
+    ReferenceError,
+    SyntaxError,
+    TypeError,
+}
+
+impl Display for ErrorType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            ErrorType::ArgumentError => "ArgumentError",
+            ErrorType::AuthenticationError => "AuthenticationError",
+            ErrorType::BusyConnectionError => "BusyConnectionError",
+            ErrorType::DriverError => "DriverError",
+            ErrorType::DriverInternalError => "DriverInternalError",
+            ErrorType::NoHostAvailableError => "NoHostAvailableError",
+            ErrorType::NotSupportedError => "NotSupportedError",
+            ErrorType::OperationTimedOutError => "OperationTimedOutError",
+            ErrorType::ResponseError => "ResponseError",
+            ErrorType::Error => "Error",
+            ErrorType::RangeError => "RangeError",
+            ErrorType::ReferenceError => "ReferenceError",
+            ErrorType::SyntaxError => "SyntaxError",
+            ErrorType::TypeError => "TypeError",
+        })
+    }
+}
 
 /// Convert rust error to napi::Error
 pub(crate) fn err_to_napi<T: Error>(e: T) -> napi::Error {
@@ -9,7 +54,12 @@ pub(crate) fn err_to_napi<T: Error>(e: T) -> napi::Error {
 
 /// Create napi::Error from a message
 pub(crate) fn js_error<T: Display>(e: T) -> napi::Error {
-    napi::Error::new(Status::GenericFailure, e.to_string())
+    js_typed_error(e, ErrorType::Error)
+}
+
+/// Create napi::Error from a message and error type
+pub(crate) fn js_typed_error<T: Display>(e: T, error_type: ErrorType) -> napi::Error {
+    napi::Error::new(Status::GenericFailure, format!("{}#{}", error_type, e))
 }
 
 /// Convert bigint to i64. Returns napi::Error if value doesn't fit in i64.
