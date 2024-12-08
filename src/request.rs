@@ -2,14 +2,14 @@ use napi::bindgen_prelude::{BigInt, Buffer};
 use scylla::{
     frame::{
         response::result::CqlValue,
-        value::{Counter, CqlTimeuuid},
+        value::{Counter, CqlTimestamp, CqlTimeuuid},
     },
     prepared_statement::PreparedStatement,
 };
 
 use crate::{
-    result::{map_column_type_to_cql_type, CqlType},
-    types::{duration::DurationWrapper, uuid::UuidWrapper},
+    result::map_column_type_to_complex_type,
+    types::{duration::DurationWrapper, type_wrappers::ComplexType, uuid::UuidWrapper},
     utils::{bigint_to_i64, js_error},
 };
 
@@ -32,6 +32,13 @@ impl QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Ascii(val),
         }
+    }
+
+    #[napi]
+    pub fn from_bigint(val: BigInt) -> napi::Result<QueryParameterWrapper> {
+        Ok(QueryParameterWrapper {
+            parameter: CqlValue::BigInt(bigint_to_i64(val, "Cannot fit value in CqlBigInt")?),
+        })
     }
 
     #[napi]
@@ -94,9 +101,39 @@ impl QueryParameterWrapper {
     }
 
     #[napi]
+    pub fn from_timestamp(val: BigInt) -> napi::Result<QueryParameterWrapper> {
+        Ok(QueryParameterWrapper {
+            parameter: CqlValue::Timestamp(CqlTimestamp(bigint_to_i64(
+                val,
+                "timestamp cannot overflow i64",
+            )?)),
+        })
+    }
+
+    #[napi]
+    pub fn from_list(val: Vec<&QueryParameterWrapper>) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::List(val.iter().map(|f| f.parameter.clone()).collect()),
+        }
+    }
+
+    #[napi]
     pub fn from_set(val: Vec<&QueryParameterWrapper>) -> QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Set(val.iter().map(|f| f.parameter.clone()).collect()),
+        }
+    }
+
+    #[napi]
+    pub fn from_map(
+        val: Vec<(&QueryParameterWrapper, &QueryParameterWrapper)>,
+    ) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Map(
+                val.iter()
+                    .map(|f| (f.0.parameter.clone(), f.1.parameter.clone()))
+                    .collect(),
+            ),
         }
     }
 
@@ -148,13 +185,13 @@ impl QueryParameterWrapper {
 
 #[napi]
 impl PreparedStatementWrapper {
-    /// Get array of expected types for this prepared statement.
     #[napi]
-    pub fn get_expected_types(&self) -> Vec<CqlType> {
+    /// Get array of expected types for this prepared statement.
+    pub fn get_expected_types(&self) -> Vec<ComplexType> {
         self.prepared
             .get_variable_col_specs()
             .iter()
-            .map(|e| map_column_type_to_cql_type(e.typ()))
+            .map(|e| map_column_type_to_complex_type(e.typ()))
             .collect()
     }
 }

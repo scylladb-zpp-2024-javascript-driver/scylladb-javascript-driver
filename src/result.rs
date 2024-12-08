@@ -1,5 +1,9 @@
 use crate::{
-    types::{time_uuid::TimeUuidWrapper, uuid::UuidWrapper},
+    types::{
+        time_uuid::TimeUuidWrapper,
+        type_wrappers::{ComplexType, CqlType},
+        uuid::UuidWrapper,
+    },
     utils::err_to_napi,
 };
 use napi::{
@@ -43,37 +47,6 @@ pub struct MetaColumnWrapper {
     pub tablename: String,
     pub name: String,
     pub type_code: CqlType,
-}
-
-#[napi]
-pub enum CqlType {
-    Ascii,
-    Boolean,
-    Blob,
-    Counter,
-    Decimal,
-    Date,
-    Double,
-    Duration,
-    Empty,
-    Float,
-    Int,
-    BigInt,
-    Text,
-    Timestamp,
-    Inet,
-    List,
-    Map,
-    Set,
-    UserDefinedType,
-    SmallInt,
-    TinyInt,
-    Time,
-    Timeuuid,
-    Tuple,
-    Uuid,
-    Varint,
-    Custom,
 }
 
 #[napi]
@@ -138,7 +111,7 @@ impl QueryResultWrapper {
             ksname: f.table_spec().ks_name().to_owned(),
             tablename: f.table_spec().table_name().to_owned(),
             name: f.name().to_owned(),
-            type_code: map_column_type_to_cql_type(f.typ()),
+            type_code: map_column_type_to_complex_type(f.typ()).base_type,
         })
         .collect()
     }
@@ -199,10 +172,10 @@ impl CqlValueWrapper {
             CqlValue::Float(_) => CqlType::Float,
             CqlValue::Int(_) => CqlType::Int,
             CqlValue::Text(_) => CqlType::Text,
-            CqlValue::Timestamp(_) => CqlType::Timestamp, // NOI
+            CqlValue::Timestamp(_) => CqlType::Timestamp,
             CqlValue::Inet(_) => CqlType::Inet,
-            CqlValue::List(_) => CqlType::List, // NOI
-            CqlValue::Map(_) => CqlType::Map,   // NOI
+            CqlValue::List(_) => CqlType::List,
+            CqlValue::Map(_) => CqlType::Map,
             CqlValue::Set(_) => CqlType::Set,
             CqlValue::UserDefinedType { .. } => CqlType::UserDefinedType, // NOI
             CqlValue::SmallInt(_) => CqlType::SmallInt,
@@ -227,6 +200,14 @@ impl CqlValueWrapper {
         match self.inner.as_ascii() {
             Some(r) => Ok(r.clone()),
             None => Err(Self::generic_error("ascii")),
+        }
+    }
+
+    #[napi]
+    pub fn get_bigint(&self) -> napi::Result<BigInt> {
+        match self.inner.as_bigint() {
+            Some(r) => Ok(BigInt::from(r)),
+            None => Err(Self::generic_error("bigint")),
         }
     }
 
@@ -294,10 +275,43 @@ impl CqlValueWrapper {
     }
 
     #[napi]
+    pub fn get_timestamp(&self) -> napi::Result<BigInt> {
+        match self.inner.as_cql_timestamp() {
+            Some(r) => Ok(r.0.into()),
+            None => Err(Self::generic_error("text")),
+        }
+    }
+
+    #[napi]
     pub fn get_inet(&self) -> napi::Result<InetAddressWrapper> {
         match self.inner.as_inet() {
             Some(r) => Ok(InetAddressWrapper::from_ip_addr(r)),
             None => Err(Self::generic_error("inet")),
+        }
+    }
+
+    #[napi]
+    pub fn get_list(&self) -> napi::Result<Vec<CqlValueWrapper>> {
+        match self.inner.as_list() {
+            Some(r) => Ok(r
+                .iter()
+                .map(|f| CqlValueWrapper { inner: f.clone() })
+                .collect()),
+            None => Err(Self::generic_error("list")),
+        }
+    }
+
+    #[napi]
+    /// If keys is true, return map keys, otherwise values
+    pub fn get_map(&self, keys: bool) -> napi::Result<Vec<CqlValueWrapper>> {
+        match self.inner.as_map() {
+            Some(r) => Ok(r
+                .iter()
+                .map(|f| CqlValueWrapper {
+                    inner: if keys { f.0.clone() } else { f.1.clone() },
+                })
+                .collect()),
+            None => Err(Self::generic_error("map")),
         }
     }
 
@@ -352,33 +366,41 @@ impl CqlValueWrapper {
     }
 }
 
-pub(crate) fn map_column_type_to_cql_type(typ: &ColumnType) -> CqlType {
+pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
     match typ {
-        ColumnType::Custom(_) => CqlType::Custom,
-        ColumnType::Ascii => CqlType::Ascii,
-        ColumnType::Boolean => CqlType::Boolean,
-        ColumnType::Blob => CqlType::Blob,
-        ColumnType::Counter => CqlType::Counter,
-        ColumnType::Date => CqlType::Date,
-        ColumnType::Decimal => CqlType::Decimal,
-        ColumnType::Double => CqlType::Double,
-        ColumnType::Duration => CqlType::Duration,
-        ColumnType::Float => CqlType::Float,
-        ColumnType::Int => CqlType::Int,
-        ColumnType::BigInt => CqlType::BigInt,
-        ColumnType::Text => CqlType::Text,
-        ColumnType::Timestamp => CqlType::Timestamp,
-        ColumnType::Inet => CqlType::Inet,
-        ColumnType::List(_) => CqlType::List,
-        ColumnType::Map(_, _) => CqlType::Map,
-        ColumnType::Set(_) => CqlType::Set,
-        ColumnType::UserDefinedType { .. } => CqlType::UserDefinedType,
-        ColumnType::SmallInt => CqlType::SmallInt,
-        ColumnType::TinyInt => CqlType::TinyInt,
-        ColumnType::Time => CqlType::Time,
-        ColumnType::Timeuuid => CqlType::Timeuuid,
-        ColumnType::Tuple(_) => CqlType::Tuple,
-        ColumnType::Uuid => CqlType::Uuid,
-        ColumnType::Varint => CqlType::Varint,
+        ColumnType::Custom(_) => panic!("No support for custom type"),
+        ColumnType::Ascii => ComplexType::simple_type(CqlType::Ascii),
+        ColumnType::Boolean => ComplexType::simple_type(CqlType::Boolean),
+        ColumnType::Blob => ComplexType::simple_type(CqlType::Blob),
+        ColumnType::Counter => ComplexType::simple_type(CqlType::Counter),
+        ColumnType::Date => ComplexType::simple_type(CqlType::Date),
+        ColumnType::Decimal => ComplexType::simple_type(CqlType::Decimal),
+        ColumnType::Double => ComplexType::simple_type(CqlType::Double),
+        ColumnType::Duration => ComplexType::simple_type(CqlType::Duration),
+        ColumnType::Float => ComplexType::simple_type(CqlType::Float),
+        ColumnType::Int => ComplexType::simple_type(CqlType::Int),
+        ColumnType::BigInt => ComplexType::simple_type(CqlType::BigInt),
+        ColumnType::Text => ComplexType::simple_type(CqlType::Text),
+        ColumnType::Timestamp => ComplexType::simple_type(CqlType::Timestamp),
+        ColumnType::Inet => ComplexType::simple_type(CqlType::Inet),
+        ColumnType::List(t) => {
+            ComplexType::one_support(CqlType::List, Some(map_column_type_to_complex_type(t)))
+        }
+        ColumnType::Map(t, v) => ComplexType::two_support(
+            CqlType::Map,
+            Some(map_column_type_to_complex_type(t)),
+            Some(map_column_type_to_complex_type(v)),
+        ),
+        ColumnType::Set(t) => {
+            ComplexType::one_support(CqlType::Set, Some(map_column_type_to_complex_type(t)))
+        }
+        ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
+        ColumnType::SmallInt => ComplexType::simple_type(CqlType::SmallInt),
+        ColumnType::TinyInt => ComplexType::simple_type(CqlType::TinyInt),
+        ColumnType::Time => ComplexType::simple_type(CqlType::Time),
+        ColumnType::Timeuuid => ComplexType::simple_type(CqlType::Timeuuid),
+        ColumnType::Tuple(_) => ComplexType::simple_type(CqlType::Tuple),
+        ColumnType::Uuid => ComplexType::simple_type(CqlType::Uuid),
+        ColumnType::Varint => ComplexType::simple_type(CqlType::Varint),
     }
 }
