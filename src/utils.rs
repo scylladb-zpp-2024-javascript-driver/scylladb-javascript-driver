@@ -2,6 +2,23 @@ use std::{error::Error, fmt::Display};
 
 use napi::{bindgen_prelude::BigInt, Status};
 
+pub enum ErrorType {
+    ArgumentError,
+    AuthenticationError,
+    BusyConnectionError, // TODO: Add suport for fields of this error
+    DriverError,
+    DriverInternalError,
+    NoHostAvailableError, // TODO: Add suport for fields of this error
+    NotSupportedError,
+    OperationTimedOutError, // TODO: Add suport for fields of this error
+    ResponseError,          // TODO: Add suport for fields of this error
+    Error,
+    RangeError,
+    ReferenceError,
+    SyntaxError,
+    TypeError,
+}
+
 /// Convert rust error to napi::Error
 pub(crate) fn err_to_napi<T: Error>(e: T) -> napi::Error {
     js_error(e)
@@ -9,7 +26,28 @@ pub(crate) fn err_to_napi<T: Error>(e: T) -> napi::Error {
 
 /// Create napi::Error from a message
 pub(crate) fn js_error<T: Display>(e: T) -> napi::Error {
-    napi::Error::new(Status::GenericFailure, e.to_string())
+    js_typed_error(e, ErrorType::Error)
+}
+
+/// Create napi::Error from a message and error type
+pub(crate) fn js_typed_error<T: Display>(e: T, error_type: ErrorType) -> napi::Error {
+    let error_class = match error_type {
+        ErrorType::ArgumentError => "ArgumentError",
+        ErrorType::AuthenticationError => "AuthenticationError",
+        ErrorType::BusyConnectionError => "BusyConnectionError",
+        ErrorType::DriverError => "DriverError",
+        ErrorType::DriverInternalError => "DriverInternalError",
+        ErrorType::NoHostAvailableError => "NoHostAvailableError",
+        ErrorType::NotSupportedError => "NotSupportedError",
+        ErrorType::OperationTimedOutError => "OperationTimedOutError",
+        ErrorType::ResponseError => "ResponseError",
+        ErrorType::Error => "Error",
+        ErrorType::RangeError => "RangeError",
+        ErrorType::ReferenceError => "ReferenceError",
+        ErrorType::SyntaxError => "SyntaxError",
+        ErrorType::TypeError => "TypeError",
+    };
+    napi::Error::new(Status::GenericFailure, format!("{}#{}", error_class, e))
 }
 
 /// Convert bigint to i64. Returns napi::Error if value doesn't fit in i64.
