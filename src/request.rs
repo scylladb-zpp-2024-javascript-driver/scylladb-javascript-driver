@@ -89,7 +89,7 @@ impl QueryParameterWrapper {
     #[napi]
     pub fn from_text(val: String) -> QueryParameterWrapper {
         QueryParameterWrapper {
-            parameter: CqlValue::Ascii(val),
+            parameter: CqlValue::Text(val),
         }
     }
 
