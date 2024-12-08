@@ -12,13 +12,13 @@ use napi::{bindgen_prelude::BigInt, Status};
 pub enum ErrorType {
     ArgumentError,
     AuthenticationError,
-    BusyConnectionError,
+    BusyConnectionError, // TODO: Add suport for fields of this error
     DriverError,
     DriverInternalError,
-    NoHostAvailableError,
+    NoHostAvailableError, // TODO: Add suport for fields of this error
     NotSupportedError,
-    OperationTimedOutError,
-    ResponseError,
+    OperationTimedOutError, // TODO: Add suport for fields of this error
+    ResponseError,          // TODO: Add suport for fields of this error
     Error,
     RangeError,
     ReferenceError,
