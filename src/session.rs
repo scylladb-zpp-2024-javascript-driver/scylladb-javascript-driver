@@ -1,7 +1,11 @@
-use scylla::{transport::SelfIdentity, Session, SessionBuilder};
+use scylla::{
+    batch::Batch, frame::response::result::CqlValue, transport::SelfIdentity, Session,
+    SessionBuilder,
+};
 
 use crate::{
-    options::{self},
+    options,
+    request::{PreparedStatementWrapper, QueryParameterWrapper},
     result::QueryResultWrapper,
     utils::err_to_napi,
 };
@@ -11,6 +15,11 @@ pub struct SessionOptions {
     pub connect_points: Vec<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
+}
+
+#[napi]
+pub struct BatchWrapper {
+    inner: Batch,
 }
 
 #[napi]
@@ -50,8 +59,75 @@ impl SessionWrapper {
             .query_unpaged(query, &[])
             .await
             .map_err(err_to_napi)?;
-        Ok(QueryResultWrapper::from_query(query_result))
+        QueryResultWrapper::from_query(query_result)
     }
+
+    /// Prepares a statement through rust driver for a given session
+    /// Return PreparedStatementWrapper that wraps object returned by the rust driver
+    #[napi]
+    pub async fn prepare_statement(
+        &self,
+        statement: String,
+    ) -> napi::Result<PreparedStatementWrapper> {
+        Ok(PreparedStatementWrapper {
+            prepared: self
+                .internal
+                .prepare(statement)
+                .await
+                .map_err(err_to_napi)?,
+        })
+    }
+
+    /// Query a database with a given prepared statement and provided parameters.
+    ///
+    /// Returns a wrapper of the value provided by the rust driver
+    ///
+    /// All parameters need to be wrapped into QueryParameterWrapper keeping CqlValue of correct type
+    /// Creating Prepared statement may help to determine required types
+    ///
+    /// Currently `execute_unpaged` from rust driver is used, so no paging is done
+    /// and there is no support for any query options
+    #[napi]
+    pub async fn execute_prepared(
+        &self,
+        query: &PreparedStatementWrapper,
+        params: Vec<Option<&QueryParameterWrapper>>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
+        QueryResultWrapper::from_query(
+            self.internal
+                .execute_unpaged(&query.prepared, params_vec)
+                .await
+                .map_err(err_to_napi)?,
+        )
+    }
+
+    #[napi]
+    pub async fn query_batch(
+        &self,
+        batch: &BatchWrapper,
+        params: Vec<Vec<Option<&QueryParameterWrapper>>>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<Vec<Option<CqlValue>>> = params
+            .into_iter()
+            .map(QueryParameterWrapper::extract_parameters)
+            .collect();
+        QueryResultWrapper::from_query(
+            self.internal
+                .batch(&batch.inner, params_vec)
+                .await
+                .map_err(err_to_napi)?,
+        )
+    }
+}
+
+#[napi]
+pub fn create_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
+    let mut batch: Batch = Default::default();
+    queries
+        .iter()
+        .for_each(|q| batch.append_statement(q.prepared.clone()));
+    BatchWrapper { inner: batch }
 }
 
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {

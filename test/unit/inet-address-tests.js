@@ -6,22 +6,23 @@ const InetAddress = require("../../lib/types").InetAddress;
 
 describe("InetAddress", function () {
     describe("constructor", function () {
+        // TODO: DataStax throws TypeErrors, but due to napi-rs limitations, we temporarily throw Errors.
         it("should validate the Buffer length", function () {
             assert.throws(function () {
                 return new InetAddress(utils.allocBufferUnsafe(10));
-            }, TypeError);
+            }, Error);
             assert.throws(function () {
                 return new InetAddress(null);
-            }, TypeError);
+            }, Error);
             assert.throws(function () {
                 return new InetAddress();
-            }, TypeError);
+            }, Error);
             assert.doesNotThrow(function () {
                 return new InetAddress(utils.allocBufferUnsafe(16));
-            }, TypeError);
+            }, Error);
             assert.doesNotThrow(function () {
                 return new InetAddress(utils.allocBufferUnsafe(4));
-            }, TypeError);
+            }, Error);
         });
     });
     describe("#toString()", function () {
@@ -188,6 +189,40 @@ describe("InetAddress", function () {
             assert.throws(function () {
                 InetAddress.fromString(" ::a:11");
             }, TypeError);
+        });
+    });
+    describe("setters", function () {
+        it("should throw errors when trying to set a value", function () {
+            const val = new InetAddress(
+                utils.allocBufferFromArray([127, 0, 0, 1]),
+            );
+            assert.throws(
+                function () {
+                    val.buffer = utils.allocBufferFromArray([127, 0, 0, 1]);
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress buffer is read-only",
+                },
+            );
+            assert.throws(
+                function () {
+                    val.version = 6;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress version is read-only",
+                },
+            );
+            assert.throws(
+                function () {
+                    val.length = 4;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress length is read-only",
+                },
+            );
         });
     });
 });
