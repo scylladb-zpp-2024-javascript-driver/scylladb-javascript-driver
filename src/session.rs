@@ -53,6 +53,14 @@ impl SessionWrapper {
     }
 
     #[napi]
+    pub fn get_keyspace(&self) -> Option<String> {
+        self.internal
+            .get_keyspace()
+            .as_deref()
+            .map(ToOwned::to_owned)
+    }
+
+    #[napi]
     pub async fn query_unpaged_no_values(&self, query: String) -> napi::Result<QueryResultWrapper> {
         let query_result = self
             .internal
