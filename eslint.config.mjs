@@ -20,7 +20,7 @@ export default [
       // If a value is passed to a function but not used the error is ignored
       // Catched but unused errors are also ignored
       // Values starting with "_" are also ignored
-      "no-unused-vars": ["error", { "args": "none", "caughtErrors": "none", "varsIgnorePattern": "_*" }],
+      "no-unused-vars": ["error", { "args": "none", "caughtErrors": "none", "varsIgnorePattern": "^_" }],
 
       // Checks if var is not used
       "no-var": "error",
