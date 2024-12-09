@@ -9,7 +9,10 @@ use scylla::{
 
 use crate::{
     result::map_column_type_to_complex_type,
-    types::{duration::DurationWrapper, type_wrappers::ComplexType, uuid::UuidWrapper},
+    types::{
+        duration::DurationWrapper, local_time::LocalTimeWrapper, type_wrappers::ComplexType,
+        uuid::UuidWrapper,
+    },
     utils::{bigint_to_i64, js_error},
 };
 
@@ -145,6 +148,13 @@ impl QueryParameterWrapper {
                     .map_err(|_| js_error("Value must fit in i16 type to be small int"))?,
             ),
         })
+    }
+
+    #[napi]
+    pub fn from_local_time(val: &LocalTimeWrapper) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Time(val.get_cql_time()),
+        }
     }
 
     #[napi]
