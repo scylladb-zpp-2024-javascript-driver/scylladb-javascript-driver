@@ -1,17 +1,11 @@
 use std::usize;
 
-use napi::bindgen_prelude::{Array, Env, ToNapiValue, Unknown};
-use scylla::frame::response::result::CqlValue;
+use napi::bindgen_prelude::{Array, Env, Unknown};
 use crate::utils::js_error;
-use crate::types::type_wrappers::ComplexType;
-
-type CqlTuple = Vec<Option<CqlValue>>;
 
 #[napi]
 pub struct TupleWrapper {
     js_values: Array,
-    types: Option<ComplexType>,
-
 }
 
 #[napi]
@@ -27,7 +21,6 @@ impl TupleWrapper {
 
         Ok(TupleWrapper {
             js_values,
-            types: None,
         })
     }
 
