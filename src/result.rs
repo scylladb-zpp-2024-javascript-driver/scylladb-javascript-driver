@@ -7,7 +7,7 @@ use crate::{
     utils::err_to_napi,
 };
 use napi::{
-    bindgen_prelude::{BigInt, Buffer, ToNapiValue, Unknown}, Error, Status
+    bindgen_prelude::{BigInt, Buffer}, Error, Status
 };
 use scylla::{
     frame::response::result::{ColumnType, CqlValue, Row},
