@@ -10,8 +10,8 @@ use scylla::{
 use crate::{
     result::map_column_type_to_complex_type,
     types::{
-        duration::DurationWrapper, local_time::LocalTimeWrapper, type_wrappers::ComplexType,
-        uuid::UuidWrapper,
+        duration::DurationWrapper, inet::InetAddressWrapper, local_time::LocalTimeWrapper,
+        type_wrappers::ComplexType, uuid::UuidWrapper,
     },
     utils::{bigint_to_i64, js_error},
 };
@@ -111,6 +111,13 @@ impl QueryParameterWrapper {
                 "timestamp cannot overflow i64",
             )?)),
         })
+    }
+
+    #[napi]
+    pub fn from_inet(val: &InetAddressWrapper) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Inet(val.get_ip_addr()),
+        }
     }
 
     #[napi]
