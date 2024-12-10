@@ -7,7 +7,8 @@ use crate::{
     utils::err_to_napi,
 };
 use napi::{
-    bindgen_prelude::{BigInt, Buffer}, Error, Status
+    bindgen_prelude::{BigInt, Buffer},
+    Error, Status,
 };
 use scylla::{
     frame::response::result::{ColumnType, CqlValue, Row},
@@ -355,9 +356,7 @@ impl CqlValueWrapper {
         match &self.inner {
             CqlValue::Tuple(r) => Ok(r
                 .iter()
-                .map(|f| 
-                    f.as_ref().map(|f| CqlValueWrapper { inner: f.clone() })
-                )
+                .map(|f| f.as_ref().map(|f| CqlValueWrapper { inner: f.clone() }))
                 .collect()),
             _ => Err(Self::generic_error("tuple")),
         }

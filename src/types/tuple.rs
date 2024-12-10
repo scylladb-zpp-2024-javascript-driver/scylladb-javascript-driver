@@ -1,7 +1,5 @@
-use std::usize;
-
-use napi::bindgen_prelude::{Array, Env, Unknown};
 use crate::utils::js_error;
+use napi::bindgen_prelude::{Array, Env, Unknown};
 
 #[napi]
 pub struct TupleWrapper {
@@ -19,22 +17,13 @@ impl TupleWrapper {
             return Err(js_error("Tuple cannot have more than 16 elements"));
         }
 
-        Ok(TupleWrapper {
-            js_values,
-        })
+        Ok(TupleWrapper { js_values })
     }
 
     #[napi]
     pub fn get(&self, env: Env, index: u32) -> napi::Result<Unknown> {
         self.js_values
             .get(index)
-            .map(|v| 
-                v.unwrap_or_else(|| 
-                    env
-                        .get_null()
-                        .unwrap()
-                        .into_unknown()
-                )
-            )
+            .map(|v| v.unwrap_or_else(|| env.get_null().unwrap().into_unknown()))
     }
 }
