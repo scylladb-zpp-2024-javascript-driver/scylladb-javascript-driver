@@ -23,9 +23,10 @@ const testCases = [
     ["Int", -1234],
     ["Text", "Nonsense"],
     ["Timestamp", 0],
-    // No support for creating Inet
-    // TODO: Fix it @PiotrJunior
-    // ["Inet", new InetAddress(utils.allocBufferFromArray([0x12, 0x34, 0x56, 0x78]))],
+    [
+        "Inet",
+        new InetAddress(utils.allocBufferFromArray([0x12, 0x34, 0x56, 0x78])),
+    ],
     ["List", ["Test value", "Some other funny value"]],
     ["Map", { Text: 0.1, Text2: 0.2 }],
     ["Set", [4, 7, 15]],
