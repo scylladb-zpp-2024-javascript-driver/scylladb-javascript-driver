@@ -21,6 +21,22 @@ impl TupleWrapper {
     }
 
     #[napi]
+    pub fn get_length(&self) -> u32 {
+        self.js_values.len()
+    }
+
+    #[napi]
+    pub fn get_js_values(&self, env: Env) -> napi::Result<Array> {
+        let js_array = env.create_array_with_length(self.js_values.len() as usize)?;
+
+        for (i, value) in self.js_values.iter().enumerate() {
+            js_array.set_element(i as u32, value)?;
+        }
+
+        Ok(js_array)
+    }
+
+    #[napi]
     pub fn get(&self, env: Env, index: u32) -> napi::Result<Unknown> {
         self.js_values
             .get(index)
