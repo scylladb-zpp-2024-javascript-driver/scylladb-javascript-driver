@@ -43,4 +43,5 @@ jobs:
         shell: bash
       - name: Run unit tests
         run: npm run unit
-
+      - name: Run not fully integrated unit tests
+        run: npm run unit-not-supported
