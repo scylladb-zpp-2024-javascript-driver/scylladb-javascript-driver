@@ -36,9 +36,6 @@ export default [
       // Disabled in some of the tests because they are inserting values into the database
       "camelcase": "error",
 
-      // TODO: FIX
-      "no-case-declarations": "off",
-
       "no-constructor-return": "error",
       "no-duplicate-imports": "error",
       "default-case-last": "error",
