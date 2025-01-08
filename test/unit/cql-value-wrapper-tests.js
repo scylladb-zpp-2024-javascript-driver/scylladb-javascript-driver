@@ -86,8 +86,8 @@ describe("Cql value wrapper", function () {
             days: 2,
             nanoseconds: 3,
         }); */
-        let expected_duration = new Duration(1, 2, 3);
-        assert.equal(expected_duration.equals(value), true);
+        let expectedDuration = new Duration(1, 2, 3);
+        assert.equal(expectedDuration.equals(value), true);
     });
 
     it("should get float type correctly from napi", function () {
