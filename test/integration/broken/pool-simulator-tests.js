@@ -322,10 +322,11 @@ describe("pool", function () {
                     )
                     .then(() => {
                         assert.strictEqual(firstHost.getInFlight(), 100);
-                        assert.strictEqual(
+                        // Cannot test that: getState deprecated
+                        /* assert.strictEqual(
                             client.getState().getInFlightQueries(firstHost),
                             100,
-                        );
+                        ); */
                     })
                     .then(() => Promise.all(promises))
                     .then(() => new Promise((resolve) => setImmediate(resolve)))
@@ -339,10 +340,11 @@ describe("pool", function () {
                     .then(() => {
                         assert.strictEqual(retryPolicyCalled, 1);
                         assert.strictEqual(firstHost.getInFlight(), 0);
-                        assert.strictEqual(
+                        // Cannot test that: getState deprecated
+                        /* assert.strictEqual(
                             client.getState().getInFlightQueries(firstHost),
                             0,
-                        );
+                        ); */
                     })
                     .then(() => client.shutdown())
             );
@@ -488,10 +490,11 @@ describe("pool", function () {
             return client
                 .connect()
                 .then(() => {
-                    assert.strictEqual(
+                    // Cannot test that: getState deprecated
+                    /* assert.strictEqual(
                         client.getState().getConnectedHosts().length,
                         3,
-                    );
+                    ); */
                     assert.strictEqual(
                         client.controlConnection.getEndpoint(),
                         firstAddress,
@@ -538,10 +541,11 @@ describe("pool", function () {
                     ),
                 )
                 .then(() => {
-                    assert.strictEqual(
+                    // Cannot test that: getState deprecated
+                    /* assert.strictEqual(
                         client.getState().getConnectedHosts().length,
                         3,
-                    );
+                    ); */
                     // Validate that events of original node going back UP don't affect the ControlConnection
                     assert.strictEqual(
                         client.controlConnection.getEndpoint(),
@@ -575,10 +579,11 @@ describe("pool", function () {
             return client
                 .connect()
                 .then(() => {
-                    assert.strictEqual(
+                    // Cannot test that: getState deprecated
+                    /* assert.strictEqual(
                         client.getState().getConnectedHosts().length,
                         3,
-                    );
+                    ); */
                     assert.strictEqual(
                         client.controlConnection.getEndpoint(),
                         firstAddress,
@@ -951,7 +956,8 @@ describe("pool", function () {
                 assert.isAbove(addresses.size, 1);
             });
 
-            it("should not create connections to nodes not selected by the load balancing policy on init", async () => {
+            // This whole test depends on information from Client.getState which is deprecated
+            /* it("should not create connections to nodes not selected by the load balancing policy on init", async () => {
                 const addresses = cluster
                     .dc(0)
                     .nodes.map((n) => n.address)
@@ -985,9 +991,10 @@ describe("pool", function () {
                 );
 
                 await client.shutdown();
-            });
+            }); */
 
-            it("should not create connections to remote nodes when core connections per host is zero", async () => {
+            // This whole test depends on information from Client.getState which is deprecated
+            /* it("should not create connections to remote nodes when core connections per host is zero", async () => {
                 const localAddresses = cluster
                     .dc(0)
                     .nodes.map((n) => n.address);
@@ -1035,9 +1042,10 @@ describe("pool", function () {
                 );
 
                 await client.shutdown();
-            });
+            }); */
 
-            [true, false].forEach((warmup) => {
+            // This whole test depends on information from Client.getState which is deprecated
+            /* [true, false].forEach((warmup) => {
                 it(`should create connections to remote nodes in the background when warmup is ${warmup}`, async () => {
                     const localAddresses = cluster
                         .dc(0)
@@ -1086,7 +1094,7 @@ describe("pool", function () {
 
                     await client.shutdown();
                 });
-            });
+            }); */
         },
     );
 });
