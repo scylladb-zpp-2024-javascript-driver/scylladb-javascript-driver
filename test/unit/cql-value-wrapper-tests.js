@@ -147,10 +147,10 @@ describe("Cql value wrapper", function () {
             }),
             CqlValue::Boolean(false),
         ]); */
-        let expected_duration = new Duration(6, 5, 4);
+        let expectedDuration = new Duration(6, 5, 4);
         assert.strictEqual(Array.isArray(value), true);
         assert.strictEqual(value.length, 2);
-        assert.strictEqual(expected_duration.equals(value[0]), true);
+        assert.strictEqual(expectedDuration.equals(value[0]), true);
         assert.strictEqual(value[1], false);
     });
 
