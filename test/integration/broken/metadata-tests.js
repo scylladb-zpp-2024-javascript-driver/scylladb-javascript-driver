@@ -2411,59 +2411,8 @@ describe("metadata @SERVER_API", function () {
         });
     });
 
-    describe("Client#getState()", function () {
-        it("should return a snapshot of the connection pool state", function (done) {
-            const client = newInstance({
-                pooling: {
-                    warmup: true,
-                    coreConnectionsPerHost: {
-                        0: 3,
-                    },
-                },
-            });
-            utils.series(
-                [
-                    client.connect.bind(client),
-                    function (next) {
-                        const state = client.getState();
-                        const hosts = state.getConnectedHosts();
-                        assert.deepEqual(
-                            hosts.map(function (h) {
-                                return state.getOpenConnections(h);
-                            }),
-                            [3, 3],
-                        );
-                        next();
-                    },
-                    function (next) {
-                        let state;
-                        utils.timesLimit(
-                            100,
-                            64,
-                            function (n, timesNext) {
-                                if (n === 65) {
-                                    // Take a snapshot while some requests are in-flight
-                                    state = client.getState();
-                                }
-                                client.execute(helper.queries.basic, timesNext);
-                            },
-                            function (err) {
-                                assert.ifError(err);
-                                assert.ok(state);
-                                const hosts = state.getConnectedHosts();
-                                assert.strictEqual(hosts.length, 2);
-                                hosts.forEach(function (h) {
-                                    assert.ok(state.getInFlightQueries(h) > 0);
-                                });
-                                next();
-                            },
-                        );
-                    },
-                ],
-                helper.finish(client, done),
-            );
-        });
-    });
+    // No planned support for Client.getState()
+    /* describe("Client#getState()", function () {    }); */
 
     describe("Client#hosts", () => {
         it("should contain the hosts metadata information", () => {
