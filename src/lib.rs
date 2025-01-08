@@ -23,7 +23,6 @@ pub mod auth;
 pub mod options;
 pub mod request;
 pub mod result;
-pub mod result_tests;
 pub mod session;
 pub mod tests;
 pub mod types;
