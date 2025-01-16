@@ -1,4 +1,4 @@
-import { policies } from "../../../index";
+import { policies } from "../../../main";
 import LoadBalancingPolicy = policies.loadBalancing.LoadBalancingPolicy;
 import TokenAwarePolicy = policies.loadBalancing.TokenAwarePolicy;
 import ReconnectionPolicy = policies.reconnection.ReconnectionPolicy;
