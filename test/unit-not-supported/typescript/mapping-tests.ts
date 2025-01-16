@@ -1,4 +1,4 @@
-import { Client, mapping, types } from "../../../index";
+import { Client, mapping, types } from "../../../main";
 import Mapper = mapping.Mapper;
 import ModelMapper = mapping.ModelMapper;
 import Uuid = types.Uuid;

@@ -2,7 +2,6 @@ import {
   auth,
   concurrent,
   errors,
-  datastax,
   mapping,
   metadata,
   metrics,
