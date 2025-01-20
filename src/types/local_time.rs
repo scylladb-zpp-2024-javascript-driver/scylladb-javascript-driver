@@ -1,7 +1,7 @@
 use crate::utils::{bigint_to_i64, js_error};
-use core::fmt;
 use napi::bindgen_prelude::BigInt;
 use scylla::frame::value::CqlTime;
+use std::fmt::{self, Write};
 use std::num::ParseIntError;
 
 const NANO_SEC_IN_SEC: i64 = 1000000000;
@@ -92,34 +92,56 @@ impl LocalTimeWrapper {
 
 impl fmt::Display for LocalTimeWrapper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}:{}:{}{}",
-            if self.hour < 10 {
-                format!("0{}", self.hour)
-            } else {
-                self.hour.to_string()
-            },
-            if self.minute < 10 {
-                format!("0{}", self.minute)
-            } else {
-                self.minute.to_string()
-            },
-            if self.second < 10 {
-                format!("0{}", self.second)
-            } else {
-                self.second.to_string()
-            },
-            if self.nanosecond > 0 {
-                let zeros = 9 - self.nanosecond.to_string().chars().count();
-                let mut nanos = self.nanosecond;
-                while nanos % 10 == 0 {
-                    nanos /= 10;
-                }
-                format!(".{}{}", "0".repeat(zeros), nanos)
-            } else {
-                "".to_string()
+        if self.hour < 10 {
+            write!(f, "0{}:", self.hour)?;
+        } else {
+            write!(f, "{}:", self.hour)?;
+        }
+        if self.minute < 10 {
+            write!(f, "0{}:", self.minute)?;
+        } else {
+            write!(f, "{}:", self.minute)?;
+        }
+        if self.second < 10 {
+            write!(f, "0{}", self.second)?;
+        } else {
+            write!(f, "{}", self.second)?;
+        }
+        if self.nanosecond > 0 {
+            let mut zeros = CharCounter::new();
+            write!(&mut zeros, "{}", self.nanosecond)?;
+            let mut nanos = self.nanosecond;
+            while nanos % 10 == 0 {
+                nanos /= 10;
             }
-        )
+            write!(f, ".")?;
+            for _ in 0..(9 - zeros.count()) {
+                write!(f, "0")?;
+            }
+            write!(f, "{}", nanos)?;
+        }
+
+        Ok(())
+    }
+}
+
+struct CharCounter {
+    count: usize,
+}
+
+impl CharCounter {
+    fn new() -> Self {
+        CharCounter { count: 0 }
+    }
+
+    fn count(self) -> usize {
+        self.count
+    }
+}
+
+impl fmt::Write for CharCounter {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.count = s.len();
+        Ok(())
     }
 }
