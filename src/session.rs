@@ -96,7 +96,7 @@ impl SessionWrapper {
     /// Currently `execute_unpaged` from rust driver is used, so no paging is done
     /// and there is no support for any query options
     #[napi]
-    pub async fn execute_prepared(
+    pub async fn execute_prepared_unpaged(
         &self,
         query: &PreparedStatementWrapper,
         params: Vec<Option<&QueryParameterWrapper>>,
