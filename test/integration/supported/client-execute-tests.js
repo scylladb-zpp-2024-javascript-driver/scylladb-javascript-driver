@@ -542,10 +542,7 @@ describe("Client @SERVER_API", function () {
                 },
             );
         });
-
-        // No support for consistency
-        // TODO: Fix this test
-        /* it("should accept localOne and localQuorum consistencies", function (done) {
+        it("should accept localOne and localQuorum consistencies", function (done) {
             const client = setupInfo.client;
             utils.series(
                 [
@@ -568,9 +565,9 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
 
-        // No support for consistency
+        // No support for ExecutionProfile
         // TODO: Fix this test
         /* it("should use consistency level from profile and override profile when provided in query options", function (done) {
             const client = newInstance({
@@ -823,7 +820,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // No support for consistency levels
+        // No support for ExecutionProfile consistency levels
         // TODO: Fix this test
         /* vit(
             "2.0",
@@ -1984,10 +1981,7 @@ describe("Client @SERVER_API", function () {
                 },
             );
         }); */
-
-        // No support for consistency
-        // TODO: Fix this test
-        /* describe("with no callback specified", function () {
+        describe("with no callback specified", function () {
             vit(
                 "2.0",
                 "should return a promise with the result as a value",
@@ -2025,7 +2019,8 @@ describe("Client @SERVER_API", function () {
                         });
                 },
             );
-            it("should reject the promise when there is a syntax error", function () {
+            // Would require correct error throwing
+            /* it("should reject the promise when there is a syntax error", function () {
                 const client = setupInfo.client;
                 return client
                     .connect()
@@ -2038,9 +2033,8 @@ describe("Client @SERVER_API", function () {
                     .catch(function (err) {
                         helper.assertInstanceOf(err, errors.ResponseError);
                     });
-            });
-        }); */
-
+            }); */
+        });
         vdescribe("2.0", "with lightweight transactions", function () {
             const client = setupInfo.client;
             const id = types.Uuid.random();
