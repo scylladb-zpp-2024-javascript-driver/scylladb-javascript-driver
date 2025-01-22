@@ -6,23 +6,22 @@ const InetAddress = require("../../lib/types").InetAddress;
 
 describe("InetAddress", function () {
     describe("constructor", function () {
-        // TODO: DataStax throws TypeErrors, but due to napi-rs limitations, we temporarily throw Errors.
         it("should validate the Buffer length", function () {
             assert.throws(function () {
                 return new InetAddress(utils.allocBufferUnsafe(10));
-            }, Error);
+            }, TypeError);
             assert.throws(function () {
                 return new InetAddress(null);
-            }, Error);
+            }, TypeError);
             assert.throws(function () {
                 return new InetAddress();
-            }, Error);
+            }, TypeError);
             assert.doesNotThrow(function () {
                 return new InetAddress(utils.allocBufferUnsafe(16));
-            }, Error);
+            }, TypeError);
             assert.doesNotThrow(function () {
                 return new InetAddress(utils.allocBufferUnsafe(4));
-            }, Error);
+            }, TypeError);
         });
     });
     describe("#toString()", function () {
