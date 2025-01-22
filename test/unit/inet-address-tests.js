@@ -190,4 +190,38 @@ describe("InetAddress", function () {
             }, TypeError);
         });
     });
+    describe("setters", function () {
+        it("should throw errors when trying to set a value", function () {
+            const val = new InetAddress(
+                utils.allocBufferFromArray([127, 0, 0, 1]),
+            );
+            assert.throws(
+                function () {
+                    val.buffer = utils.allocBufferFromArray([127, 0, 0, 1]);
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress buffer is read-only",
+                },
+            );
+            assert.throws(
+                function () {
+                    val.version = 6;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress version is read-only",
+                },
+            );
+            assert.throws(
+                function () {
+                    val.length = 4;
+                },
+                {
+                    name: "SyntaxError",
+                    message: "InetAddress length is read-only",
+                },
+            );
+        });
+    });
 });

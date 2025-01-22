@@ -115,7 +115,7 @@ describe("Uuid", function () {
         });
     });
     describe("fromString()", function () {
-        it("should validate that the string", function () {
+        it("should validate the string", function () {
             assert.throws(function () {
                 Uuid.fromString("22");
             });
@@ -230,6 +230,23 @@ describe("Uuid", function () {
                     assert.ifError(err);
                     assert.strictEqual(Object.keys(values).length, length);
                     done();
+                },
+            );
+        });
+    });
+
+    describe("setter errors", function () {
+        it("should validate if setter throws an error", function () {
+            assert.throws(
+                function () {
+                    let uuid = Uuid.fromString(
+                        "ffffffff-ffff-ffff-ffff-ffffffffffff",
+                    );
+                    uuid.buffer = "00000000-0000-0000-0000-000000000000";
+                },
+                {
+                    name: "SyntaxError",
+                    message: "UUID buffer is read-only",
                 },
             );
         });
