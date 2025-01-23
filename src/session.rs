@@ -77,13 +77,13 @@ impl SessionWrapper {
         &self,
         statement: String,
     ) -> napi::Result<PreparedStatementWrapper> {
-        Ok(PreparedStatementWrapper {
-            prepared: self
-                .internal
-                .prepare(statement)
-                .await
-                .map_err(err_to_napi)?,
-        })
+        let mut prepared = self
+            .internal
+            .prepare(statement)
+            .await
+            .map_err(err_to_napi)?;
+        prepared.set_use_cached_result_metadata(true);
+        Ok(PreparedStatementWrapper { prepared })
     }
 
     /// Query a database with a given prepared statement and provided parameters.

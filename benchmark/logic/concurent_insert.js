@@ -8,7 +8,7 @@ const Long = require("long");
 const { randomInt } = require("crypto");
 
 const client = new cassandra.Client(getClientArgs());
-const iterCnt = 100000;
+const iterCnt = 10000;
 
 async.series(
     [

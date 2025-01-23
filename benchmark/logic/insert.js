@@ -30,7 +30,7 @@ async.series(
             client.execute(query, next);
         },
         async function insert(next) {
-            for (let i = 0; i < 10000; i++) {
+            for (let i = 0; i < 100; i++) {
                 const id = cassandra.types.Uuid.random();
                 const query =
                     "INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)";
