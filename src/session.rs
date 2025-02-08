@@ -13,6 +13,7 @@ use crate::{
 #[napi]
 pub struct SessionOptions {
     pub connect_points: Vec<String>,
+    pub keyspace: Option<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
     pub credentials_username: Option<String>,
@@ -35,6 +36,7 @@ impl SessionOptions {
     pub fn empty() -> Self {
         SessionOptions {
             connect_points: vec![],
+            keyspace: None,
             application_name: None,
             application_version: None,
             credentials_username: None,
@@ -49,6 +51,12 @@ impl SessionWrapper {
     pub async fn create_session(options: &SessionOptions) -> napi::Result<Self> {
         let builder = configure_session_builder(options);
         let session = builder.build().await.map_err(err_to_napi)?;
+        if let Some(keyspace) = &options.keyspace {
+            session
+                .use_keyspace(keyspace, false)
+                .await
+                .map_err(err_to_napi)?;
+        }
         Ok(SessionWrapper { internal: session })
     }
 
