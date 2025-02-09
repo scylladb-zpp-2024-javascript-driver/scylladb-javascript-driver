@@ -35,3 +35,7 @@ path = "benchmarks/logic_rust/insert.rs"
 [[bin]]
 name = "select_benchmark"
 path = "benchmarks/logic_rust/select.rs"
+
+[[bin]]
+name = "concurrent_insert_benchmark"
+path = "benchmarks/logic_rust/concurrent_insert.rs"
