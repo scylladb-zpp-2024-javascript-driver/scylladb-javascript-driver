@@ -27,3 +27,7 @@ strip = "symbols"
 
 [profile.dev]
 panic = "abort"
+
+[[bin]]
+name = "select_benchmark"
+path = "benchmark/logic_rust/select.rs"
