@@ -77,6 +77,27 @@ impl SessionWrapper {
         QueryResultWrapper::from_query(query_result)
     }
 
+    /// Executes unprepared query. This assumes the types will be either guessed or provided by user.
+    ///
+    /// Returns a wrapper of the value provided by the rust driver
+    ///
+    /// All parameters need to be wrapped into QueryParameterWrapper keeping CqlValue of assumed correct type
+    /// If the provided types will not be correct, this query will fail.
+    #[napi]
+    pub async fn query_unpaged(
+        &self,
+        query: String,
+        params: Vec<Option<&QueryParameterWrapper>>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
+        let query_result = self
+            .internal
+            .query_unpaged(query, params_vec)
+            .await
+            .map_err(err_to_napi)?;
+        QueryResultWrapper::from_query(query_result)
+    }
+
     /// Prepares a statement through rust driver for a given session
     /// Return PreparedStatementWrapper that wraps object returned by the rust driver
     #[napi]
