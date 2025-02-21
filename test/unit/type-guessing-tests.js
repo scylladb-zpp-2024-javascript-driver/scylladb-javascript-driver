@@ -3,6 +3,7 @@ const rust = require("../../index");
 const utils = require("../../lib/utils");
 const types = require("../../lib/types");
 const typeGuessing = require("../../lib/types/type-guessing");
+const { rustConvertHint } = require("../../lib/types/cql-utils");
 
 describe("Encoder.guessDataType()", function () {
     it("should guess the native types", function () {
@@ -117,7 +118,7 @@ describe("Encoder.guessDataType()", function () {
             }
             return;
         }
-        type = rust.convertHint(type).baseType;
+        type = rustConvertHint(type).baseType;
         assert.strictEqual(type, expectedType, message + ": " + value);
     }
 });
