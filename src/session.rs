@@ -151,11 +151,20 @@ impl SessionWrapper {
 }
 
 #[napi]
-pub fn create_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
+pub fn create_prepared_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
     let mut batch: Batch = Default::default();
     queries
         .iter()
         .for_each(|q| batch.append_statement(q.prepared.clone()));
+    BatchWrapper { inner: batch }
+}
+
+#[napi]
+pub fn create_unprepared_batch(queries: Vec<&str>) -> BatchWrapper {
+    let mut batch: Batch = Default::default();
+    queries
+        .iter()
+        .for_each(|q| batch.append_statement(q.to_owned()));
     BatchWrapper { inner: batch }
 }
 
