@@ -266,9 +266,7 @@ describe("Client @SERVER_API", function () {
                 done,
             );
         });
-        // Currently no support for hints
-        // TODO: Fix this test
-        /* vit("2.0", "should use hints when provided", function (done) {
+        vit("2.0", "should use hints when provided", function (done) {
             const client = newInstance();
             const id1 = types.Uuid.random();
             const id2 = types.Uuid.random();
@@ -285,7 +283,10 @@ describe("Client @SERVER_API", function () {
                         "INSERT INTO %s (id, int_sample, bigint_sample) VALUES (?, ?, ?)",
                         table1,
                     ),
-                    params: [id2, -1, -1],
+                    // Would require full encoder support
+                    // TODO: Fix this test
+                    // params: [id2, -1, BigInt(-1)],
+                    params: [id2, -1, BigInt(-1)],
                 },
             ];
             const hints = [null, [null, "int", "bigint"]];
@@ -319,10 +320,9 @@ describe("Client @SERVER_API", function () {
                     );
                 },
             );
-        }); */
-        // Currently no support for hints
-        // TODO: Fix this test
-        /* vit(
+        });
+
+        vit(
             "2.0",
             "should callback in err when wrong hints are provided",
             function (done) {
@@ -344,7 +344,7 @@ describe("Client @SERVER_API", function () {
                                 queries,
                                 { hints: {} },
                                 function (err) {
-                                    //it should not fail, dismissed
+                                    // it should not fail, dismissed
                                     next(err);
                                 },
                             );
@@ -354,7 +354,7 @@ describe("Client @SERVER_API", function () {
                                 queries,
                                 { hints: [["uuid"]] },
                                 function (err) {
-                                    //it should not fail
+                                    // it should not fail
                                     next(err);
                                 },
                             );
@@ -392,7 +392,8 @@ describe("Client @SERVER_API", function () {
                     done,
                 );
             },
-        ); */
+        );
+
         // Currently no support for timestamps
         // TODO: Fix this test
         /* vit("2.1", "should support protocol level timestamp", function (done) {
