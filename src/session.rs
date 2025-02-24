@@ -70,6 +70,27 @@ impl SessionWrapper {
         QueryResultWrapper::from_query(query_result)
     }
 
+    /// Executes unprepared query. This assumes the types will be either guessed or provided by user.
+    ///
+    /// Returns a wrapper of the value provided by the rust driver
+    ///
+    /// All parameters need to be wrapped into QueryParameterWrapper keeping CqlValue of assumed correct type
+    /// If the provided types will not be correct, this query will fail.
+    #[napi]
+    pub async fn query_unpaged(
+        &self,
+        query: String,
+        params: Vec<Option<&QueryParameterWrapper>>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
+        let query_result = self
+            .internal
+            .query_unpaged(query, params_vec)
+            .await
+            .map_err(err_to_napi)?;
+        QueryResultWrapper::from_query(query_result)
+    }
+
     /// Prepares a statement through rust driver for a given session
     /// Return PreparedStatementWrapper that wraps object returned by the rust driver
     #[napi]
@@ -130,11 +151,20 @@ impl SessionWrapper {
 }
 
 #[napi]
-pub fn create_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
+pub fn create_prepared_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
     let mut batch: Batch = Default::default();
     queries
         .iter()
         .for_each(|q| batch.append_statement(q.prepared.clone()));
+    BatchWrapper { inner: batch }
+}
+
+#[napi]
+pub fn create_unprepared_batch(queries: Vec<&str>) -> BatchWrapper {
+    let mut batch: Batch = Default::default();
+    queries
+        .iter()
+        .for_each(|q| batch.append_statement(q.to_owned()));
     BatchWrapper { inner: batch }
 }
 
