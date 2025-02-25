@@ -273,9 +273,8 @@ describe("Client @SERVER_API", function () {
                 insertSelectTest(client, table, columns, values, hints, done);
             },
         );
-        // No support for partial hints
-        // TODO: Fix this test
-        /* vit(
+
+        vit(
             "2.0",
             "should use parameter hints as string for complex types partial",
             function (done) {
@@ -290,7 +289,7 @@ describe("Client @SERVER_API", function () {
                 const client = setupInfo.client;
                 insertSelectTest(client, table, columns, values, hints, done);
             },
-        ); */
+        );
         vit(
             "2.0",
             "should use parameter hints as string for complex types complete",

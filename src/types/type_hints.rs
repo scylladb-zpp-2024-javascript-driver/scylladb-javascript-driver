@@ -56,11 +56,14 @@ fn type_code_to_cql_type(value: i32) -> Result<CqlType, napi::Error> {
 /// Convert single hint from the format expected by API of the driver
 /// to the ``ComplexType`` that is used internally in the rust part of the code
 #[napi]
-pub fn convert_hint(hint: TypeHint) -> napi::Result<ComplexType> {
+pub fn convert_hint(hint: Option<TypeHint>) -> napi::Result<Option<ComplexType>> {
+    let Some(hint) = hint else {
+        return Ok(None);
+    };
     let base_type = type_code_to_cql_type(hint.code)?;
     let support_types = hint.info.flatten();
 
-    Ok(match base_type {
+    Ok(Some(match base_type {
         CqlType::List | CqlType::Set => {
             // Ensure there is no value in info field, or there is exactly one support type
             let mut support_types = support_types.unwrap_or_default();
@@ -70,26 +73,25 @@ pub fn convert_hint(hint: TypeHint) -> napi::Result<ComplexType> {
                     support_types.len()
                 )));
             }
-            let support_type = convert_hint(support_types.pop().unwrap())?;
-            ComplexType::one_support(base_type, Some(support_type))
+            let support_type = convert_hint(support_types.pop())?;
+            ComplexType::one_support(base_type, support_type)
         }
         CqlType::Map | CqlType::Tuple => {
             let support_types: Vec<TypeHint> = support_types.unwrap_or_default();
 
-            let support_types: Vec<Result<ComplexType, napi::Error>> =
-                support_types.into_iter().map(convert_hint).collect();
-
-            if support_types.iter().any(|e| e.is_err()) {
-                return Err(js_error("Failed to convert one of the subtypes"));
-            }
-            let mut support_types: Vec<ComplexType> =
-                support_types.into_iter().filter_map(|e| e.ok()).collect();
+            let mut support_types: Vec<Option<ComplexType>> = support_types
+                .into_iter()
+                .map(|e| convert_hint(Some(e)))
+                .collect::<Result<Vec<Option<ComplexType>>, napi::Error>>()
+                .map_err(|err| {
+                    js_error(format!("Failed to convert one of the subtypes: {}", err))
+                })?;
 
             match base_type {
                 CqlType::Map => {
-                    if support_types.len() != 2 {
+                    if ![0, 2].contains(&support_types.len()) {
                         return Err(js_error(format!(
-                            "Invalid number of support types. Got {}, expected 2",
+                            "Invalid number of support types. Got {}, expected two or none",
                             support_types.len()
                         )));
                     }
@@ -98,7 +100,11 @@ pub fn convert_hint(hint: TypeHint) -> napi::Result<ComplexType> {
                     // but we keep it as Option, as used Complex type constructor assumes Option
                     let second_support = support_types.pop();
                     let first_support = support_types.pop();
-                    ComplexType::two_support(base_type, first_support, second_support)
+                    ComplexType::two_support(
+                        base_type,
+                        first_support.flatten(),
+                        second_support.flatten(),
+                    )
                 }
                 // TODO: update it with tuple implementations
                 CqlType::Tuple => todo!(),
@@ -110,5 +116,5 @@ pub fn convert_hint(hint: TypeHint) -> napi::Result<ComplexType> {
             todo!()
         }
         _ => ComplexType::simple_type(base_type),
-    })
+    }))
 }
