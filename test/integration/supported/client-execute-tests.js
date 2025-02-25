@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 "use strict";
 const assert = require("assert");
 const util = require("util");
