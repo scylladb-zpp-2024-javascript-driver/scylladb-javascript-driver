@@ -13,8 +13,11 @@ use crate::{
 #[napi]
 pub struct SessionOptions {
     pub connect_points: Vec<String>,
+    pub keyspace: Option<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
+    pub credentials_username: Option<String>,
+    pub credentials_password: Option<String>,
 }
 
 #[napi]
@@ -33,8 +36,11 @@ impl SessionOptions {
     pub fn empty() -> Self {
         SessionOptions {
             connect_points: vec![],
+            keyspace: None,
             application_name: None,
             application_version: None,
+            credentials_username: None,
+            credentials_password: None,
         }
     }
 }
@@ -43,13 +49,15 @@ impl SessionOptions {
 impl SessionWrapper {
     #[napi]
     pub async fn create_session(options: &SessionOptions) -> napi::Result<Self> {
-        let s = SessionBuilder::new()
-            .known_node(options.connect_points[0].clone())
-            .custom_identity(get_self_identity(options))
-            .build()
-            .await
-            .map_err(err_to_napi)?;
-        Ok(SessionWrapper { internal: s })
+        let builder = configure_session_builder(options);
+        let session = builder.build().await.map_err(err_to_napi)?;
+        if let Some(keyspace) = &options.keyspace {
+            session
+                .use_keyspace(keyspace, false)
+                .await
+                .map_err(err_to_napi)?;
+        }
+        Ok(SessionWrapper { internal: session })
     }
 
     #[napi]
@@ -136,6 +144,19 @@ pub fn create_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
         .iter()
         .for_each(|q| batch.append_statement(q.prepared.clone()));
     BatchWrapper { inner: batch }
+}
+
+fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
+    let mut builder = SessionBuilder::new();
+    builder = builder.custom_identity(get_self_identity(options));
+    builder = builder.known_nodes(&options.connect_points);
+    if let (Some(username), Some(password)) = (
+        options.credentials_username.as_ref(),
+        options.credentials_password.as_ref(),
+    ) {
+        builder = builder.user(username, password);
+    }
+    builder
 }
 
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
