@@ -9,6 +9,7 @@ const LocalTime = require("../../lib/types/local-time");
 const Long = require("long");
 const InetAddress = require("../../lib/types/inet-address");
 const LocalDate = require("../../lib/types/local-date");
+const Tuple = require("../../lib/types/tuple");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -247,7 +248,7 @@ describe("Cql value wrapper", function () {
         console.log(value.get(0));
         assert.strictEqual(value.get(0), "some text");
         assert.strictEqual(value.get(1), 1);
-        assert.strictEqual(value.get(2), null);
+        assert.strictEqual(value.get(2), undefined);
     });
 
     it("should get time uuid type correctly from napi", function () {
