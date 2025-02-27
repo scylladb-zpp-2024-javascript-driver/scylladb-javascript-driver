@@ -9,6 +9,7 @@ const LocalTime = require("../../lib/types/local-time");
 const Long = require("long");
 const InetAddress = require("../../lib/types/inet-address");
 const LocalDate = require("../../lib/types/local-date");
+const Tuple = require("../../lib/types/tuple");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
