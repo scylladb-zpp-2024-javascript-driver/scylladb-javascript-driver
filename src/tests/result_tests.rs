@@ -144,6 +144,17 @@ pub fn tests_get_cql_wrapper_tiny_int() -> CqlValueWrapper {
 }
 
 #[napi]
+/// Test function returning sample CqlValueWrapper with Tuple type
+pub fn tests_get_cql_wrapper_tuple() -> CqlValueWrapper {
+    let element = CqlValue::Tuple(vec![
+        Some(CqlValue::Text("some text".to_owned())),
+        Some(CqlValue::Int(1)),
+        None,
+    ]);
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
 /// Test function returning sample CqlValueWrapper with Uuid type
 pub fn tests_get_cql_wrapper_uuid() -> CqlValueWrapper {
     let element = CqlValue::Uuid(uuid!("ffffffff-ffff-ffff-ffff-ffffffffffff"));
