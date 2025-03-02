@@ -27,7 +27,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    internal: Session,
+    inner: Session,
 }
 
 #[napi]
@@ -52,15 +52,12 @@ impl SessionWrapper {
             .build()
             .await
             .map_err(err_to_napi)?;
-        Ok(SessionWrapper { internal: s })
+        Ok(SessionWrapper { inner: s })
     }
 
     #[napi]
     pub fn get_keyspace(&self) -> Option<String> {
-        self.internal
-            .get_keyspace()
-            .as_deref()
-            .map(ToOwned::to_owned)
+        self.inner.get_keyspace().as_deref().map(ToOwned::to_owned)
     }
 
     #[napi]
@@ -70,7 +67,7 @@ impl SessionWrapper {
         _options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let query_result = self
-            .internal
+            .inner
             .query_unpaged(query, &[])
             .await
             .map_err(err_to_napi)?;
@@ -91,7 +88,7 @@ impl SessionWrapper {
     ) -> napi::Result<QueryResultWrapper> {
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
         let query_result = self
-            .internal
+            .inner
             .query_unpaged(query, params_vec)
             .await
             .map_err(err_to_napi)?;
@@ -106,11 +103,7 @@ impl SessionWrapper {
         statement: String,
     ) -> napi::Result<PreparedStatementWrapper> {
         Ok(PreparedStatementWrapper {
-            prepared: self
-                .internal
-                .prepare(statement)
-                .await
-                .map_err(err_to_napi)?,
+            prepared: self.inner.prepare(statement).await.map_err(err_to_napi)?,
         })
     }
 
@@ -133,7 +126,7 @@ impl SessionWrapper {
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
         let query = apply_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
-            self.internal
+            self.inner
                 .execute_unpaged(&query, params_vec)
                 .await
                 .map_err(err_to_napi)?,
@@ -151,7 +144,7 @@ impl SessionWrapper {
             .map(QueryParameterWrapper::extract_parameters)
             .collect();
         QueryResultWrapper::from_query(
-            self.internal
+            self.inner
                 .batch(&batch.inner, params_vec)
                 .await
                 .map_err(err_to_napi)?,
