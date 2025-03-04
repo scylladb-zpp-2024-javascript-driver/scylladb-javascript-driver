@@ -1,6 +1,7 @@
 use crate::{
     types::{
         time_uuid::TimeUuidWrapper,
+        tuple::TupleWrapper,
         type_wrappers::{ComplexType, CqlType},
         uuid::UuidWrapper,
     },
@@ -182,7 +183,7 @@ impl CqlValueWrapper {
             CqlValue::TinyInt(_) => CqlType::TinyInt,
             CqlValue::Time(_) => CqlType::Time,
             CqlValue::Timeuuid(_) => CqlType::Timeuuid,
-            CqlValue::Tuple(_) => CqlType::Tuple, // NOI
+            CqlValue::Tuple(_) => CqlType::Tuple,
             CqlValue::Uuid(_) => CqlType::Uuid,
             CqlValue::Varint(_) => CqlType::Varint, // NOI
         }
@@ -359,6 +360,14 @@ impl CqlValueWrapper {
         match self.inner.as_timeuuid() {
             Some(r) => Ok(TimeUuidWrapper::from_cql_time_uuid(r)),
             None => Err(Self::generic_error("time_uuid")),
+        }
+    }
+
+    #[napi]
+    pub fn get_tuple(&self) -> napi::Result<TupleWrapper> {
+        match &self.inner {
+            CqlValue::Tuple(r) => Ok(TupleWrapper::from_cql_tuple(r.clone())),
+            _ => Err(Self::generic_error("tuple")),
         }
     }
 

@@ -17,6 +17,21 @@ use uuid::uuid;
 
 #[napi]
 pub fn tests_from_value_get_type(test: String) -> ComplexType {
+    if test.as_str() == "Tuple" {
+        return ComplexType::two_support(
+            CqlType::Tuple,
+            Some(ComplexType::simple_type(CqlType::Text)),
+            Some(ComplexType::two_support(
+                CqlType::Tuple,
+                Some(ComplexType::simple_type(CqlType::Int)),
+                Some(ComplexType::two_support(
+                    CqlType::Tuple,
+                    Some(ComplexType::simple_type(CqlType::Empty)),
+                    None,
+                )),
+            )),
+        );
+    }
     let v = match test.as_str() {
         "Ascii" => (CqlType::Ascii, None, None),
         "BigInt" => (CqlType::BigInt, None, None),
@@ -82,6 +97,11 @@ pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
         "Timeuuid" => CqlValue::Timeuuid(
             CqlTimeuuid::from_str("8e14e760-7fa8-11eb-bc66-000000000001").unwrap(),
         ),
+        "Tuple" => CqlValue::Tuple(vec![
+            Some(CqlValue::Text("First".to_owned())),
+            Some(CqlValue::Int(1)),
+            None,
+        ]),
         "Uuid" => CqlValue::Uuid(uuid!("ffffffff-eeee-ffff-ffff-ffffffffffff")),
         _ => CqlValue::Empty,
     };

@@ -8,6 +8,7 @@ const Duration = require("../../lib/types/duration");
 const LocalTime = require("../../lib/types/local-time");
 const Long = require("long");
 const InetAddress = require("../../lib/types/inet-address");
+const Tuple = require("../../lib/types/tuple");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -202,6 +203,25 @@ describe("Cql value wrapper", function () {
         /* Corresponding value: 
         let element = CqlValue::TinyInt(3); */
         assert.strictEqual(value, Number(3));
+    });
+
+    it("should get tuple type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperTuple();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Tuple);
+        let value = getCqlObject(element);
+        assert.instanceOf(value, Tuple);
+        /* Corresponding value:
+        let element = CqlValue::Tuple(vec![
+            Some(CqlValue::Text("some text".to_owned())),
+            Some(CqlValue::Int(1)),
+            None,
+        ]); */
+        assert.strictEqual(value.length, 3);
+        console.log(value.get(0));
+        assert.strictEqual(value.get(0), "some text");
+        assert.strictEqual(value.get(1), 1);
+        assert.strictEqual(value.get(2), null);
     });
 
     it("should get uuid type correctly from napi", function () {
