@@ -5,8 +5,8 @@
     "license": "Apache-2.0",
     "private": true,
     "dependencies": {
-      "scylladb-javascript-driver": "file:./../",
-      "async": "^1.5.2"
+        "async": "^1.5.2",
+        "cassandra-driver": "^4.8.0",
+        "scylladb-javascript-driver": "file:./../"
     }
-  }
-  
+}

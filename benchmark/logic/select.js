@@ -1,6 +1,7 @@
 "use strict";
 const async = require("async");
-const cassandra = require("scylladb-javascript-driver");
+// scylladb-javascript-driver, cassandra-driver
+const cassandra = require(process.argv[2]);
 const { getClientArgs } = require("./utils");
 const { exit } = require("process");
 
