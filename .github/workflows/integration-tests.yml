@@ -4,6 +4,7 @@ name: Run integration tests
 env:
   DEBUG: napi:*
   APP_NAME: scylladb-javascript-driver
+  RUST_BACKTRACE: full
 "on":
   push:
     branches:
