@@ -906,7 +906,11 @@ describe("Client @SERVER_API", function () {
             },
         ); */
 
-        vit("2.1", "should support protocol level timestamp", function (done) {
+        // Incorrectly enabled test: enabled for prepared, instead of unprepared.
+        // Would require query options on unprepared queries
+        // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/pull/92#discussion_r1977849708
+        // TODO: Fix this test
+        /* vit("2.1", "should support protocol level timestamp", function (done) {
             const client = setupInfo.client;
             const id = types.Uuid.random();
             const timestamp = types.generateTimestamp(new Date(), 777);
@@ -946,7 +950,7 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        });
+        }); */
 
         // No support for queryTrace flag
         // TODO: Fix this test
