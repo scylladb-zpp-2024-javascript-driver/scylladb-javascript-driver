@@ -1,17 +1,13 @@
 use napi::bindgen_prelude::{BigInt, Buffer};
-use scylla::{
-    frame::{
-        response::result::CqlValue,
-        value::{Counter, CqlTimestamp, CqlTimeuuid},
-    },
-    prepared_statement::PreparedStatement,
+use scylla::frame::{
+    response::result::CqlValue,
+    value::{Counter, CqlTimestamp, CqlTimeuuid},
 };
 
 use crate::{
-    result::map_column_type_to_complex_type,
     types::{
-        duration::DurationWrapper, inet::InetAddressWrapper, local_time::LocalTimeWrapper,
-        type_wrappers::ComplexType, uuid::UuidWrapper,
+        duration::DurationWrapper, inet::InetAddressWrapper, local_date::LocalDateWrapper,
+        local_time::LocalTimeWrapper, uuid::UuidWrapper,
     },
     utils::{bigint_to_i64, js_error},
 };
@@ -20,12 +16,6 @@ use crate::{
 #[napi]
 pub struct QueryParameterWrapper {
     pub(crate) parameter: CqlValue,
-}
-
-#[napi]
-/// Wrapper for struct representing Prepared statement to the database
-pub struct PreparedStatementWrapper {
-    pub(crate) prepared: PreparedStatement,
 }
 
 #[napi]
@@ -66,6 +56,13 @@ impl QueryParameterWrapper {
                 "Value casted into counter type shouldn't overflow i64",
             )?)),
         })
+    }
+
+    #[napi]
+    pub fn from_local_date(val: &LocalDateWrapper) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Date(val.get_cql_date()),
+        }
     }
 
     #[napi]
@@ -196,19 +193,6 @@ impl QueryParameterWrapper {
     ) -> Vec<Option<CqlValue>> {
         row.iter()
             .map(|e| e.as_ref().map(|v| v.parameter.clone()))
-            .collect()
-    }
-}
-
-#[napi]
-impl PreparedStatementWrapper {
-    #[napi]
-    /// Get array of expected types for this prepared statement.
-    pub fn get_expected_types(&self) -> Vec<ComplexType> {
-        self.prepared
-            .get_variable_col_specs()
-            .iter()
-            .map(|e| map_column_type_to_complex_type(e.typ()))
             .collect()
     }
 }

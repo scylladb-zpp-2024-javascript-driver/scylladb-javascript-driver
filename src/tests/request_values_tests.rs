@@ -9,7 +9,7 @@ use scylla::frame::{
 };
 
 use crate::{
-    request::QueryParameterWrapper,
+    requests::parameter_wrappers::QueryParameterWrapper,
     types::type_wrappers::{ComplexType, CqlType},
 };
 
