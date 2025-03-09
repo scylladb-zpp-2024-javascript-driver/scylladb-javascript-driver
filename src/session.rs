@@ -27,7 +27,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    internal: Session,
+    inner: Session,
 }
 
 #[napi]
@@ -52,15 +52,12 @@ impl SessionWrapper {
             .build()
             .await
             .map_err(err_to_napi)?;
-        Ok(SessionWrapper { internal: s })
+        Ok(SessionWrapper { inner: s })
     }
 
     #[napi]
     pub fn get_keyspace(&self) -> Option<String> {
-        self.internal
-            .get_keyspace()
-            .as_deref()
-            .map(ToOwned::to_owned)
+        self.inner.get_keyspace().as_deref().map(ToOwned::to_owned)
     }
 
     #[napi]
@@ -70,8 +67,29 @@ impl SessionWrapper {
         _options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let query_result = self
-            .internal
+            .inner
             .query_unpaged(query, &[])
+            .await
+            .map_err(err_to_napi)?;
+        QueryResultWrapper::from_query(query_result)
+    }
+
+    /// Executes unprepared query. This assumes the types will be either guessed or provided by user.
+    ///
+    /// Returns a wrapper of the value provided by the rust driver
+    ///
+    /// All parameters need to be wrapped into QueryParameterWrapper keeping CqlValue of assumed correct type
+    /// If the provided types will not be correct, this query will fail.
+    #[napi]
+    pub async fn query_unpaged(
+        &self,
+        query: String,
+        params: Vec<Option<&QueryParameterWrapper>>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
+        let query_result = self
+            .inner
+            .query_unpaged(query, params_vec)
             .await
             .map_err(err_to_napi)?;
         QueryResultWrapper::from_query(query_result)
@@ -85,11 +103,7 @@ impl SessionWrapper {
         statement: String,
     ) -> napi::Result<PreparedStatementWrapper> {
         Ok(PreparedStatementWrapper {
-            prepared: self
-                .internal
-                .prepare(statement)
-                .await
-                .map_err(err_to_napi)?,
+            prepared: self.inner.prepare(statement).await.map_err(err_to_napi)?,
         })
     }
 
@@ -112,7 +126,7 @@ impl SessionWrapper {
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
         let query = apply_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
-            self.internal
+            self.inner
                 .execute_unpaged(&query, params_vec)
                 .await
                 .map_err(err_to_napi)?,
@@ -130,7 +144,7 @@ impl SessionWrapper {
             .map(QueryParameterWrapper::extract_parameters)
             .collect();
         QueryResultWrapper::from_query(
-            self.internal
+            self.inner
                 .batch(&batch.inner, params_vec)
                 .await
                 .map_err(err_to_napi)?,
@@ -139,11 +153,20 @@ impl SessionWrapper {
 }
 
 #[napi]
-pub fn create_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
+pub fn create_prepared_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
     let mut batch: Batch = Default::default();
     queries
         .iter()
         .for_each(|q| batch.append_statement(q.prepared.clone()));
+    BatchWrapper { inner: batch }
+}
+
+#[napi]
+pub fn create_unprepared_batch(queries: Vec<String>) -> BatchWrapper {
+    let mut batch: Batch = Default::default();
+    queries
+        .into_iter()
+        .for_each(|q| batch.append_statement(q.as_str()));
     BatchWrapper { inner: batch }
 }
 
