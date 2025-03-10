@@ -1,12 +1,14 @@
 // This is separate file, but still compiles into the library
 
+use scylla::client::session_builder::SessionBuilder;
+
 #[napi(js_name = "PlainTextAuthProvider")]
 pub struct PlainTextAuthProvider {
     // If we use pub, given attribute is accessible in JS:
     pub id: u32,
     // Not all attributes can be public:
     /* pub <- CE */
-    internal: scylla::SessionBuilder,
+    internal: SessionBuilder,
     /* If a given object can't be translated into js, it can still be
     in a class exposed to JS, but cannot be public. It's also not visible in the
     definition in ts file. This **suggests** if we crete an object of this class,
@@ -26,7 +28,7 @@ impl PlainTextAuthProvider {
         println!("Plain text constructor!");
         PlainTextAuthProvider {
             id: 10,
-            internal: scylla::SessionBuilder::new(),
+            internal: SessionBuilder::new(),
         }
     }
 

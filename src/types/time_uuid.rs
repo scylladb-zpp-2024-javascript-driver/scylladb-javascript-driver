@@ -1,5 +1,5 @@
 use napi::bindgen_prelude::Buffer;
-use scylla::frame::value::CqlTimeuuid;
+use scylla::value::CqlTimeuuid;
 
 use super::uuid::UuidWrapper;
 

@@ -1,9 +1,10 @@
-use scylla::prepared_statement::PreparedStatement;
+use scylla::client::session::Session;
+use scylla::client::session_builder::SessionBuilder;
+use scylla::client::SelfIdentity;
+use scylla::statement::batch::Batch;
+use scylla::statement::prepared::PreparedStatement;
 use scylla::statement::{Consistency, SerialConsistency};
-use scylla::{
-    batch::Batch, frame::response::result::CqlValue, transport::SelfIdentity, Session,
-    SessionBuilder,
-};
+use scylla::value::CqlValue;
 
 use crate::options;
 use crate::requests::parameter_wrappers::QueryParameterWrapper;
