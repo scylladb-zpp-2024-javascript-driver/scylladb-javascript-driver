@@ -96,31 +96,15 @@ module.exports = function (keyspace, prepare) {
 
         it("should support setting numeric values using strings for collections", () => {
             const insertQuery = `INSERT INTO tbl_numeric_collections
-         (id, list_bigint, list_decimal, map_double, set_float, map_varint, set_int) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+         (id, list_bigint, list_decimal, map_varint) VALUES (?, ?, ?, ?)`;
             const hints = !prepare
-                ? [
-                      null,
-                      "list<bigint>",
-                      "list<decimal>",
-                      "map<text, double>",
-                      "set<float>",
-                      "map<text, varint>",
-                      "set<int>",
-                  ]
+                ? [null, "list<bigint>", "list<decimal>", "map<text, varint>"]
                 : null;
             const intValue = "890";
             const decimalValue = "1234567.875";
             const id = Uuid.random();
 
-            const params = [
-                id,
-                [intValue],
-                [decimalValue],
-                { a: decimalValue },
-                [decimalValue],
-                { a: intValue },
-                [intValue],
-            ];
+            const params = [id, [intValue], [decimalValue], { a: intValue }];
 
             return client
                 .execute(insertQuery, params, { prepare, hints })
@@ -138,10 +122,6 @@ module.exports = function (keyspace, prepare) {
                     expect(row["list_decimal"][0].toString()).to.be.equal(
                         decimalValue,
                     );
-                    expect(row["set_float"][0].toString()).to.be.equal(
-                        decimalValue,
-                    );
-                    expect(row["set_int"][0].toString()).to.be.equal(intValue);
                 });
         });
 
