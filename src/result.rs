@@ -28,8 +28,16 @@ enum QueryResultVariant {
 }
 
 #[napi]
+#[derive(Clone)]
+pub struct DecodingOptions {
+    pub use_big_int_as_long: bool,
+    pub use_big_int_as_varint: bool,
+}
+
+#[napi]
 pub struct QueryResultWrapper {
     internal: QueryResultVariant,
+    decoding_options: DecodingOptions,
 }
 
 #[napi]
@@ -60,7 +68,14 @@ impl QueryResultWrapper {
                 return Err(err_to_napi(e));
             }
         };
-        Ok(QueryResultWrapper { internal: value })
+        let empty_decoding_options = DecodingOptions {
+            use_big_int_as_long: false,
+            use_big_int_as_varint: false,
+        };
+        Ok(QueryResultWrapper {
+            internal: value,
+            decoding_options: empty_decoding_options,
+        })
     }
 
     #[napi]
@@ -131,6 +146,11 @@ impl QueryResultWrapper {
             QueryResultVariant::RowsResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
             QueryResultVariant::EmptyResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
         }
+    }
+
+    #[napi]
+    pub fn get_decoding_options(&self) -> DecodingOptions {
+        self.decoding_options.clone()
     }
 }
 
