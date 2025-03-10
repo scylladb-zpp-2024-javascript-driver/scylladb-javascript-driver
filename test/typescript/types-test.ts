@@ -1,4 +1,4 @@
-import { types, Client } from "../../../main";
+import { types, Client } from "../../main";
 import Uuid = types.Uuid;
 import TimeUuid = types.TimeUuid;
 import Long = types.Long;
