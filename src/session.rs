@@ -1,4 +1,4 @@
-use scylla::client::session::Session;
+use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::client::SelfIdentity;
 use scylla::statement::batch::Batch;
@@ -14,11 +14,14 @@ use crate::{
     requests::request::PreparedStatementWrapper, result::QueryResultWrapper, utils::err_to_napi,
 };
 
+const DEFAULT_CACHE_SIZE: u32 = 500;
+
 #[napi]
 pub struct SessionOptions {
     pub connect_points: Vec<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
+    pub cache_size: Option<u32>,
 }
 
 #[napi]
@@ -28,7 +31,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    inner: Session,
+    inner: CachingSession,
 }
 
 #[napi]
@@ -40,6 +43,7 @@ impl SessionOptions {
             connect_points: vec![],
             application_name: None,
             application_version: None,
+            cache_size: None,
         }
     }
 }
@@ -55,16 +59,37 @@ impl SessionWrapper {
             .build()
             .await
             .map_err(err_to_napi)?;
+        let s: CachingSession =
+            CachingSession::from(s, options.cache_size.unwrap_or(DEFAULT_CACHE_SIZE) as usize);
         Ok(SessionWrapper { inner: s })
     }
 
     /// Returns the name of the current keyspace
     #[napi]
     pub fn get_keyspace(&self) -> Option<String> {
-        self.inner.get_keyspace().as_deref().map(ToOwned::to_owned)
+        self.inner
+            .get_session()
+            .get_keyspace()
+            .as_deref()
+            .map(ToOwned::to_owned)
     }
 
-    /// Executes unprepared statement. This assumes the types will be either guessed or provided by user.
+    #[napi]
+    pub async fn query_unpaged_no_values(
+        &self,
+        query: String,
+        _options: &QueryOptionsWrapper,
+    ) -> napi::Result<QueryResultWrapper> {
+        let query_result = self
+            .inner
+            .get_session()
+            .query_unpaged(query, &[])
+            .await
+            .map_err(err_to_napi)?;
+        QueryResultWrapper::from_query(query_result)
+    }
+
+    /// Executes unprepared query. This assumes the types will be either guessed or provided by user.
     ///
     /// Returns a wrapper of the result provided by the rust driver
     ///
@@ -81,6 +106,7 @@ impl SessionWrapper {
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
         let query_result = self
             .inner
+            .get_session()
             .query_unpaged(statement, params_vec)
             .await
             .map_err(err_to_napi)?;
@@ -94,8 +120,13 @@ impl SessionWrapper {
         &self,
         statement: String,
     ) -> napi::Result<PreparedStatementWrapper> {
+        let query: Statement = statement.into();
         Ok(PreparedStatementWrapper {
-            prepared: self.inner.prepare(statement).await.map_err(err_to_napi)?,
+            prepared: self
+                .inner
+                .add_prepared_statement(&query) // TODO: change for add_prepared_statement_to_owned after it is made public
+                .await
+                .map_err(err_to_napi)?,
         })
     }
 
@@ -119,6 +150,7 @@ impl SessionWrapper {
         let query = apply_prepared_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
             self.inner
+                .get_session()
                 .execute_unpaged(&query, params_vec)
                 .await
                 .map_err(err_to_napi)?,
