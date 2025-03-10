@@ -1,8 +1,5 @@
 use napi::bindgen_prelude::{BigInt, Buffer};
-use scylla::frame::{
-    response::result::CqlValue,
-    value::{Counter, CqlTimestamp, CqlTimeuuid},
-};
+use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue};
 
 use crate::{
     types::{
