@@ -8,8 +8,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 
-napi = { version = "2.12.2", default-features = false, features = ["napi4", "napi6", "async"] }
-napi-derive = "2.12.2"
+napi = { version = "2.16.16", default-features = false, features = ["napi4", "napi6", "async"] }
+napi-derive = "2.16.6"
 scylla = { git = "https://github.com/scylladb/scylla-rust-driver.git", rev = "v0.15.0", features = [
     "ssl",
 ] }
@@ -21,7 +21,7 @@ thiserror = "2.0.12"
 
 
 [build-dependencies]
-napi-build = "2.0.1"
+napi-build = "2.1.5"
 
 [profile.release]
 lto = true
