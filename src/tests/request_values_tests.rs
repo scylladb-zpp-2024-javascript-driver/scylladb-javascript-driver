@@ -1,11 +1,7 @@
+use scylla::value::CqlTime;
 use std::{
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
-};
-
-use scylla::frame::{
-    response::result::CqlValue,
-    value::{Counter, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid},
 };
 
 use crate::{
@@ -13,6 +9,7 @@ use crate::{
     types::type_wrappers::{ComplexType, CqlType},
 };
 
+use scylla::value::{Counter, CqlDuration, CqlTimestamp, CqlTimeuuid, CqlValue};
 use uuid::uuid;
 
 #[napi]

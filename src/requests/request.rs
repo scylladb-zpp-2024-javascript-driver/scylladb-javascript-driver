@@ -1,5 +1,5 @@
 use napi::bindgen_prelude::BigInt;
-use scylla::prepared_statement::PreparedStatement;
+use scylla::statement::prepared::PreparedStatement;
 
 use crate::{result::map_column_type_to_complex_type, types::type_wrappers::ComplexType};
 
