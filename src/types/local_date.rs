@@ -1,6 +1,6 @@
 use crate::utils::{js_error, CharCounter};
 use regex::Regex;
-use scylla::frame::value::CqlDate;
+use scylla::value::CqlDate;
 use std::sync::LazyLock;
 use std::{
     cmp::max,
