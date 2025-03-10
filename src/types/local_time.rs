@@ -1,6 +1,6 @@
 use crate::utils::{bigint_to_i64, js_error, CharCounter};
 use napi::bindgen_prelude::BigInt;
-use scylla::frame::value::CqlTime;
+use scylla::value::CqlTime;
 use std::fmt::{self, Write};
 use std::num::ParseIntError;
 

@@ -1,11 +1,7 @@
+use scylla::value::{Counter, CqlDate, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid, CqlValue};
 use std::{
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
-};
-
-use scylla::frame::{
-    response::result::CqlValue,
-    value::{Counter, CqlDate, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid},
 };
 
 use crate::result::CqlValueWrapper;

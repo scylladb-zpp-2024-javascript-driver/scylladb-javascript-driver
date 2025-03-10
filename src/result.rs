@@ -12,9 +12,11 @@ use napi::{
     Error, Status,
 };
 use scylla::{
-    frame::response::result::{ColumnType, CqlValue, Row},
-    transport::query_result::IntoRowsResultError,
-    QueryResult, QueryRowsResult,
+    cluster::metadata::{CollectionType, NativeType},
+    errors::IntoRowsResultError,
+    frame::response::result::ColumnType,
+    response::query_result::{QueryResult, QueryRowsResult},
+    value::{CqlValue, Row},
 };
 
 use crate::types::duration::DurationWrapper;
@@ -159,7 +161,7 @@ impl CqlValueWrapper {
     #[napi]
     /// Get type of value in this object
     pub fn get_type(&self) -> CqlType {
-        match self.inner {
+        match &self.inner {
             CqlValue::Ascii(_) => CqlType::Ascii,
             CqlValue::BigInt(_) => CqlType::BigInt,
             CqlValue::Boolean(_) => CqlType::Boolean,
@@ -186,6 +188,7 @@ impl CqlValueWrapper {
             CqlValue::Tuple(_) => CqlType::Tuple, // NOI
             CqlValue::Uuid(_) => CqlType::Uuid,
             CqlValue::Varint(_) => CqlType::Varint, // NOI
+            other => unimplemented!("Missing implementation for CQL value {:?}", other),
         }
     }
 
@@ -382,39 +385,51 @@ impl CqlValueWrapper {
 
 pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
     match typ {
-        ColumnType::Custom(_) => panic!("No support for custom type"),
-        ColumnType::Ascii => ComplexType::simple_type(CqlType::Ascii),
-        ColumnType::Boolean => ComplexType::simple_type(CqlType::Boolean),
-        ColumnType::Blob => ComplexType::simple_type(CqlType::Blob),
-        ColumnType::Counter => ComplexType::simple_type(CqlType::Counter),
-        ColumnType::Date => ComplexType::simple_type(CqlType::Date),
-        ColumnType::Decimal => ComplexType::simple_type(CqlType::Decimal),
-        ColumnType::Double => ComplexType::simple_type(CqlType::Double),
-        ColumnType::Duration => ComplexType::simple_type(CqlType::Duration),
-        ColumnType::Float => ComplexType::simple_type(CqlType::Float),
-        ColumnType::Int => ComplexType::simple_type(CqlType::Int),
-        ColumnType::BigInt => ComplexType::simple_type(CqlType::BigInt),
-        ColumnType::Text => ComplexType::simple_type(CqlType::Text),
-        ColumnType::Timestamp => ComplexType::simple_type(CqlType::Timestamp),
-        ColumnType::Inet => ComplexType::simple_type(CqlType::Inet),
-        ColumnType::List(t) => {
-            ComplexType::one_support(CqlType::List, Some(map_column_type_to_complex_type(t)))
-        }
-        ColumnType::Map(t, v) => ComplexType::two_support(
-            CqlType::Map,
-            Some(map_column_type_to_complex_type(t)),
-            Some(map_column_type_to_complex_type(v)),
-        ),
-        ColumnType::Set(t) => {
-            ComplexType::one_support(CqlType::Set, Some(map_column_type_to_complex_type(t)))
-        }
+        ColumnType::Native(native) => ComplexType::simple_type(match native {
+            NativeType::Ascii => CqlType::Ascii,
+            NativeType::Boolean => CqlType::Boolean,
+            NativeType::Blob => CqlType::Blob,
+            NativeType::Counter => CqlType::Counter,
+            NativeType::Date => CqlType::Date,
+            NativeType::Decimal => CqlType::Decimal,
+            NativeType::Double => CqlType::Double,
+            NativeType::Duration => CqlType::Duration,
+            NativeType::Float => CqlType::Float,
+            NativeType::Int => CqlType::Int,
+            NativeType::BigInt => CqlType::BigInt,
+            NativeType::Text => CqlType::Text,
+            NativeType::Timestamp => CqlType::Timestamp,
+            NativeType::Inet => CqlType::Inet,
+            NativeType::SmallInt => CqlType::SmallInt,
+            NativeType::TinyInt => CqlType::TinyInt,
+            NativeType::Time => CqlType::Time,
+            NativeType::Timeuuid => CqlType::Timeuuid,
+            NativeType::Uuid => CqlType::Uuid,
+            NativeType::Varint => CqlType::Varint,
+            other => unimplemented!("Missing implementation for CQL native type {:?}", other),
+        }),
+        ColumnType::Collection { frozen: _, typ } => match typ {
+            CollectionType::List(column_type) => ComplexType::one_support(
+                CqlType::List,
+                Some(map_column_type_to_complex_type(column_type)),
+            ),
+            CollectionType::Map(column_type, column_type1) => ComplexType::two_support(
+                CqlType::Map,
+                Some(map_column_type_to_complex_type(column_type)),
+                Some(map_column_type_to_complex_type(column_type1)),
+            ),
+            CollectionType::Set(column_type) => ComplexType::one_support(
+                CqlType::Set,
+                Some(map_column_type_to_complex_type(column_type)),
+            ),
+            other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
+        },
         ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
-        ColumnType::SmallInt => ComplexType::simple_type(CqlType::SmallInt),
-        ColumnType::TinyInt => ComplexType::simple_type(CqlType::TinyInt),
-        ColumnType::Time => ComplexType::simple_type(CqlType::Time),
-        ColumnType::Timeuuid => ComplexType::simple_type(CqlType::Timeuuid),
         ColumnType::Tuple(_) => ComplexType::simple_type(CqlType::Tuple),
-        ColumnType::Uuid => ComplexType::simple_type(CqlType::Uuid),
-        ColumnType::Varint => ComplexType::simple_type(CqlType::Varint),
+        ColumnType::Vector {
+            typ: _,
+            dimensions: _,
+        } => todo!(),
+        other => unimplemented!("Missing implementation for CQL type {:?}", other),
     }
 }
