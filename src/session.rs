@@ -1,4 +1,4 @@
-use scylla::client::session::Session;
+use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::client::SelfIdentity;
 use scylla::response::PagingState;
@@ -16,6 +16,8 @@ use crate::{
     requests::request::PreparedStatementWrapper, result::QueryResultWrapper, utils::err_to_napi,
 };
 
+const DEFAULT_CACHE_SIZE: u32 = 512;
+
 #[napi]
 pub struct SessionOptions {
     pub connect_points: Vec<String>,
@@ -24,6 +26,7 @@ pub struct SessionOptions {
     pub application_version: Option<String>,
     pub credentials_username: Option<String>,
     pub credentials_password: Option<String>,
+    pub cache_size: Option<u32>,
 }
 
 #[napi]
@@ -33,7 +36,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    inner: Session,
+    inner: CachingSession,
 }
 
 #[napi]
@@ -48,6 +51,7 @@ impl SessionOptions {
             application_version: None,
             credentials_username: None,
             credentials_password: None,
+            cache_size: None,
         }
     }
 }
@@ -59,13 +63,21 @@ impl SessionWrapper {
     pub async fn create_session(options: &SessionOptions) -> napi::Result<Self> {
         let builder = configure_session_builder(options);
         let session = builder.build().await.map_err(err_to_napi)?;
+        let session: CachingSession = CachingSession::from(
+            session,
+            options.cache_size.unwrap_or(DEFAULT_CACHE_SIZE) as usize,
+        );
         Ok(SessionWrapper { inner: session })
     }
 
     /// Returns the name of the current keyspace
     #[napi]
     pub fn get_keyspace(&self) -> Option<String> {
-        self.inner.get_keyspace().as_deref().map(ToOwned::to_owned)
+        self.inner
+            .get_session()
+            .get_keyspace()
+            .as_deref()
+            .map(ToOwned::to_owned)
     }
 
     /// Executes unprepared statement. This assumes the types will be either guessed or provided by user.
@@ -85,6 +97,7 @@ impl SessionWrapper {
         let params_vec = MaybeUnsetQueryParameterWrapper::extract_parameters(params);
         let query_result = self
             .inner
+            .get_session()
             .query_unpaged(statement, params_vec)
             .await
             .map_err(err_to_napi)?;
@@ -98,8 +111,13 @@ impl SessionWrapper {
         &self,
         statement: String,
     ) -> napi::Result<PreparedStatementWrapper> {
+        let statement: Statement = statement.into();
         Ok(PreparedStatementWrapper {
-            prepared: self.inner.prepare(statement).await.map_err(err_to_napi)?,
+            prepared: self
+                .inner
+                .add_prepared_statement(&statement) // TODO: change for add_prepared_statement_to_owned after it is made public
+                .await
+                .map_err(err_to_napi)?,
         })
     }
 
@@ -123,6 +141,7 @@ impl SessionWrapper {
         let query = apply_prepared_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
             self.inner
+                .get_session()
                 .execute_unpaged(&query, params_vec)
                 .await
                 .map_err(err_to_napi)?,
@@ -174,6 +193,7 @@ impl SessionWrapper {
 
         let (result, paging_state_response) = self
             .inner
+            .get_session()
             .query_single_page(statement, values, paging_state)
             .await
             .map_err(err_to_napi)?;
@@ -208,6 +228,7 @@ impl SessionWrapper {
 
         let (result, paging_state) = self
             .inner
+            .get_session()
             .execute_single_page(&prepared, values, paging_state)
             .await
             .map_err(err_to_napi)?;
