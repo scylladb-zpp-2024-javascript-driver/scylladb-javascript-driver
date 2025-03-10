@@ -1,4 +1,4 @@
-import { Client, Host, metadata, types } from "../../../main";
+import { Client, Host, metadata, types } from "../../main";
 import TableMetadata = metadata.TableMetadata;
 import QueryTrace = metadata.QueryTrace;
 
