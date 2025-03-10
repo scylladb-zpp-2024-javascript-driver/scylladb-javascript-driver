@@ -1,13 +1,16 @@
+use scylla::prepared_statement::PreparedStatement;
+use scylla::statement::{Consistency, SerialConsistency};
 use scylla::{
     batch::Batch, frame::response::result::CqlValue, transport::SelfIdentity, Session,
     SessionBuilder,
 };
 
+use crate::options;
+use crate::requests::parameter_wrappers::QueryParameterWrapper;
+use crate::requests::request::QueryOptionsWrapper;
+use crate::utils::{bigint_to_i64, js_error};
 use crate::{
-    options,
-    request::{PreparedStatementWrapper, QueryParameterWrapper},
-    result::QueryResultWrapper,
-    utils::err_to_napi,
+    requests::request::PreparedStatementWrapper, result::QueryResultWrapper, utils::err_to_napi,
 };
 
 #[napi]
@@ -24,7 +27,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    internal: Session,
+    inner: Session,
 }
 
 #[napi]
@@ -49,22 +52,44 @@ impl SessionWrapper {
             .build()
             .await
             .map_err(err_to_napi)?;
-        Ok(SessionWrapper { internal: s })
+        Ok(SessionWrapper { inner: s })
     }
 
     #[napi]
     pub fn get_keyspace(&self) -> Option<String> {
-        self.internal
-            .get_keyspace()
-            .as_deref()
-            .map(ToOwned::to_owned)
+        self.inner.get_keyspace().as_deref().map(ToOwned::to_owned)
     }
 
     #[napi]
-    pub async fn query_unpaged_no_values(&self, query: String) -> napi::Result<QueryResultWrapper> {
+    pub async fn query_unpaged_no_values(
+        &self,
+        query: String,
+        _options: &QueryOptionsWrapper,
+    ) -> napi::Result<QueryResultWrapper> {
         let query_result = self
-            .internal
+            .inner
             .query_unpaged(query, &[])
+            .await
+            .map_err(err_to_napi)?;
+        QueryResultWrapper::from_query(query_result)
+    }
+
+    /// Executes unprepared query. This assumes the types will be either guessed or provided by user.
+    ///
+    /// Returns a wrapper of the value provided by the rust driver
+    ///
+    /// All parameters need to be wrapped into QueryParameterWrapper keeping CqlValue of assumed correct type
+    /// If the provided types will not be correct, this query will fail.
+    #[napi]
+    pub async fn query_unpaged(
+        &self,
+        query: String,
+        params: Vec<Option<&QueryParameterWrapper>>,
+    ) -> napi::Result<QueryResultWrapper> {
+        let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
+        let query_result = self
+            .inner
+            .query_unpaged(query, params_vec)
             .await
             .map_err(err_to_napi)?;
         QueryResultWrapper::from_query(query_result)
@@ -78,11 +103,7 @@ impl SessionWrapper {
         statement: String,
     ) -> napi::Result<PreparedStatementWrapper> {
         Ok(PreparedStatementWrapper {
-            prepared: self
-                .internal
-                .prepare(statement)
-                .await
-                .map_err(err_to_napi)?,
+            prepared: self.inner.prepare(statement).await.map_err(err_to_napi)?,
         })
     }
 
@@ -100,11 +121,13 @@ impl SessionWrapper {
         &self,
         query: &PreparedStatementWrapper,
         params: Vec<Option<&QueryParameterWrapper>>,
+        options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
+        let query = apply_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
-            self.internal
-                .execute_unpaged(&query.prepared, params_vec)
+            self.inner
+                .execute_unpaged(&query, params_vec)
                 .await
                 .map_err(err_to_napi)?,
         )
@@ -121,7 +144,7 @@ impl SessionWrapper {
             .map(QueryParameterWrapper::extract_parameters)
             .collect();
         QueryResultWrapper::from_query(
-            self.internal
+            self.inner
                 .batch(&batch.inner, params_vec)
                 .await
                 .map_err(err_to_napi)?,
@@ -130,12 +153,66 @@ impl SessionWrapper {
 }
 
 #[napi]
-pub fn create_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
+pub fn create_prepared_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
     let mut batch: Batch = Default::default();
     queries
         .iter()
         .for_each(|q| batch.append_statement(q.prepared.clone()));
     BatchWrapper { inner: batch }
+}
+
+#[napi]
+pub fn create_unprepared_batch(queries: Vec<String>) -> BatchWrapper {
+    let mut batch: Batch = Default::default();
+    queries
+        .into_iter()
+        .for_each(|q| batch.append_statement(q.as_str()));
+    BatchWrapper { inner: batch }
+}
+
+fn apply_options(
+    mut prepared: PreparedStatement,
+    options: &QueryOptionsWrapper,
+) -> napi::Result<PreparedStatement> {
+    if let Some(o) = options.consistency {
+        prepared.set_consistency(
+            Consistency::try_from(o)
+                .map_err(|_| js_error(format!("Unknown consistency value: {o}")))?,
+        );
+    }
+
+    if let Some(o) = options.serial_consistency {
+        prepared.set_serial_consistency(Some(
+            SerialConsistency::try_from(o)
+                .map_err(|_| js_error(format!("Unknown serial consistency value: {o}")))?,
+        ));
+    }
+
+    if let Some(o) = options.is_idempotent {
+        prepared.set_is_idempotent(o);
+    }
+    // TODO: Update it and check all edge-cases:
+    // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/pull/92#discussion_r1864461799
+    // Currently there is no support for paging, so there is no need for this option
+    /* if let Some(o) = options.fetch_size {
+        if o.is_negative() {
+            return Err(js_error("fetch size cannot be negative"));
+        }
+        query.set_page_size(o);
+    } */
+    if let Some(o) = &options.timestamp {
+        prepared.set_timestamp(Some(bigint_to_i64(
+            o.clone(),
+            "Timestamp cannot overflow i64",
+        )?));
+    }
+    // TODO: Update it to allow collection of information from traced query
+    // Currently it's just passing the value, but not able to access any tracing information
+    if let Some(o) = options.trace_query {
+        prepared.set_tracing(o);
+    }
+
+    Ok(prepared)
 }
 
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
