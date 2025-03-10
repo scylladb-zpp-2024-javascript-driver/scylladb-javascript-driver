@@ -8,8 +8,8 @@ import {
   policies,
   tracker,
   types,
-} from "../../../main";
-import * as root from "../../../main";
+} from "../../main";
+import * as root from "../../main";
 
 
 let counter: number = 0;
