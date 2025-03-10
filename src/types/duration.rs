@@ -1,5 +1,5 @@
 use napi::bindgen_prelude::BigInt;
-use scylla::frame::value::CqlDuration;
+use scylla::value::CqlDuration;
 
 use crate::utils::bigint_to_i64;
 
