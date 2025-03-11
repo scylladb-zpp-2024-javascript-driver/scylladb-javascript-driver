@@ -3,15 +3,15 @@ use napi::bindgen_prelude::BigInt;
 use crate::utils::{self, bigint_to_i64};
 
 #[napi]
-pub fn tests_bigint_to_i64(value: BigInt, case: Option<i32>) -> napi::Result<()> {
-    let case = match case {
-        Some(case) => case,
+pub fn tests_bigint_to_i64(value: BigInt, case_id: Option<i32>) -> napi::Result<()> {
+    let case_id = match case_id {
+        Some(case_id) => case_id,
         None => {
             return utils::bigint_to_i64(value, "Overflow expected").map(|_| ());
         }
     };
 
-    let expected = match case {
+    let expected = match case_id {
         0 => 0,
         1 => -1,
         2 => 5,
