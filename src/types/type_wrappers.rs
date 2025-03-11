@@ -1,3 +1,6 @@
+use crate::result::map_column_type_to_complex_type;
+use scylla::frame::response::result::ColumnType;
+
 #[napi]
 pub enum CqlType {
     Ascii,
@@ -68,5 +71,17 @@ impl ComplexType {
             support_type_1: support1.map(Box::new),
             support_type_2: support2.map(Box::new),
         }
+    }
+
+    pub(crate) fn from_tuple(columns: &[ColumnType]) -> Self {
+        ComplexType::two_support(
+            CqlType::Tuple,
+            columns.first().map(|v| map_column_type_to_complex_type(v)),
+            if columns.is_empty() {
+                None
+            } else {
+                Some(ComplexType::from_tuple(&columns[1..]))
+            },
+        )
     }
 }
