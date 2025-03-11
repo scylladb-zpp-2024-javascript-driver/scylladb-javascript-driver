@@ -7,7 +7,7 @@ const { exit } = require("process");
 const { assert } = require("console");
 
 const client = new cassandra.Client(getClientArgs());
-const iter_cnt = 100000;
+const iterCnt = parseInt(process.argv[3]); 
 
 async.series(
     [
@@ -32,20 +32,20 @@ async.series(
             client.execute(query, next);
         },
         async function insert(next) {
-            let all_parameters = [];
-            for (let i = 0; i < iter_cnt; i++) {
-                all_parameters.push({
+            let allParameters = [];
+            for (let i = 0; i < iterCnt; i++) {
+                allParameters.push({
                     query: 'INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)',
                     params: [cassandra.types.Uuid.random(), 10]
                 });
             }
-            const result = await cassandra.concurrent.executeConcurrent(client, all_parameters);
+            const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, {prepare: true});
             next();
         },
         async function test(next) {
             const query = "SELECT COUNT(1) FROM benchmarks.basic USING TIMEOUT 120s;";
             let res = await client.execute(query);
-            assert(res.rows[0].count == `BigInt(${iter_cnt})`);
+            assert(res.rows[0].count == iterCnt);
             next();
         },
         function r() {

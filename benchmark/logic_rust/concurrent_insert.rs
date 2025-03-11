@@ -6,7 +6,6 @@ use std::env;
 use std::sync::Arc;
 use uuid::Uuid;
 
-const ITER_CNT: usize = 100_000;
 const CONCURRENCY: usize = 10;
 
 async fn insert_data(
@@ -17,7 +16,7 @@ async fn insert_data(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut index = start_index;
 
-    while index < ITER_CNT {
+    while index < n as usize {
         let id = Uuid::new_v4();
         session.execute_unpaged(insert_query, (id, 100)).await?;
         index += CONCURRENCY;
@@ -28,6 +27,11 @@ async fn insert_data(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let n: i32 = env::var("CNT")
+        .ok()
+        .and_then(|s| s.parse::<i32>().ok())
+        .unwrap_or(100);
+
     let session = SessionBuilder::new()
         .known_node("172.17.0.2:9042")
         .build()
@@ -70,6 +74,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     join_all(handles).await;
 
-    println!("Completed");
+    println!("Completed {}", n);
     Ok(())
 }

@@ -1,8 +1,14 @@
+use std::env;
+
 use scylla::client::session_builder::SessionBuilder;
 use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let n: i32 = env::var("CNT")
+        .ok()
+        .and_then(|s| s.parse::<i32>().ok())
+        .unwrap_or(100);
     let session = SessionBuilder::new()
         .known_node("172.17.0.2:9042")
         .build()
@@ -27,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     let insert_query = "INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)";
-    for _ in 0..10_000 {
+    for _ in 0..n {
         let id = Uuid::new_v4();
         session.query_unpaged(insert_query, (id, 100)).await?;
     }

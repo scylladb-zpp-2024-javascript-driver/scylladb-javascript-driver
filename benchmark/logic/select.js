@@ -6,7 +6,7 @@ const { getClientArgs } = require("./utils");
 const { exit } = require("process");
 
 const client = new cassandra.Client(getClientArgs());
-
+const iterCnt = parseInt(process.argv[3]);
 
 async.series(
     [
@@ -35,14 +35,14 @@ async.series(
                 "INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)";
             for (let i = 0; i < 10; i++) {
                 let id = cassandra.types.Uuid.random();
-                await client.execute(query, [id, 100]);
+                await client.execute(query, [id, 100], {prepare: true});
             }
             next();
         },
         async function query(next) {
             const query = "SELECT * FROM benchmarks.basic";
-            for (let i = 0; i < 10000; i++) {
-                let res = await client.execute(query);
+            for (let i = 0; i < iterCnt; i++) {
+                let _res = await client.execute(query);
             }
             next();
         },
