@@ -26,8 +26,8 @@ export function generate(): void {
   console.log(`  
 'use strict';
   
-import { auth, concurrent, errors, datastax, mapping, metadata, metrics, policies, tracker, types } from "../../../index";
-import * as root from "../../../index";
+import { auth, concurrent, errors, mapping, metadata, metrics, policies, tracker, types } from "../../main";
+import * as root from "../../main";
 
 export async function generatedFn() {
   let n:number;
@@ -36,10 +36,14 @@ export async function generatedFn() {
   let f:Function;
 `);
 
+  // We exclude entities that are not meant to be used directly
+  // and deprecated entites. They are available in JS for compatibility
+  // (and throw a deprecated message) but are not availabe in Typescript
+  // to fail at compile time.
   printClasses(root, "root", new Set(["Encoder"]));
-  printObjects(root, "root", new Set(["token"]));
+  printObjects(root, "root", new Set(["token", "datastax", "geometry"]));
 
-  printClasses(auth, "auth", new Set(["NoAuthProvider"]));
+  printClasses(auth, "auth", new Set(["NoAuthProvider", "DseGssapiAuthProvider", "DsePlainTextAuthProvider"]));
   printClasses(errors, "errors");
   printFunctions(concurrent, "concurrent");
   printClasses(concurrent, "concurrent");
