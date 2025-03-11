@@ -69,11 +69,11 @@ impl LocalDateWrapper {
     }
 
     pub fn get_cql_date(&self) -> CqlDate {
-        CqlDate(((1 << 31) + self.value) as u32)
+        CqlDate(((1 << 31) + self.value as i64) as u32)
     }
 
     pub fn from_cql_date(date: CqlDate) -> Self {
-        let value: i32 = date.0 as i32 - (1 << 31);
+        let value = (date.0 as i64 - (1 << 31)) as i32;
         let date = Ymd::from_days(value.into());
         LocalDateWrapper {
             value,
