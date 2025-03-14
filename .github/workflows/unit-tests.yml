@@ -3,6 +3,7 @@
 name: Unit tests
 env:
   DEBUG: napi:*
+  PEDANTIC: true
 "on":
   push:
     branches:
