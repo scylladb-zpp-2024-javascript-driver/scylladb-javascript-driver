@@ -3,6 +3,7 @@ name: Run examples
 env:
   DEBUG: napi:*
   APP_NAME: scylladb-javascript-driver
+  PEDANTIC: true
 "on":
   push:
     branches:
