@@ -17,7 +17,7 @@ async.series(
         function createKeyspace(next) {
             // Keep replication one to reduce time spent in the database
             const query =
-                "CREATE KEYSPACE IF NOT EXISTS benchmarks WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1' }";
+                "CREATE KEYSPACE IF NOT EXISTS benchmarks WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': '1' }";
             client.execute(query, next);
         },
         // Drop tabele to ensure no overhead comes from having already some data in the database

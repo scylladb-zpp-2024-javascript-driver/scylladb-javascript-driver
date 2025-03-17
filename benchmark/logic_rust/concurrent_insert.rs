@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     session
         .query_unpaged(
-            "CREATE KEYSPACE IF NOT EXISTS benchmarks WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1' }", 
+            "CREATE KEYSPACE IF NOT EXISTS benchmarks WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': '1' }", 
             &[],
         )
         .await?;
@@ -74,6 +74,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     join_all(handles).await;
 
-    println!("Completed {}", n);
     Ok(())
 }
