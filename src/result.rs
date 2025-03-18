@@ -29,21 +29,29 @@ enum QueryResultVariant {
     RowsResult(QueryRowsResult),
 }
 
+/// Wrapper for a whole query result
 #[napi]
 pub struct QueryResultWrapper {
     internal: QueryResultVariant,
 }
 
+/// Wrapper for a single row of the query result
 #[napi]
 pub struct RowWrapper {
     internal: Vec<Option<CqlValue>>,
 }
 
+/// Wrapper for a single CQL value
+///
+/// CqlValueWrapper exposes functions get____ for each CQL type,
+/// which extract value from the object,
+/// assuming this wrapper stores a value of the requested CQL type.
 #[napi]
 pub struct CqlValueWrapper {
     pub(crate) inner: CqlValue,
 }
 
+/// Wrapper for the information required in the ResultSet.columns field
 #[napi]
 pub struct MetaColumnWrapper {
     pub ksname: String,
@@ -54,6 +62,7 @@ pub struct MetaColumnWrapper {
 
 #[napi]
 impl QueryResultWrapper {
+    /// Converts rust query result into query result wrapper that can be passed to NAPI-RS
     pub fn from_query(internal: QueryResult) -> napi::Result<QueryResultWrapper> {
         let value = match internal.into_rows_result() {
             Ok(v) => QueryResultVariant::RowsResult(v),
@@ -65,6 +74,7 @@ impl QueryResultWrapper {
         Ok(QueryResultWrapper { internal: value })
     }
 
+    /// Extracts all the rows of the result into a vector of rows
     #[napi]
     pub fn get_rows(&self) -> napi::Result<Option<Vec<RowWrapper>>> {
         let r2 = match &self.internal {
@@ -85,8 +95,8 @@ impl QueryResultWrapper {
         ))
     }
 
+    /// Get the names of the columns in order, as they appear in the query result
     #[napi]
-    /// Get the names of the columns in order
     pub fn get_columns_names(&self) -> Vec<String> {
         match &self.internal {
             QueryResultVariant::RowsResult(v) => v,
@@ -100,6 +110,7 @@ impl QueryResultWrapper {
         .collect()
     }
 
+    /// Get the specification of all columns as they appear in the query result
     #[napi]
     pub fn get_columns_specs(&self) -> Vec<MetaColumnWrapper> {
         match &self.internal {
@@ -119,6 +130,7 @@ impl QueryResultWrapper {
         .collect()
     }
 
+    /// Get all warnings generated in the query
     #[napi]
     pub fn get_warnings(&self) -> Vec<String> {
         match &self.internal {
@@ -127,6 +139,7 @@ impl QueryResultWrapper {
         }
     }
 
+    /// Get all tracing ids generated in the query
     #[napi]
     pub fn get_trace_id(&self) -> Option<UuidWrapper> {
         match &self.internal {
@@ -159,7 +172,7 @@ impl CqlValueWrapper {
     }
 
     #[napi]
-    /// Get type of value in this object
+    /// Get type of CQL value that is stored in this object
     pub fn get_type(&self) -> CqlType {
         match &self.inner {
             CqlValue::Ascii(_) => CqlType::Ascii,
@@ -383,6 +396,8 @@ impl CqlValueWrapper {
     }
 }
 
+/// Maps rust driver ColumnType representing type of the column with support types
+/// into ComplexType used in this code.
 pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
     match typ {
         ColumnType::Native(native) => ComplexType::simple_type(match native {

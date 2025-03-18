@@ -9,7 +9,14 @@ use crate::{
     utils::{bigint_to_i64, js_error},
 };
 
-/// Structure wraps CqlValue type. Use for passing parameters for queries
+/// Structure wraps CqlValue type. Use for passing parameters for requests.
+///
+/// Exposes functions from___ for each CQL type. They can be used to
+/// create QueryParameterWrapper from a given value. For complex types,
+/// like list or map, it requires the values to be provided as QueryParameterWrapper.
+///
+/// Currently there is no type validation for complex types, meaning this code
+/// will accept for example vector with multiple types of values, which is not a valid CQL object.
 #[napi]
 pub struct QueryParameterWrapper {
     pub(crate) parameter: CqlValue,
