@@ -430,7 +430,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line13">line 13</a>
+        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line270">line 270</a>
     </li></ul></dd>
     
 
@@ -492,7 +492,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line20">line 20</a>
+        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line277">line 277</a>
     </li></ul></dd>
     
 
@@ -1020,7 +1020,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line27">line 27</a>
+        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line284">line 284</a>
     </li></ul></dd>
     
 
@@ -1082,7 +1082,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line30">line 30</a>
+        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line287">line 287</a>
     </li></ul></dd>
     
 
@@ -2317,6 +2317,163 @@ parameters and the keys as an associative array.</p>
     
 
     
+    <h4 class="name" id="bigintToLong"><span class="type-signature"></span>bigintToLong<span class="signature">(from)</span><span class="type-signature"> &rarr; {Long}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Converts from bigint provided by napi into Long type used by the datastax library
+BigInt is the way napi handles values too big for js Number type,
+while Long is the way datastax code handles 64-bit integers.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>from</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">bigint</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="new-utils.js.html">new-utils.js</a>, <a href="new-utils.js.html#line67">line 67</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Long</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
     <h4 class="name" id="binarySearch"><span class="type-signature"></span>binarySearch<span class="signature">(arr, key, compareFunc)</span><span class="type-signature"> &rarr; {number}</span></h4>
     
 
@@ -2965,7 +3122,7 @@ If it is not found, it returns a negative number which is the bitwise complement
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line39">line 39</a>
+        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line296">line 296</a>
     </li></ul></dd>
     
 
@@ -3739,6 +3896,358 @@ If it is not found, it returns a negative number which is the bitwise complement
     
 
     
+    <h4 class="name" id="encodeListLike"><span class="type-signature"></span>encodeListLike<span class="signature">(values, subtype)</span><span class="type-signature"> &rarr; {Array.&lt;rust.QueryParameterWrapper>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Wraps each of the elements into given subtype</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>values</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>subtype</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">rust.ComplexType</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_cql-utils.js.html">types/cql-utils.js</a>, <a href="types_cql-utils.js.html#line29">line 29</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;rust.QueryParameterWrapper></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="encodeMap"><span class="type-signature"></span>encodeMap<span class="signature">(value, parentType)</span><span class="type-signature"> &rarr; {Array.&lt;Array.&lt;rust.QueryParameterWrapper>>}</span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>parentType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">rust.ComplexType</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_cql-utils.js.html">types/cql-utils.js</a>, <a href="types_cql-utils.js.html#line52">line 52</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;Array.&lt;rust.QueryParameterWrapper>></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
     <h4 class="name" id="encodeVector"><span class="type-signature"></span>encodeVector<span class="signature">(value, params)</span><span class="type-signature"></span></h4>
     
 
@@ -3882,6 +4391,172 @@ If it is not found, it returns a negative number which is the bitwise complement
 
 
 
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="ensureValue"><span class="type-signature"></span>ensureValue<span class="signature">(message)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Ensures the value isn't one of many ways to express null value</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Error message if value is &quot;null&quot;</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_cql-utils.js.html">types/cql-utils.js</a>, <a href="types_cql-utils.js.html#line18">line 18</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Throws:</h5>
+
+        
+
+<dl>
+    <dt>
+        <div class="param-desc">
+        <p>Throws an error if the value is &quot;null&quot;</p>
+        </div>
+    </dt>
+    <dd></dd>
+    <dt>
+        <dl>
+            <dt>
+                Type
+            </dt>
+            <dd>
+                
+<span class="param-type">TypeError</span>
+
+
+            </dd>
+        </dl>
+    </dt>
+    <dd></dd>
+</dl>
+
+
+    
 
 
 
@@ -4039,7 +4714,7 @@ If it is not found, it returns a negative number which is the bitwise complement
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line97">line 97</a>
+        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line354">line 354</a>
     </li></ul></dd>
     
 
@@ -5140,6 +5815,312 @@ to the target.</p>
     
 
     
+    <h4 class="name" id="getColumnsMetadata"><span class="type-signature"></span>getColumnsMetadata<span class="signature">(result)</span><span class="type-signature"> &rarr; {Array.&lt;{name, type}>}</span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>result</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">rust.QueryResultWrapper</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_results-wrapper.js.html">types/results-wrapper.js</a>, <a href="types_results-wrapper.js.html#line117">line 117</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;{name, type}></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getCqlObject"><span class="type-signature"></span>getCqlObject<span class="signature">(field)</span><span class="type-signature"> &rarr; {any}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Checks the type of value wrapper object and gets it from the underlying value</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>field</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">rust.CqlValueWrapper</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_results-wrapper.js.html">types/results-wrapper.js</a>, <a href="types_results-wrapper.js.html#line16">line 16</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">any</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
     <h4 class="name" id="getDefaultOptions"><span class="type-signature"></span>getDefaultOptions<span class="signature">()</span><span class="type-signature"></span></h4>
     
 
@@ -5217,6 +6198,347 @@ to the target.</p>
 
 
 
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getRowsFromResultsWrapper"><span class="type-signature"></span>getRowsFromResultsWrapper<span class="signature">(result)</span><span class="type-signature"> &rarr; {Array.&lt;Row>|undefined}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Simple way of getting results from rust driver.
+Call the driver O(columns * rows) times</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>result</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">rust.QueryResultWrapper</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_results-wrapper.js.html">types/results-wrapper.js</a>, <a href="types_results-wrapper.js.html#line88">line 88</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns array of rows if ResultWrapper has any, and undefined otherwise</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;Row></span>
+|
+
+<span class="param-type">undefined</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getWrapped"><span class="type-signature"></span>getWrapped<span class="signature">(type, value)</span><span class="type-signature"> &rarr; {rust.QueryParameterWrapper}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Wrap value into QueryParameterWrapper based on the type</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">rust.ComplexType</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_cql-utils.js.html">types/cql-utils.js</a>, <a href="types_cql-utils.js.html#line73">line 73</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">rust.QueryParameterWrapper</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -5938,6 +7260,161 @@ to the target.</p>
     
 
     
+    <h4 class="name" id="longToBigint"><span class="type-signature"></span>longToBigint<span class="signature">(from)</span><span class="type-signature"> &rarr; {bigint}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Converts from Long type used by the datastax library into bigint used by napi</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>from</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Long</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="new-utils.js.html">new-utils.js</a>, <a href="new-utils.js.html#line83">line 83</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">bigint</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
     <h4 class="name" id="map"><span class="type-signature"></span>map<span class="signature">(arr, fn, callback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
     
 
@@ -6341,6 +7818,169 @@ to the target.</p>
 
 
 
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="napiErrorHandler"><span class="type-signature"></span>napiErrorHandler<span class="signature">(fn)</span><span class="type-signature"> &rarr; {function}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>A wrapper function to map napi errors to Node.js errors or custom errors.
+Because NAPI-RS does not support throwing errors different that Error, for example
+TypeError, RangeError, etc. or custom, driver-specific errors, this function is used
+to catch the original error and throw a new one with the appropriate type.
+This should be used to wrap all NAPI-RS functions that may throw errors.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The original function to be wrapped.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="new-utils.js.html">new-utils.js</a>, <a href="new-utils.js.html#line35">line 35</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A wrapped function with error handling logic.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">function</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -7091,6 +8731,185 @@ When using a callback, it will use it as handlers of the continuation of the pro
     
 
     
+    <h4 class="name" id="parseParams"><span class="type-signature"></span>parseParams<span class="signature">(preparedStatement, params)</span><span class="type-signature"> &rarr; {Array.&lt;rust.QueryParameterWrapper>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Parses array of params into rust objects according to preparedStatement expected types
+Throws ResponseError when received different amount of parameters than expected</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>preparedStatement</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">rust.PreparedStatementWrapper</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>params</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;any></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="types_cql-utils.js.html">types/cql-utils.js</a>, <a href="types_cql-utils.js.html#line185">line 185</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;rust.QueryParameterWrapper></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
     <h4 class="name" id="parseVectorTypeArgs"><span class="type-signature"></span>parseVectorTypeArgs<span class="signature">(typeName, stringToExclude, subtypeResolveFn)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
@@ -7778,7 +9597,7 @@ function in the array.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line384">line 384</a>
+        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line641">line 641</a>
     </li></ul></dd>
     
 
@@ -8112,7 +9931,7 @@ function in the array.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="new-utils.js.html">new-utils.js</a>, <a href="new-utils.js.html#line7">line 7</a>
+        <a href="new-utils.js.html">new-utils.js</a>, <a href="new-utils.js.html#line10">line 10</a>
     </li></ul></dd>
     
 
@@ -9961,14 +11780,10 @@ fine tuning it when not needed.</p>
             
 
             <td class="description last"><p>Array of addresses or host names of the nodes to add as contact points.</p>
-<p>
- Contact points are addresses of Cassandra nodes that the driver uses to discover the cluster topology.
-</p>
-<p>
- Only one contact point is required (the driver will retrieve the address of the other nodes automatically),
- but it is usually a good idea to provide more than one contact point, because if that single contact point is
- unavailable, the driver will not be able to initialize correctly.
-</p></td>
+<p>Contact points are addresses of Cassandra nodes that the driver uses to discover the cluster topology.</p>
+<p>Only one contact point is required (the driver will retrieve the address of the other nodes automatically),
+but it is usually a good idea to provide more than one contact point, because if that single contact point is
+unavailable, the driver will not be able to initialize correctly.</p></td>
         </tr>
 
     
@@ -10000,10 +11815,9 @@ fine tuning it when not needed.</p>
             
 
             <td class="description last"><p>The local data center to use.</p>
-<p>
-  If using DCAwareRoundRobinPolicy (default), this option is required and only hosts from this data center are
-  connected to and used in query plans.
-</p></td>
+<p>If using DCAwareRoundRobinPolicy (default), this option is required and only hosts from this data center are
+connected to and used in query plans.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10034,7 +11848,8 @@ fine tuning it when not needed.</p>
 
             
 
-            <td class="description last"><p>The logged keyspace for all the connections created within the <a href="Client.html">Client</a> instance.</p></td>
+            <td class="description last"><p>The logged keyspace for all the connections created within the <a href="Client.html">Client</a> instance.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10068,10 +11883,9 @@ fine tuning it when not needed.</p>
             <td class="description last"><p>An object containing the username and password for plain-text authentication.
 It configures the authentication provider to be used against Apache Cassandra's PasswordAuthenticator or DSE's
 DseAuthenticator, when default auth scheme is plain-text.</p>
-<p>
-  Note that you should configure either <code>credentials</code> or <code>authProvider</code> to connect to an
-  auth-enabled cluster, but not both.
-</p>
+<p>Note that you should configure either <code>credentials</code> or <code>authProvider</code> to connect to an
+auth-enabled cluster, but not both.</p>
+<p>[TODO: Add support for this field]</p>
                 <h6>Properties</h6>
 
 <table class="props">
@@ -10122,7 +11936,8 @@ DseAuthenticator, when default auth scheme is plain-text.</p>
 
             
 
-            <td class="description last"><p>The username to use for plain-text authentication.</p></td>
+            <td class="description last"><p>The username to use for plain-text authentication.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10153,7 +11968,8 @@ DseAuthenticator, when default auth scheme is plain-text.</p>
 
             
 
-            <td class="description last"><p>The password to use for plain-text authentication.</p></td>
+            <td class="description last"><p>The password to use for plain-text authentication.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10193,7 +12009,8 @@ DseAuthenticator, when default auth scheme is plain-text.</p>
 
             <td class="description last"><p>A unique identifier assigned to a <a href="Client.html">Client</a> object, that will be communicated to the
 server (DSE 6.0+) to identify the client instance created with this options. When not defined, the driver will
-generate a random identifier.</p></td>
+generate a random identifier.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10226,7 +12043,8 @@ generate a random identifier.</p></td>
 
             <td class="description last"><p>An optional setting identifying the name of the application using
 the <a href="Client.html">Client</a> instance.</p>
-<p>This value is passed to DSE and is useful as metadata for describing a client connection on the server side.</p></td>
+<p>This value is passed to DSE and is useful as metadata for describing a client connection on the server side.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10259,7 +12077,8 @@ the <a href="Client.html">Client</a> instance.</p>
 
             <td class="description last"><p>An optional setting identifying the version of the application using
 the <a href="Client.html">Client</a> instance.</p>
-<p>This value is passed to DSE and is useful as metadata for describing a client connection on the server side.</p></td>
+<p>This value is passed to DSE and is useful as metadata for describing a client connection on the server side.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10291,7 +12110,8 @@ the <a href="Client.html">Client</a> instance.</p>
             
 
             <td class="description last"><p>Options for reporting mechanism from the client to the DSE server, for
-versions that support it.</p>
+versions that support it.
+[TODO: Add support for this field]</p>
                 <h6>Properties</h6>
 
 <table class="props">
@@ -10351,7 +12171,92 @@ versions that support it.</p>
             
 
             <td class="description last"><p>Determines whether the reporting mechanism is enabled.
-Defaults to <code>true</code>.</p></td>
+Defaults to <code>true</code>.
+[TODO: Add support for this field]</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cloud</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The options to connect to a cloud instance.
+[TODO: Add support for this field Remove?]</p>
+                <h6>Properties</h6>
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>secureConnectBundle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+|
+
+<span class="param-type">URL</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Determines the file path for the credentials file bundle.
+[TODO: Add support for this field Remove?]</p></td>
         </tr>
 
     
@@ -10390,7 +12295,8 @@ Defaults to <code>true</code>.</p></td>
             
 
             <td class="description last"><p>The default window size in milliseconds used to debounce node list and schema
-refresh metadata requests. Default: 1000.</p></td>
+refresh metadata requests. Default: 1000.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10427,7 +12333,8 @@ enabled.</p>
 replica calculation per token in the different keyspaces. When disabling metadata synchronization, use
 <a href="module-metadata-Metadata.html#refreshKeyspaces">Metadata.refreshKeyspaces()</a> to keep keyspace information up to
 date or token-awareness will not work correctly.</p>
-Default: <code>true</code>.</td>
+<p>Default: <code>true</code>.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10459,7 +12366,8 @@ Default: <code>true</code>.</td>
             
 
             <td class="description last"><p>Determines if the driver should prepare queries on all hosts in the cluster.
-Default: <code>true</code>.</p></td>
+Default: <code>true</code>.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10492,7 +12400,8 @@ Default: <code>true</code>.</p></td>
 
             <td class="description last"><p>Determines if the driver should re-prepare all cached prepared queries on a
 host when it marks it back up.
-Default: <code>true</code>.</p></td>
+Default: <code>true</code>.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10526,7 +12435,8 @@ Default: <code>true</code>.</p></td>
             <td class="description last"><p>Determines the maximum amount of different prepared queries before evicting items
 from the internal cache. Reaching a high threshold hints that the queries are not being reused, like when
 hard-coding parameter values inside the queries.
-Default: <code>500</code>.</p></td>
+Default: <code>500</code>.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10557,7 +12467,7 @@ Default: <code>500</code>.</p></td>
 
             
 
-            <td class="description last">
+            <td class="description last"><p>[TODO: Add support for this field]</p>
                 <h6>Properties</h6>
 
 <table class="props">
@@ -10609,7 +12519,8 @@ Default: <code>500</code>.</p></td>
             
 
             <td class="description last"><p>The load balancing policy instance to be used to determine
-the coordinator per query.</p></td>
+the coordinator per query.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10640,7 +12551,8 @@ the coordinator per query.</p></td>
 
             
 
-            <td class="description last"><p>The retry policy.</p></td>
+            <td class="description last"><p>The retry policy.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10671,7 +12583,8 @@ the coordinator per query.</p></td>
 
             
 
-            <td class="description last"><p>The reconnection policy to be used.</p></td>
+            <td class="description last"><p>The reconnection policy to be used.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10702,7 +12615,8 @@ the coordinator per query.</p></td>
 
             
 
-            <td class="description last"><p>The address resolution policy.</p></td>
+            <td class="description last"><p>The address resolution policy.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10736,9 +12650,8 @@ the coordinator per query.</p></td>
             <td class="description last"><p>The <code>SpeculativeExecutionPolicy</code>
 instance to be used to determine if the client should send speculative queries when the selected host takes more
 time than expected.</p>
-<p>
-  Default: <code><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></code>
-</p></td>
+<p>Default: <code><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></code></p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10771,11 +12684,9 @@ time than expected.</p>
 
             <td class="description last"><p>The client-side
 <a href="module-policies_timestampGeneration-TimestampGenerator.html">query timestamp generator</a>.</p>
-<p>
-  Default: <code><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a>
-  </code>
-</p>
-<p>Use <code>null</code> to disable client-side timestamp generation.</p></td>
+<p>Default: <code><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></code></p>
+<p>Use <code>null</code> to disable client-side timestamp generation.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10813,7 +12724,8 @@ time than expected.</p>
 
             
 
-            <td class="description last"><p>Default options for all queries.</p></td>
+            <td class="description last"><p>Default options for all queries.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10844,7 +12756,8 @@ time than expected.</p>
 
             
 
-            <td class="description last"><p>Pooling options.</p>
+            <td class="description last"><p>Pooling options.
+[TODO: Add support for this field]</p>
                 <h6>Properties</h6>
 
 <table class="props">
@@ -10896,7 +12809,8 @@ time than expected.</p>
             
 
             <td class="description last"><p>The amount of idle time in milliseconds that has to pass before the
-driver issues a request on an active connection to avoid idle time disconnections. Default: 30000.</p></td>
+driver issues a request on an active connection to avoid idle time disconnections. Default: 30000.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10928,7 +12842,8 @@ driver issues a request on an active connection to avoid idle time disconnection
             
 
             <td class="description last"><p>Associative array containing amount of connections per host
-distance.</p></td>
+distance.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10962,9 +12877,10 @@ distance.</p></td>
             <td class="description last"><p>The maximum number of requests per connection. The default
 value is:</p>
 <ul>
-  <li>For modern protocol versions (v3 and above): 2048</li>
-  <li>For older protocol versions (v1 and v2): 128</li>
-</ul></td>
+<li>For modern protocol versions (v3 and above): 2048</li>
+<li>For older protocol versions (v1 and v2): 128</li>
+</ul>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -10996,7 +12912,8 @@ value is:</p>
             
 
             <td class="description last"><p>Determines if all connections to hosts in the local datacenter must be opened on
-connect. Default: true.</p></td>
+connect. Default: true.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11034,7 +12951,7 @@ connect. Default: true.</p></td>
 
             
 
-            <td class="description last">
+            <td class="description last"><p>[TODO: Add support for this field]</p>
                 <h6>Properties</h6>
 
 <table class="props">
@@ -11086,7 +13003,8 @@ connect. Default: true.</p></td>
             
 
             <td class="description last"><p>The port to use to connect to the Cassandra host. If not set through this
-method, the default port (9042) will be used instead.</p></td>
+method, the default port (9042) will be used instead.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11118,7 +13036,8 @@ method, the default port (9042) will be used instead.</p></td>
             
 
             <td class="description last"><p>The maximum time in seconds to wait for schema
-agreement between nodes before returning from a DDL query. Default: 10.</p></td>
+agreement between nodes before returning from a DDL query. Default: 10.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11151,7 +13070,8 @@ agreement between nodes before returning from a DDL query. Default: 10.</p></td>
 
             <td class="description last"><p>When set, it limits the maximum protocol version used to connect to
 the nodes.
-Useful for using the driver against a cluster that contains nodes with different major/minor versions of Cassandra.</p></td>
+Useful for using the driver against a cluster that contains nodes with different major/minor versions of Cassandra.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11183,15 +13103,12 @@ Useful for using the driver against a cluster that contains nodes with different
             
 
             <td class="description last"><p>When set to true, enables the NO_COMPACT startup option.</p>
-<p>
-When this option is supplied <code>SELECT</code>, <code>UPDATE</code>, <code>DELETE</code>, and <code>BATCH</code>
-statements on <code>COMPACT STORAGE</code> tables function in "compatibility" mode which allows seeing these tables
-as if they were "regular" CQL tables.
-</p>
-<p>
-This option only effects interactions with interactions with tables using <code>COMPACT STORAGE</code> and is only
-supported by C* 3.0.16+, 3.11.2+, 4.0+ and DSE 6.0+.
-</p></td>
+<p>When this option is supplied <code>SELECT</code>, <code>UPDATE</code>, <code>DELETE</code>, and <code>BATCH</code>
+statements on <code>COMPACT STORAGE</code> tables function in &quot;compatibility&quot; mode which allows seeing these tables
+as if they were &quot;regular&quot; CQL tables.</p>
+<p>This option only effects interactions with interactions with tables using <code>COMPACT STORAGE</code> and is only
+supported by C* 3.0.16+, 3.11.2+, 4.0+ and DSE 6.0+.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11229,7 +13146,7 @@ supported by C* 3.0.16+, 3.11.2+, 4.0+ and DSE 6.0+.
 
             
 
-            <td class="description last">
+            <td class="description last"><p>[TODO: Add support for this field]</p>
                 <h6>Properties</h6>
 
 <table class="props">
@@ -11280,7 +13197,8 @@ supported by C* 3.0.16+, 3.11.2+, 4.0+ and DSE 6.0+.
 
             
 
-            <td class="description last"><p>Connection timeout in milliseconds. Default: 5000.</p></td>
+            <td class="description last"><p>Connection timeout in milliseconds. Default: 5000.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11312,7 +13230,8 @@ supported by C* 3.0.16+, 3.11.2+, 4.0+ and DSE 6.0+.
             
 
             <td class="description last"><p>Determines the amount of requests that simultaneously
-have to timeout before closing the connection. Default: 64.</p></td>
+have to timeout before closing the connection. Default: 64.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11343,7 +13262,8 @@ have to timeout before closing the connection. Default: 64.</p></td>
 
             
 
-            <td class="description last"><p>Whether to enable TCP keep-alive on the socket. Default: true.</p></td>
+            <td class="description last"><p>Whether to enable TCP keep-alive on the socket. Default: true.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11374,7 +13294,8 @@ have to timeout before closing the connection. Default: 64.</p></td>
 
             
 
-            <td class="description last"><p>TCP keep-alive delay in milliseconds. Default: 0.</p></td>
+            <td class="description last"><p>TCP keep-alive delay in milliseconds. Default: 0.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11406,23 +13327,20 @@ have to timeout before closing the connection. Default: 64.</p></td>
             
 
             <td class="description last"><p>Per-host read timeout in milliseconds.</p>
-<p>
-  Please note that this is not the maximum time a call to <a href="Client.html#execute">Client#execute</a> may have to wait;
-  this is the maximum time that call will wait for one particular Cassandra host, but other hosts will be tried if
-  one of them timeout. In other words, a <a href="Client.html#execute">Client#execute</a> call may theoretically wait up to
-  <code>readTimeout * number_of_cassandra_hosts</code> (though the total number of hosts tried for a given query also
-  depends on the LoadBalancingPolicy in use).
+<p>Please note that this is not the maximum time a call to <a href="Client.html#execute">Client#execute</a> may have to wait;
+this is the maximum time that call will wait for one particular Cassandra host, but other hosts will be tried if
+one of them timeout. In other words, a <a href="Client.html#execute">Client#execute</a> call may theoretically wait up to
+<code>readTimeout * number_of_cassandra_hosts</code> (though the total number of hosts tried for a given query also
+depends on the LoadBalancingPolicy in use).</p>
 <p>When setting this value, keep in mind the following:</p>
 <ul>
-  <li>the timeout settings used on the Cassandra side (*_request_timeout_in_ms in cassandra.yaml) should be taken
-  into account when picking a value for this read timeout. You should pick a value a couple of seconds greater than
-  the Cassandra timeout settings.
-  </li>
-  <li>
-    the read timeout is only approximate and only control the timeout to one Cassandra host, not the full query.
-  </li>
+<li>the timeout settings used on the Cassandra side (*_request_timeout_in_ms in cassandra.yaml) should be taken
+into account when picking a value for this read timeout. You should pick a value a couple of seconds greater than
+the Cassandra timeout settings.</li>
+<li>the read timeout is only approximate and only control the timeout to one Cassandra host, not the full query.</li>
 </ul>
-Setting a value of 0 disables read timeouts. Default: <code>12000</code>.</td>
+<p>Setting a value of 0 disables read timeouts. Default: <code>12000</code>.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11453,7 +13371,8 @@ Setting a value of 0 disables read timeouts. Default: <code>12000</code>.</td>
 
             
 
-            <td class="description last"><p>When set to true, it disables the Nagle algorithm. Default: true.</p></td>
+            <td class="description last"><p>When set to true, it disables the Nagle algorithm. Default: true.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11485,7 +13404,8 @@ Setting a value of 0 disables read timeouts. Default: <code>12000</code>.</td>
             
 
             <td class="description last"><p>Buffer length in bytes use by the write queue before flushing
-the frames. Default: 8000.</p></td>
+the frames. Default: 8000.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11523,7 +13443,8 @@ the frames. Default: 8000.</p></td>
 
             
 
-            <td class="description last"><p>Provider to be used to authenticate to an auth-enabled cluster.</p></td>
+            <td class="description last"><p>Provider to be used to authenticate to an auth-enabled cluster.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11555,7 +13476,8 @@ the frames. Default: 8000.</p></td>
             
 
             <td class="description last"><p>The instance of RequestTracker used to monitor or log requests executed
-with this instance.</p></td>
+with this instance.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11588,11 +13510,10 @@ with this instance.</p></td>
 
             <td class="description last"><p>Client-to-node ssl options. When set the driver will use the secure layer.
 You can specify cert, ca, ... options named after the Node.js <code>tls.connect()</code> options.</p>
-<p>
-  It uses the same default values as Node.js <code>tls.connect()</code> except for <code>rejectUnauthorized</code>
-  which is set to <code>false</code> by default (for historical reasons). This setting is likely to change
-  in upcoming versions to enable validation by default.
-</p></td>
+<p>It uses the same default values as Node.js <code>tls.connect()</code> except for <code>rejectUnauthorized</code>
+which is set to <code>false</code> by default (for historical reasons). This setting is likely to change
+in upcoming versions to enable validation by default.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11623,7 +13544,8 @@ You can specify cert, ca, ... options named after the Node.js <code>tls.connect(
 
             
 
-            <td class="description last"><p>Encoding options.</p>
+            <td class="description last"><p>Encoding options.
+[TODO: Add support for this field]</p>
                 <h6>Properties</h6>
 
 <table class="props">
@@ -11675,7 +13597,8 @@ You can specify cert, ca, ... options named after the Node.js <code>tls.connect(
             
 
             <td class="description last"><p>Map constructor to use for Cassandra map&lt;k,v&gt; type encoding and decoding.
-If not set, it will default to Javascript Object with map keys as property names.</p></td>
+If not set, it will default to Javascript Object with map keys as property names.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11707,7 +13630,8 @@ If not set, it will default to Javascript Object with map keys as property names
             
 
             <td class="description last"><p>Set constructor to use for Cassandra set<k> type encoding and decoding.
-If not set, it will default to Javascript Array.</p></td>
+If not set, it will default to Javascript Array.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11740,17 +13664,14 @@ If not set, it will default to Javascript Array.</p></td>
 
             <td class="description last"><p>Determines if the network buffer should be copied for buffer based data
 types (blob, uuid, timeuuid and inet).</p>
-<p>
-  Setting it to true will cause that the network buffer is copied for each row value of those types,
-  causing additional allocations but freeing the network buffer to be reused.
-  Setting it to true is a good choice for cases where the Row and ResultSet returned by the queries are long-lived
-  objects.
-</p>
-<p>
- Setting it to false will cause less overhead and the reference of the network buffer to be maintained until the row
- / result set are de-referenced.
- Default: true.
-</p></td>
+<p>Setting it to true will cause that the network buffer is copied for each row value of those types,
+causing additional allocations but freeing the network buffer to be reused.
+Setting it to true is a good choice for cases where the Row and ResultSet returned by the queries are long-lived
+objects.</p>
+<p>Setting it to false will cause less overhead and the reference of the network buffer to be maintained until the row
+/ result set are de-referenced.
+Default: true.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11784,15 +13705,12 @@ types (blob, uuid, timeuuid and inet).</p>
             <td class="description last"><p>Valid for Cassandra 2.2 and above. Determines that, if a parameter
 is set to
 <code>undefined</code> it should be encoded as <code>unset</code>.</p>
-<p>
- By default, ECMAScript <code>undefined</code> is encoded as <code>null</code> in the driver. Cassandra 2.2
- introduced the concept of unset.
- At driver level, you can set a parameter to unset using the field <code>types.unset</code>. Setting this flag to
- true allows you to use ECMAScript undefined as Cassandra <code>unset</code>.
-</p>
-<p>
-  Default: true.
-</p></td>
+<p>By default, ECMAScript <code>undefined</code> is encoded as <code>null</code> in the driver. Cassandra 2.2
+introduced the concept of unset.
+At driver level, you can set a parameter to unset using the field <code>types.unset</code>. Setting this flag to
+true allows you to use ECMAScript undefined as Cassandra <code>unset</code>.</p>
+<p>Default: true.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11824,7 +13742,8 @@ is set to
             
 
             <td class="description last"><p>Use <a href="https://tc39.github.io/proposal-bigint/">BigInt ECMAScript type</a>
-to represent CQL bigint and counter data types.</p></td>
+to represent CQL bigint and counter data types.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11856,7 +13775,8 @@ to represent CQL bigint and counter data types.</p></td>
             
 
             <td class="description last"><p>Use <a href="https://tc39.github.io/proposal-bigint/">BigInt ECMAScript
-type</a> to represent CQL varint data type.</p></td>
+type</a> to represent CQL varint data type.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11894,7 +13814,8 @@ type</a> to represent CQL varint data type.</p></td>
 
             
 
-            <td class="description last"><p>The array of <a href="ExecutionProfile.html">execution profiles</a>.</p></td>
+            <td class="description last"><p>The array of <a href="ExecutionProfile.html">execution profiles</a>.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11927,14 +13848,11 @@ type</a> to represent CQL varint data type.</p></td>
 
             <td class="description last"><p>Function to be used to create a <code>Promise</code> from a
 callback-style function.</p>
-<p>
-  Promise libraries often provide different methods to create a promise. For example, you can use Bluebird's
-  <code>Promise.fromCallback()</code> method.
-</p>
-<p>
-  By default, the driver will use the
-  Promise constructor.
-</p></td>
+<p>Promise libraries often provide different methods to create a promise. For example, you can use Bluebird's
+<code>Promise.fromCallback()</code> method.</p>
+<p>By default, the driver will use the
+<a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise constructor</a>.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -11973,7 +13891,7 @@ callback-style function.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client.js.html">client.js</a>, <a href="client.js.html#line30">line 30</a>
+        <a href="client-options.js.html">client-options.js</a>, <a href="client-options.js.html#line12">line 12</a>
     </li></ul></dd>
     
 
@@ -12050,7 +13968,7 @@ callback-style function.</p>
             <td class="type">
             
                 
-<span class="param-type">Boolean</span>
+<span class="param-type">boolean</span>
 
 
             
@@ -12069,11 +13987,10 @@ callback-style function.</p>
             
 
             <td class="description last"><p>Determines if the driver must retrieve the following result pages automatically.</p>
-<p>
-  This setting is only considered by the <a href="Client.html#eachRow">Client#eachRow()</a> method. For more information,
-  check the
-  paging results documentation.
-</p></td>
+<p>This setting is only considered by the <a href="Client.html#eachRow">Client#eachRow()</a> method. For more information,
+check the
+<a href="https://docs.datastax.com/en/developer/nodejs-driver/latest/features/paging/">paging results documentation</a>.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12086,7 +14003,7 @@ callback-style function.</p>
             <td class="type">
             
                 
-<span class="param-type">Boolean</span>
+<span class="param-type">boolean</span>
 
 
             
@@ -12106,11 +14023,10 @@ callback-style function.</p>
 
             <td class="description last"><p>Determines if the stack trace before the query execution should be
 maintained.</p>
-<p>
-  Useful for debugging purposes, it should be set to <code>false</code> under production environment as it adds an
-  unnecessary overhead to each execution.
-</p>
-Default: false.</td>
+<p>Useful for debugging purposes, it should be set to <code>false</code> under production environment as it adds an
+unnecessary overhead to each execution.</p>
+<p>Default: false.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12123,7 +14039,7 @@ Default: false.</td>
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">number</span>
 
 
             
@@ -12142,10 +14058,9 @@ Default: false.</td>
             
 
             <td class="description last"><p><a href="module-types.html#~consistencies">Consistency level</a>.</p>
-<p>
-  Defaults to <code>localOne</code> for Apache Cassandra and DSE deployments.
-  For DataStax Astra, it defaults to <code>localQuorum</code>.
-</p></td>
+<p>Defaults to <code>localOne</code> for Apache Cassandra and DSE deployments.
+For DataStax Astra, it defaults to <code>localQuorum</code>.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12177,7 +14092,8 @@ Default: false.</td>
             
 
             <td class="description last"><p>Key-value payload to be passed to the server. On the Cassandra side,
-implementations of QueryHandler can use this data.</p></td>
+implementations of QueryHandler can use this data.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12190,7 +14106,7 @@ implementations of QueryHandler can use this data.</p></td>
             <td class="type">
             
                 
-<span class="param-type">String</span>
+<span class="param-type">string</span>
 
 
             
@@ -12210,7 +14126,8 @@ implementations of QueryHandler can use this data.</p></td>
 
             <td class="description last"><p>The user or role name to act as when executing this statement.</p>
 <p>When set, it executes as a different user/role than the one currently authenticated (a.k.a. proxy execution).</p>
-<p>This feature is only available in DSE 5.1+.</p></td>
+<p>This feature is only available in DSE 5.1+.</p>
+<p>[TODO: Add support for this field Delete?]</p></td>
         </tr>
 
     
@@ -12223,7 +14140,7 @@ implementations of QueryHandler can use this data.</p></td>
             <td class="type">
             
                 
-<span class="param-type">String</span>
+<span class="param-type">string</span>
 |
 
 <span class="param-type"><a href="ExecutionProfile.html">ExecutionProfile</a></span>
@@ -12245,7 +14162,8 @@ implementations of QueryHandler can use this data.</p></td>
             
 
             <td class="description last"><p>Name or instance of the <a href="ExecutionProfile.html">profile</a> to
-be used for this execution. If not set, it will the use &quot;default&quot; execution profile.</p></td>
+be used for this execution. If not set, it will the use &quot;default&quot; execution profile.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12258,7 +14176,7 @@ be used for this execution. If not set, it will the use &quot;default&quot; exec
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">number</span>
 
 
             
@@ -12276,7 +14194,8 @@ be used for this execution. If not set, it will the use &quot;default&quot; exec
 
             
 
-            <td class="description last"><p>Amount of rows to retrieve per page.</p></td>
+            <td class="description last"><p>Amount of rows to retrieve per page.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12311,7 +14230,8 @@ be used for this execution. If not set, it will the use &quot;default&quot; exec
             
 
             <td class="description last"><p>Type hints for parameters given in the query, ordered as for the parameters.</p>
-<p>For batch queries, an array of such arrays, ordered as with the queries in the batch.</p></td>
+<p>For batch queries, an array of such arrays, ordered as with the queries in the batch.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12343,26 +14263,18 @@ be used for this execution. If not set, it will the use &quot;default&quot; exec
             
 
             <td class="description last"><p>The host that should handle the query.</p>
-<p>
-  Use of this option is <em>heavily discouraged</em> and should only be used in the following cases:
-</p>
+<p>Use of this option is <strong>heavily discouraged</strong> and should only be used in the following cases:</p>
 <ol>
-  <li>
-    Querying node-local tables, such as tables in the <code>system</code> and <code>system_views</code>
-    keyspaces.
-  </li>
-  <li>
-    Applying a series of schema changes, where it may be advantageous to execute schema changes in sequence on the
-    same node.
-  </li>
+<li>Querying node-local tables, such as tables in the <code>system</code> and <code>system_views</code> keyspaces.</li>
+<li>Applying a series of schema changes, where it may be advantageous to execute schema changes in sequence on the
+same node.</li>
 </ol>
-<p>
-  Configuring a specific host causes the configured
-  <a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a> to be completely bypassed.
-  However, if the load balancing policy dictates that the host is at a
-  <a href="module-types.html#~distance">distance of ignored</a> or there is no active connectivity to the host, the request will
-  fail with a <a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a>.
-</p></td>
+<p>Configuring a specific host causes the configured
+<a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a> to be completely bypassed.
+However, if the load balancing policy dictates that the host is at a
+<a href="module-types.html#~distance">distance of ignored</a> or there is no active connectivity to the host, the request will
+fail with a <a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a>.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12375,7 +14287,7 @@ be used for this execution. If not set, it will the use &quot;default&quot; exec
             <td class="type">
             
                 
-<span class="param-type">Boolean</span>
+<span class="param-type">boolean</span>
 
 
             
@@ -12395,11 +14307,10 @@ be used for this execution. If not set, it will the use &quot;default&quot; exec
 
             <td class="description last"><p>Defines whether the query can be applied multiple times without changing the result
 beyond the initial application.</p>
-<p>
-  The query execution idempotence can be used at <a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a> level to
-  determine if an statement can be retried in case of request error or write timeout.
-</p>
-<p>Default: <code>false</code>.</p></td>
+<p>The query execution idempotence can be used at <a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a> level to
+determine if an statement can be retried in case of request error or write timeout.</p>
+<p>Default: <code>false</code>.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12412,7 +14323,7 @@ beyond the initial application.</p>
             <td class="type">
             
                 
-<span class="param-type">String</span>
+<span class="param-type">string</span>
 
 
             
@@ -12435,7 +14346,8 @@ beyond the initial application.</p>
 <li>To indicate what keyspace the statement is applicable to (protocol V5+ only).  This is useful when the
 query does not provide an explicit keyspace and you want to override the current <a href="Client.html#keyspace">Client#keyspace</a>.</li>
 <li>For query routing when the query operates on a different keyspace than the current <a href="Client.html#keyspace">Client#keyspace</a>.</li>
-</ol></td>
+</ol>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12448,7 +14360,7 @@ query does not provide an explicit keyspace and you want to override the current
             <td class="type">
             
                 
-<span class="param-type">Boolean</span>
+<span class="param-type">boolean</span>
 
 
             
@@ -12467,7 +14379,8 @@ query does not provide an explicit keyspace and you want to override the current
             
 
             <td class="description last"><p>Determines if the batch should be written to the batchlog. Only valid for
-<a href="Client.html#batch">Client#batch()</a>, it will be ignored by other methods. Default: true.</p></td>
+<a href="Client.html#batch">Client#batch()</a>, it will be ignored by other methods. Default: true.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12480,7 +14393,7 @@ query does not provide an explicit keyspace and you want to override the current
             <td class="type">
             
                 
-<span class="param-type">Boolean</span>
+<span class="param-type">boolean</span>
 
 
             
@@ -12499,7 +14412,8 @@ query does not provide an explicit keyspace and you want to override the current
             
 
             <td class="description last"><p>Determines if its a counter batch. Only valid for
-<a href="Client.html#batch">Client#batch()</a>, it will be ignored by other methods. Default: false.</p></td>
+<a href="Client.html#batch">Client#batch()</a>, it will be ignored by other methods. Default: false.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12515,7 +14429,7 @@ query does not provide an explicit keyspace and you want to override the current
 <span class="param-type">Buffer</span>
 |
 
-<span class="param-type">String</span>
+<span class="param-type">string</span>
 
 
             
@@ -12534,7 +14448,8 @@ query does not provide an explicit keyspace and you want to override the current
             
 
             <td class="description last"><p>Buffer or string token representing the paging state.</p>
-<p>Useful for manual paging, if provided, the query will be executed starting from a given paging state.</p></td>
+<p>Useful for manual paging, if provided, the query will be executed starting from a given paging state.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12547,7 +14462,7 @@ query does not provide an explicit keyspace and you want to override the current
             <td class="type">
             
                 
-<span class="param-type">Boolean</span>
+<span class="param-type">boolean</span>
 
 
             
@@ -12565,7 +14480,8 @@ query does not provide an explicit keyspace and you want to override the current
 
             
 
-            <td class="description last"><p>Determines if the query must be executed as a prepared statement.</p></td>
+            <td class="description last"><p>Determines if the query must be executed as a prepared statement.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12578,7 +14494,7 @@ query does not provide an explicit keyspace and you want to override the current
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">number</span>
 
 
             
@@ -12598,13 +14514,10 @@ query does not provide an explicit keyspace and you want to override the current
 
             <td class="description last"><p>When defined, it overrides the default read timeout
 (<code>socketOptions.readTimeout</code>) in milliseconds for this execution per coordinator.</p>
-<p>
-  Suitable for statements for which the coordinator may allow a longer server-side timeout, for example aggregation
-  queries.
-</p>
-<p>
-  A value of <code>0</code> disables client side read timeout for the execution. Default: <code>undefined</code>.
-</p></td>
+<p>Suitable for statements for which the coordinator may allow a longer server-side timeout, for example aggregation
+queries.</p>
+<p>A value of <code>0</code> disables client side read timeout for the execution. Default: <code>undefined</code>.</p>
+<p>[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12636,10 +14549,9 @@ query does not provide an explicit keyspace and you want to override the current
             
 
             <td class="description last"><p>Retry policy for the query.</p>
-<p>
-  This property can be used to specify a different <a href="module-policies_retry.html">retry policy</a> to the one specified
-  in the <a href="global.html#ClientOptions">ClientOptions</a>.policies.
-</p></td>
+<p>This property can be used to specify a different <a href="module-policies_retry.html">retry policy</a> to the one specified
+in the <a href="global.html#ClientOptions">ClientOptions</a>.policies.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12671,7 +14583,8 @@ query does not provide an explicit keyspace and you want to override the current
             
 
             <td class="description last"><p>Index of the parameters that are part of the partition key to determine
-the routing.</p></td>
+the routing.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12705,7 +14618,8 @@ the routing.</p></td>
 
             
 
-            <td class="description last"><p>Partition key(s) to determine which coordinator should be used for the query.</p></td>
+            <td class="description last"><p>Partition key(s) to determine which coordinator should be used for the query.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12737,7 +14651,8 @@ the routing.</p></td>
             
 
             <td class="description last"><p>Array of the parameters names that are part of the partition key to determine the
-routing. Only valid for non-prepared requests, it's recommended that you use the prepare flag instead.</p></td>
+routing. Only valid for non-prepared requests, it's recommended that you use the prepare flag instead.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12750,7 +14665,7 @@ routing. Only valid for non-prepared requests, it's recommended that you use the
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">number</span>
 
 
             
@@ -12770,7 +14685,8 @@ routing. Only valid for non-prepared requests, it's recommended that you use the
 
             <td class="description last"><p>Serial consistency is the consistency level for the serial phase of
 conditional updates.
-This option will be ignored for anything else that a conditional update/insert.</p></td>
+This option will be ignored for anything else that a conditional update/insert.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12783,7 +14699,7 @@ This option will be ignored for anything else that a conditional update/insert.<
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">number</span>
 |
 
 <span class="param-type">Long</span>
@@ -12808,7 +14724,8 @@ This option will be ignored for anything else that a conditional update/insert.<
 (00:00:00, January 1st, 1970).</p>
 <p>If provided, this will replace the server side assigned timestamp as default timestamp.</p>
 <p>Use <a href="module-types.html#~generateTimestamp">generateTimestamp()</a> utility method to generate a valid timestamp
-based on a Date and microseconds parts.</p></td>
+based on a Date and microseconds parts.
+[TODO: Add support for this field]</p></td>
         </tr>
 
     
@@ -12821,7 +14738,7 @@ based on a Date and microseconds parts.</p></td>
             <td class="type">
             
                 
-<span class="param-type">Boolean</span>
+<span class="param-type">boolean</span>
 
 
             
@@ -12880,7 +14797,7 @@ problems related to query executions. Default: false.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client.js.html">client.js</a>, <a href="client.js.html#line229">line 229</a>
+        <a href="client.js.html">client.js</a>, <a href="client.js.html#line22">line 22</a>
     </li></ul></dd>
     
 
@@ -12891,6 +14808,319 @@ problems related to query executions. Default: false.</p>
     
 </dl>
 
+
+
+
+
+
+            
+                
+
+    
+
+    
+    <h4 class="name" id="RejectCallback"><span class="type-signature"></span>RejectCallback<span class="signature">(reason)</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Reject callback</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>reason</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="client.js.html">client.js</a>, <a href="client.js.html#line792">line 792</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+            
+                
+
+    
+
+    
+    <h4 class="name" id="ResolveCallback"><span class="type-signature"></span>ResolveCallback<span class="signature">(value)</span><span class="type-signature"> &rarr; {void}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Resolve callback</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">ResultSet</span>
+|
+
+<span class="param-type">PromiseLike.&lt;ResultSet></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="client.js.html">client.js</a>, <a href="client.js.html#line800">line 800</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -13046,7 +15276,7 @@ problems related to query executions. Default: false.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="client.js.html">client.js</a>, <a href="client.js.html#line1219">line 1219</a>
+        <a href="client.js.html">client.js</a>, <a href="client.js.html#line872">line 872</a>
     </li></ul></dd>
     
 
@@ -13090,13 +15320,13 @@ problems related to query executions. Default: false.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="AuthResponseRequest.html">AuthResponseRequest</a></li><li><a href="BatchRequest.html">BatchRequest</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Connection.html">Connection</a></li><li><a href="ControlConnection.html">ControlConnection</a></li><li><a href="CredentialsRequest.html">CredentialsRequest</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecuteRequest.html">ExecuteRequest</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="FrameReader.html">FrameReader</a></li><li><a href="FrameWriter.html">FrameWriter</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostConnectionPool.html">HostConnectionPool</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="InsightsClient.html">InsightsClient</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Murmur3Tokenizer.html">Murmur3Tokenizer</a></li><li><a href="OperationState.html">OperationState</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="PrepareHandler.html">PrepareHandler</a></li><li><a href="QueryRequest.html">QueryRequest</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="RandomTokenizer.html">RandomTokenizer</a></li><li><a href="Request.html">Request</a></li><li><a href="RequestExecution.html">RequestExecution</a></li><li><a href="RequestHandler.html">RequestHandler</a></li><li><a href="StartupRequest.html">StartupRequest</a></li><li><a href="StreamIdStack.html">StreamIdStack</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="Tokenizer.html">Tokenizer</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="WriteQueue.html">WriteQueue</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Parser">Parser</a></li><li><a href="global.html#Protocol">Protocol</a></li><li><a href="global.html#ResultEmitter">ResultEmitter</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#defaultReleaseDelay">defaultReleaseDelay</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#errorCodes">errorCodes</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#fromSignedByte">fromSignedByte</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getDefaultOptions">getDefaultOptions</a></li><li><a href="global.html#groupSize">groupSize</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxGroupsFor2Bytes">maxGroupsFor2Bytes</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#releasableSize">releasableSize</a></li><li><a href="global.html#resultFlag">resultFlag</a></li><li><a href="global.html#rowBuffer">rowBuffer</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#shiftToGroup">shiftToGroup</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="AuthResponseRequest.html">AuthResponseRequest</a></li><li><a href="BatchRequest.html">BatchRequest</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Connection.html">Connection</a></li><li><a href="ControlConnection.html">ControlConnection</a></li><li><a href="CredentialsRequest.html">CredentialsRequest</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecuteRequest.html">ExecuteRequest</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="FrameReader.html">FrameReader</a></li><li><a href="FrameWriter.html">FrameWriter</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostConnectionPool.html">HostConnectionPool</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Murmur3Tokenizer.html">Murmur3Tokenizer</a></li><li><a href="OperationState.html">OperationState</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="PrepareHandler.html">PrepareHandler</a></li><li><a href="QueryRequest.html">QueryRequest</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="RandomTokenizer.html">RandomTokenizer</a></li><li><a href="Request.html">Request</a></li><li><a href="RequestExecution.html">RequestExecution</a></li><li><a href="RequestHandler.html">RequestHandler</a></li><li><a href="StartupRequest.html">StartupRequest</a></li><li><a href="StreamIdStack.html">StreamIdStack</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="Tokenizer.html">Tokenizer</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="WriteQueue.html">WriteQueue</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Parser">Parser</a></li><li><a href="global.html#Protocol">Protocol</a></li><li><a href="global.html#ResultEmitter">ResultEmitter</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#bigintToLong">bigintToLong</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#defaultReleaseDelay">defaultReleaseDelay</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeListLike">encodeListLike</a></li><li><a href="global.html#encodeMap">encodeMap</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#ensureValue">ensureValue</a></li><li><a href="global.html#errorCodes">errorCodes</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#fromSignedByte">fromSignedByte</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getColumnsMetadata">getColumnsMetadata</a></li><li><a href="global.html#getCqlObject">getCqlObject</a></li><li><a href="global.html#getDefaultOptions">getDefaultOptions</a></li><li><a href="global.html#getRowsFromResultsWrapper">getRowsFromResultsWrapper</a></li><li><a href="global.html#getWrapped">getWrapped</a></li><li><a href="global.html#groupSize">groupSize</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#longToBigint">longToBigint</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxGroupsFor2Bytes">maxGroupsFor2Bytes</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#napiErrorHandler">napiErrorHandler</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseParams">parseParams</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#releasableSize">releasableSize</a></li><li><a href="global.html#resultFlag">resultFlag</a></li><li><a href="global.html#rowBuffer">rowBuffer</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#shiftToGroup">shiftToGroup</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Nov 27 2024 09:28:44 GMT+0000 (Coordinated Universal Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Tue Mar 18 2025 13:37:13 GMT+0000 (Coordinated Universal Time)
 </footer>
 
 <script> prettyPrint(); </script>
