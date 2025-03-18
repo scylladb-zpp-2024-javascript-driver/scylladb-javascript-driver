@@ -141,6 +141,26 @@ impl QueryParameterWrapper {
     }
 
     #[napi]
+    pub fn from_udt(
+        name: String,
+        keyspace: String,
+        names: Vec<String>,                  // Same length of those two vectors
+        values: Vec<&QueryParameterWrapper>, // is guaranteed by JavaScript code
+    ) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::UserDefinedType {
+                keyspace,
+                name,
+                fields: names
+                    .iter()
+                    .zip(values.iter())
+                    .map(|(name, value)| (name.clone(), Some(value.parameter.clone())))
+                    .collect(),
+            },
+        }
+    }
+
+    #[napi]
     pub fn from_map(
         val: Vec<(&QueryParameterWrapper, &QueryParameterWrapper)>,
     ) -> QueryParameterWrapper {
