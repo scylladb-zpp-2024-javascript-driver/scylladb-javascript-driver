@@ -1,5 +1,5 @@
 use napi::bindgen_prelude::{BigInt, Buffer};
-use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue};
+use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
     types::{
@@ -8,6 +8,11 @@ use crate::{
     },
     utils::{bigint_to_i64, js_error},
 };
+
+#[napi]
+pub struct MaybeUnsetQueryParameterWrapper {
+    pub(crate) parameter: MaybeUnset<CqlValue>,
+}
 
 /// Structure wraps CqlValue type. Use for passing parameters for requests.
 ///
@@ -190,13 +195,32 @@ impl QueryParameterWrapper {
     }
 }
 
-impl QueryParameterWrapper {
+impl MaybeUnsetQueryParameterWrapper {
     /// Takes vector of QueryParameterWrapper references and turns it into vector of CqlValue
     pub(crate) fn extract_parameters(
-        row: Vec<Option<&QueryParameterWrapper>>,
-    ) -> Vec<Option<CqlValue>> {
+        row: Vec<Option<&MaybeUnsetQueryParameterWrapper>>,
+    ) -> Vec<Option<MaybeUnset<CqlValue>>> {
         row.iter()
             .map(|e| e.as_ref().map(|v| v.parameter.clone()))
             .collect()
+    }
+}
+
+#[napi]
+impl MaybeUnsetQueryParameterWrapper {
+    #[napi]
+    pub fn from_non_null_non_unset_value(
+        val: &QueryParameterWrapper,
+    ) -> MaybeUnsetQueryParameterWrapper {
+        MaybeUnsetQueryParameterWrapper {
+            parameter: MaybeUnset::Set(val.parameter.clone()),
+        }
+    }
+
+    #[napi]
+    pub fn unset() -> MaybeUnsetQueryParameterWrapper {
+        MaybeUnsetQueryParameterWrapper {
+            parameter: MaybeUnset::Unset,
+        }
     }
 }
