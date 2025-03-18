@@ -49,6 +49,7 @@ impl PreparedStatementWrapper {
 
 #[napi]
 impl QueryOptionsWrapper {
+    /// Constructor for empty QueryOptionsWrapper
     #[napi]
     pub fn empty_options() -> QueryOptionsWrapper {
         QueryOptionsWrapper {
