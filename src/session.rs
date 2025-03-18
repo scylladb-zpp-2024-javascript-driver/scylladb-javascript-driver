@@ -33,6 +33,7 @@ pub struct SessionWrapper {
 
 #[napi]
 impl SessionOptions {
+    /// Empty SessionOptions constructor
     #[napi]
     pub fn empty() -> Self {
         SessionOptions {
@@ -45,6 +46,7 @@ impl SessionOptions {
 
 #[napi]
 impl SessionWrapper {
+    /// Creates session based on the provided session options.
     #[napi]
     pub async fn create_session(options: &SessionOptions) -> napi::Result<Self> {
         let s = SessionBuilder::new()
@@ -56,11 +58,15 @@ impl SessionWrapper {
         Ok(SessionWrapper { inner: s })
     }
 
+    /// Returns the name of the current keyspace
     #[napi]
     pub fn get_keyspace(&self) -> Option<String> {
         self.inner.get_keyspace().as_deref().map(ToOwned::to_owned)
     }
 
+    /// Executes unprepared statement with no parameters.
+    ///
+    /// Returns a wrapper of the result provided by the rust driver
     #[napi]
     pub async fn query_unpaged_no_values(
         &self,
@@ -75,9 +81,9 @@ impl SessionWrapper {
         QueryResultWrapper::from_query(query_result)
     }
 
-    /// Executes unprepared query. This assumes the types will be either guessed or provided by user.
+    /// Executes unprepared statement. This assumes the types will be either guessed or provided by user.
     ///
-    /// Returns a wrapper of the value provided by the rust driver
+    /// Returns a wrapper of the result provided by the rust driver
     ///
     /// All parameters need to be wrapped into QueryParameterWrapper keeping CqlValue of assumed correct type
     /// If the provided types will not be correct, this query will fail.
@@ -108,9 +114,9 @@ impl SessionWrapper {
         })
     }
 
-    /// Query a database with a given prepared statement and provided parameters.
+    /// Execute a given prepared statement against the database with provided parameters.
     ///
-    /// Returns a wrapper of the value provided by the rust driver
+    /// Returns a wrapper of the result provided by the rust driver
     ///
     /// All parameters need to be wrapped into QueryParameterWrapper keeping CqlValue of correct type
     /// Creating Prepared statement may help to determine required types
@@ -134,6 +140,9 @@ impl SessionWrapper {
         )
     }
 
+    /// Executes all statements in the provided batch. Those statements can be either prepared or unprepared.
+    ///
+    /// Returns a wrapper of the result provided by the rust driver
     #[napi]
     pub async fn query_batch(
         &self,
@@ -153,6 +162,8 @@ impl SessionWrapper {
     }
 }
 
+/// Creates object representing a prepared batch of statements.
+/// Requires each passed statement to be already prepared.
 #[napi]
 pub fn create_prepared_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
     let mut batch: Batch = Default::default();
@@ -162,6 +173,7 @@ pub fn create_prepared_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWr
     BatchWrapper { inner: batch }
 }
 
+/// Creates object representing unprepared batch of statements.
 #[napi]
 pub fn create_unprepared_batch(queries: Vec<String>) -> BatchWrapper {
     let mut batch: Batch = Default::default();
@@ -171,6 +183,7 @@ pub fn create_unprepared_batch(queries: Vec<String>) -> BatchWrapper {
     BatchWrapper { inner: batch }
 }
 
+/// Apply options to the prepared statement
 fn apply_options(
     mut prepared: PreparedStatement,
     options: &QueryOptionsWrapper,
@@ -216,6 +229,7 @@ fn apply_options(
     Ok(prepared)
 }
 
+/// Provides driver self identity, filling information on application based on session options.
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
     let mut self_identity = SelfIdentity::new();
     self_identity.set_custom_driver_name(options::DEFAULT_DRIVER_NAME);
