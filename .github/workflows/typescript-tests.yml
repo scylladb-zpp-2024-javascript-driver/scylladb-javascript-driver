@@ -1,4 +1,4 @@
-name: Typescript tests
+name: Run Typescript tests
 env:
   DEBUG: napi:*
 "on":
