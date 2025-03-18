@@ -3,6 +3,7 @@ pub mod inet;
 pub mod local_date;
 pub mod local_time;
 pub mod time_uuid;
+pub mod tuple;
 pub mod type_hints;
 pub mod type_wrappers;
 pub mod uuid;

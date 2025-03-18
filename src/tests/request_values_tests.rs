@@ -34,6 +34,21 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
         "TinyInt" => (CqlType::TinyInt, None, None),
         "Time" => (CqlType::Time, None, None),
         "Timeuuid" => (CqlType::Timeuuid, None, None),
+        "Tuple" => {
+            return ComplexType::two_support(
+                CqlType::Tuple,
+                Some(ComplexType::simple_type(CqlType::Text)),
+                Some(ComplexType::two_support(
+                    CqlType::Tuple,
+                    Some(ComplexType::simple_type(CqlType::Int)),
+                    Some(ComplexType::two_support(
+                        CqlType::Tuple,
+                        Some(ComplexType::simple_type(CqlType::Empty)),
+                        None,
+                    )),
+                )),
+            )
+        }
         "Uuid" => (CqlType::Uuid, None, None),
         _ => (CqlType::Empty, None, None),
     };
@@ -79,6 +94,11 @@ pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
         "Timeuuid" => CqlValue::Timeuuid(
             CqlTimeuuid::from_str("8e14e760-7fa8-11eb-bc66-000000000001").unwrap(),
         ),
+        "Tuple" => CqlValue::Tuple(vec![
+            Some(CqlValue::Text("First".to_owned())),
+            Some(CqlValue::Int(1)),
+            None,
+        ]),
         "Uuid" => CqlValue::Uuid(uuid!("ffffffff-eeee-ffff-ffff-ffffffffffff")),
         _ => CqlValue::Empty,
     };
