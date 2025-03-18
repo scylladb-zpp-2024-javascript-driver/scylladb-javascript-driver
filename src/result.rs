@@ -395,6 +395,25 @@ impl CqlValueWrapper {
     }
 
     #[napi]
+    pub fn get_udt_values(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
+        match self.inner.as_udt() {
+            Some(r) => Ok(r
+                .iter()
+                .map(|f| f.1.clone().map(|f| CqlValueWrapper { inner: f }))
+                .collect()),
+            None => Err(Self::generic_error("user_defined_type")),
+        }
+    }
+
+    #[napi]
+    pub fn get_udt_names(&self) -> napi::Result<Vec<String>> {
+        match self.inner.as_udt() {
+            Some(r) => Ok(r.iter().map(|f| f.0.clone()).collect()),
+            None => Err(Self::generic_error("user_defined_type")),
+        }
+    }
+
+    #[napi]
     pub fn get_small_int(&self) -> napi::Result<i16> {
         match self.inner.as_smallint() {
             Some(r) => Ok(r),
