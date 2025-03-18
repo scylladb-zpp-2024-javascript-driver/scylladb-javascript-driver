@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use napi::{
-    Result,
+    Env, NapiRaw, Result,
     bindgen_prelude::{BigInt, Buffer, ToNapiValue},
 };
 use scylla::{
@@ -302,7 +302,35 @@ impl ToNapiValue for CqlValueWrapper {
                     ),
                     CqlType::Set,
                 ),
-                CqlValue::UserDefinedType { .. } => todo!(),
+                CqlValue::UserDefinedType {
+                    keyspace: _,
+                    name: _,
+                    fields,
+                } => {
+                    // Create an empty JS object
+                    let mut obj = Env::from_raw(env).create_object()?;
+                    // And fill it with the wrapped values
+                    add_type_to_napi_value(
+                        env,
+                        fields
+                            .iter()
+                            .try_for_each(|(field_name, field_value)| {
+                                obj.set(
+                                    field_name,
+                                    field_value.as_ref().map(|e| {
+                                        CqlValueWrapper::to_napi_value(
+                                            // Value wrapping
+                                            env,
+                                            CqlValueWrapper { inner: e.clone() },
+                                        )
+                                    }),
+                                )
+                            })
+                            .map(|_| obj.raw()),
+                        CqlType::UserDefinedType,
+                    )
+                }
+
                 CqlValue::SmallInt(val) => i16::to_napi_value(env, val),
                 CqlValue::TinyInt(val) => i8::to_napi_value(env, val),
                 CqlValue::Time(val) => {
@@ -386,7 +414,14 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             ),
             other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
         },
-        ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
+        ColumnType::UserDefinedType {
+            frozen: _,
+            definition,
+        } => ComplexType::from_udt_column_type(
+            definition.field_types.as_slice(),
+            definition.name.to_string(),
+            definition.keyspace.to_string(),
+        ),
         ColumnType::Tuple(t) => ComplexType::tuple_from_column_type(t.as_slice()),
         ColumnType::Vector {
             typ: _,
