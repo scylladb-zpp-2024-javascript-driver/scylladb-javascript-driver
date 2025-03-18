@@ -4,10 +4,10 @@ use scylla::client::SelfIdentity;
 use scylla::statement::batch::Batch;
 use scylla::statement::prepared::PreparedStatement;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
-use scylla::value::CqlValue;
+use scylla::value::{CqlValue, MaybeUnset};
 
 use crate::options;
-use crate::requests::parameter_wrappers::QueryParameterWrapper;
+use crate::requests::parameter_wrappers::MaybeUnsetQueryParameterWrapper;
 use crate::requests::request::QueryOptionsWrapper;
 use crate::utils::{bigint_to_i64, js_error};
 use crate::{
@@ -74,11 +74,11 @@ impl SessionWrapper {
     pub async fn query_unpaged(
         &self,
         query: String,
-        params: Vec<Option<&QueryParameterWrapper>>,
+        params: Vec<Option<&MaybeUnsetQueryParameterWrapper>>,
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let statement: Statement = apply_statement_options(query.into(), options)?;
-        let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
+        let params_vec = MaybeUnsetQueryParameterWrapper::extract_parameters(params);
         let query_result = self
             .inner
             .query_unpaged(statement, params_vec)
@@ -112,10 +112,10 @@ impl SessionWrapper {
     pub async fn execute_prepared_unpaged(
         &self,
         query: &PreparedStatementWrapper,
-        params: Vec<Option<&QueryParameterWrapper>>,
+        params: Vec<Option<&MaybeUnsetQueryParameterWrapper>>,
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
+        let params_vec = MaybeUnsetQueryParameterWrapper::extract_parameters(params);
         let query = apply_prepared_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
             self.inner
@@ -132,11 +132,11 @@ impl SessionWrapper {
     pub async fn batch(
         &self,
         batch: &BatchWrapper,
-        params: Vec<Vec<Option<&QueryParameterWrapper>>>,
+        params: Vec<Vec<Option<&MaybeUnsetQueryParameterWrapper>>>,
     ) -> napi::Result<QueryResultWrapper> {
-        let params_vec: Vec<Vec<Option<CqlValue>>> = params
+        let params_vec: Vec<Vec<Option<MaybeUnset<CqlValue>>>> = params
             .into_iter()
-            .map(QueryParameterWrapper::extract_parameters)
+            .map(MaybeUnsetQueryParameterWrapper::extract_parameters)
             .collect();
         QueryResultWrapper::from_query(
             self.inner
