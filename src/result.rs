@@ -32,13 +32,13 @@ enum QueryResultVariant {
 /// Wrapper for a whole query result
 #[napi]
 pub struct QueryResultWrapper {
-    internal: QueryResultVariant,
+    inner: QueryResultVariant,
 }
 
 /// Wrapper for a single row of the query result
 #[napi]
 pub struct RowWrapper {
-    internal: Vec<Option<CqlValue>>,
+    inner: Vec<Option<CqlValue>>,
 }
 
 /// Wrapper for a single CQL value
@@ -63,33 +63,33 @@ pub struct MetaColumnWrapper {
 #[napi]
 impl QueryResultWrapper {
     /// Converts rust query result into query result wrapper that can be passed to NAPI-RS
-    pub fn from_query(internal: QueryResult) -> napi::Result<QueryResultWrapper> {
-        let value = match internal.into_rows_result() {
+    pub fn from_query(result: QueryResult) -> napi::Result<QueryResultWrapper> {
+        let value = match result.into_rows_result() {
             Ok(v) => QueryResultVariant::RowsResult(v),
             Err(IntoRowsResultError::ResultNotRows(v)) => QueryResultVariant::EmptyResult(v),
             Err(IntoRowsResultError::ResultMetadataLazyDeserializationError(e)) => {
                 return Err(err_to_napi(e));
             }
         };
-        Ok(QueryResultWrapper { internal: value })
+        Ok(QueryResultWrapper { inner: value })
     }
 
     /// Extracts all the rows of the result into a vector of rows
     #[napi]
     pub fn get_rows(&self) -> napi::Result<Option<Vec<RowWrapper>>> {
-        let r2 = match &self.internal {
+        let result = match &self.inner {
             QueryResultVariant::RowsResult(v) => v,
             QueryResultVariant::EmptyResult(_) => {
                 return Ok(None);
             }
         };
 
-        let rows = r2.rows::<Row>()
+        let rows = result.rows::<Row>()
             .expect("Type check against the Row type has failed; this is a bug in the underlying Rust driver");
         Ok(Some(
             rows.map(|f| RowWrapper {
                 // TODO: Correctly handle such errors
-                internal: f.expect("Unhandled row Deserialization Error ").columns,
+                inner: f.expect("Unhandled row Deserialization Error ").columns,
             })
             .collect(),
         ))
@@ -98,7 +98,7 @@ impl QueryResultWrapper {
     /// Get the names of the columns in order, as they appear in the query result
     #[napi]
     pub fn get_columns_names(&self) -> Vec<String> {
-        match &self.internal {
+        match &self.inner {
             QueryResultVariant::RowsResult(v) => v,
             QueryResultVariant::EmptyResult(_) => {
                 return vec![];
@@ -113,7 +113,7 @@ impl QueryResultWrapper {
     /// Get the specification of all columns as they appear in the query result
     #[napi]
     pub fn get_columns_specs(&self) -> Vec<MetaColumnWrapper> {
-        match &self.internal {
+        match &self.inner {
             QueryResultVariant::RowsResult(v) => v,
             QueryResultVariant::EmptyResult(_) => {
                 return vec![];
@@ -133,7 +133,7 @@ impl QueryResultWrapper {
     /// Get all warnings generated in the query
     #[napi]
     pub fn get_warnings(&self) -> Vec<String> {
-        match &self.internal {
+        match &self.inner {
             QueryResultVariant::RowsResult(v) => v.warnings().map(|e| e.to_owned()).collect(),
             QueryResultVariant::EmptyResult(v) => v.warnings().map(|e| e.to_owned()).collect(),
         }
@@ -142,7 +142,7 @@ impl QueryResultWrapper {
     /// Get all tracing ids generated in the query
     #[napi]
     pub fn get_trace_id(&self) -> Option<UuidWrapper> {
-        match &self.internal {
+        match &self.inner {
             QueryResultVariant::RowsResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
             QueryResultVariant::EmptyResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
         }
@@ -155,7 +155,7 @@ impl RowWrapper {
     /// Get the CQL value wrappers for each column in the given row
     pub fn get_columns(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
         let s: Vec<Option<CqlValueWrapper>> = self
-            .internal
+            .inner
             .iter()
             .map(|f| f.clone().map(|f| CqlValueWrapper { inner: f }))
             .collect();
