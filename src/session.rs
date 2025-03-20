@@ -144,7 +144,7 @@ impl SessionWrapper {
     ///
     /// Returns a wrapper of the result provided by the rust driver
     #[napi]
-    pub async fn query_batch(
+    pub async fn batch(
         &self,
         batch: &BatchWrapper,
         params: Vec<Vec<Option<&QueryParameterWrapper>>>,
