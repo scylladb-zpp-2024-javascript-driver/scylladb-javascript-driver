@@ -77,14 +77,14 @@ impl QueryResultWrapper {
     /// Extracts all the rows of the result into a vector of rows
     #[napi]
     pub fn get_rows(&self) -> napi::Result<Option<Vec<RowWrapper>>> {
-        let r2 = match &self.internal {
+        let result = match &self.internal {
             QueryResultVariant::RowsResult(v) => v,
             QueryResultVariant::EmptyResult(_) => {
                 return Ok(None);
             }
         };
 
-        let rows = r2.rows::<Row>()
+        let rows = result.rows::<Row>()
             .expect("Type check against the Row type has failed; this is a bug in the underlying Rust driver");
         Ok(Some(
             rows.map(|f| RowWrapper {
