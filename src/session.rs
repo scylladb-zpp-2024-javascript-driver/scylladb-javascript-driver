@@ -1,9 +1,9 @@
-use scylla::client::session::Session;
+use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::client::SelfIdentity;
 use scylla::statement::batch::Batch;
 use scylla::statement::prepared::PreparedStatement;
-use scylla::statement::{Consistency, SerialConsistency};
+use scylla::statement::{Consistency, SerialConsistency, Statement};
 use scylla::value::CqlValue;
 
 use crate::options;
@@ -28,7 +28,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    inner: Session,
+    inner: CachingSession,
 }
 
 #[napi]
@@ -53,12 +53,17 @@ impl SessionWrapper {
             .build()
             .await
             .map_err(err_to_napi)?;
+        let s: CachingSession = CachingSession::from(s, 100);
         Ok(SessionWrapper { inner: s })
     }
 
     #[napi]
     pub fn get_keyspace(&self) -> Option<String> {
-        self.inner.get_keyspace().as_deref().map(ToOwned::to_owned)
+        self.inner
+            .get_session()
+            .get_keyspace()
+            .as_deref()
+            .map(ToOwned::to_owned)
     }
 
     #[napi]
@@ -69,6 +74,7 @@ impl SessionWrapper {
     ) -> napi::Result<QueryResultWrapper> {
         let query_result = self
             .inner
+            .get_session()
             .query_unpaged(query, &[])
             .await
             .map_err(err_to_napi)?;
@@ -90,6 +96,7 @@ impl SessionWrapper {
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
         let query_result = self
             .inner
+            .get_session()
             .query_unpaged(query, params_vec)
             .await
             .map_err(err_to_napi)?;
@@ -103,8 +110,13 @@ impl SessionWrapper {
         &self,
         statement: String,
     ) -> napi::Result<PreparedStatementWrapper> {
+        let query: Statement = statement.into();
         Ok(PreparedStatementWrapper {
-            prepared: self.inner.prepare(statement).await.map_err(err_to_napi)?,
+            prepared: self
+                .inner
+                .add_prepared_statement(&query)
+                .await
+                .map_err(err_to_napi)?,
         })
     }
 
@@ -128,6 +140,7 @@ impl SessionWrapper {
         let query = apply_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
             self.inner
+                .get_session()
                 .execute_unpaged(&query, params_vec)
                 .await
                 .map_err(err_to_napi)?,
