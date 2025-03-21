@@ -1,9 +1,6 @@
-# The goal of this workflow is to check if unit test run correctly
-# This includes both datastax unit tests and tests specific for this driver
-name: Run unit tests
+name: Run Typescript tests
 env:
   DEBUG: napi:*
-  PEDANTIC: true
 "on":
   push:
     branches:
@@ -12,7 +9,7 @@ jobs:
   build-and-run-tests:
     strategy:
       fail-fast: false
-    name: Build and run unit tests - node@20
+    name: Build and run typescript tests - node@20
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,10 +36,14 @@ jobs:
           key: x86_64-unknown-linux-gnu-cargo-ubuntu-latest
       - name: Install dependencies
         run: npm i
-      - name: Build
-        run: npm run build -- --target x86_64-unknown-linux-gnu
+      - name: Run build
+        run: npm run build
+      - name: Install TypeScript 4.9
+        run: npm install -g typescript@4.9
+      - name: Compile TypeScript
+        run: |
+          pushd test/typescript/
+          tsc -p .
+          node -e "require('./api-generation-test').generate()" > generated.ts
+          tsc generated.ts
         shell: bash
-      - name: Run unit tests
-        run: npm run unit
-      - name: Run not fully integrated unit tests
-        run: npm run unit-not-supported

@@ -73,3 +73,25 @@ pub(crate) fn bigint_to_i64(value: BigInt, error_msg: impl Display) -> napi::Res
     }
     Ok(value.words[0] as i64 * if value.sign_bit { -1 } else { 1 })
 }
+
+#[derive(Default)]
+pub struct CharCounter {
+    count: usize,
+}
+
+impl CharCounter {
+    pub fn new() -> Self {
+        CharCounter { count: 0 }
+    }
+
+    pub fn count(self) -> usize {
+        self.count
+    }
+}
+
+impl fmt::Write for CharCounter {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.count = s.len();
+        Ok(())
+    }
+}

@@ -5,6 +5,8 @@ env:
   DEBUG: napi:*
   APP_NAME: scylladb-javascript-driver
   RUST_BACKTRACE: full
+  PEDANTIC: true
+  NO_CONCURRENCY: true
 "on":
   push:
     branches:
