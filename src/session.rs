@@ -3,7 +3,7 @@ use scylla::client::session_builder::SessionBuilder;
 use scylla::client::SelfIdentity;
 use scylla::statement::batch::Batch;
 use scylla::statement::prepared::PreparedStatement;
-use scylla::statement::{Consistency, SerialConsistency};
+use scylla::statement::{Consistency, SerialConsistency, Statement};
 use scylla::value::CqlValue;
 
 use crate::options;
@@ -110,7 +110,7 @@ impl SessionWrapper {
         &self,
         statement: String,
     ) -> napi::Result<PreparedStatementWrapper> {
-        let query = Query::from(statement);
+        let query: Statement = statement.into();
         Ok(PreparedStatementWrapper {
             prepared: self
                 .inner
