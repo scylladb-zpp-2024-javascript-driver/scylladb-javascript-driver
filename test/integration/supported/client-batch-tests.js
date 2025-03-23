@@ -394,9 +394,7 @@ describe("Client @SERVER_API", function () {
             },
         );
 
-        // Currently no support for timestamps
-        // TODO: Fix this test
-        /* vit("2.1", "should support protocol level timestamp", function (done) {
+        vit("2.1", "should support protocol level timestamp", function (done) {
             const insertQuery =
                 "INSERT INTO %s (id, text_sample) VALUES (?, ?)";
             const selectQuery =
@@ -415,61 +413,60 @@ describe("Client @SERVER_API", function () {
                     params: [id2, "value 2 with timestamp"],
                 },
             ];
+            const assert1 = function (next) {
+                client.execute(
+                    util.format(selectQuery, table1, id1),
+                    function (err, result) {
+                        assert.ifError(err);
+                        assert.ok(result);
+                        assert.ok(result.first());
+                        assert.strictEqual(
+                            result.first()["text_sample"],
+                            "value 1 with timestamp",
+                        );
+                        helper.assertInstanceOf(
+                            result.first()["writetime(text_sample)"],
+                            types.Long,
+                        );
+                        assert.strictEqual(
+                            result.first()["writetime(text_sample)"].toString(),
+                            timestamp.toString(),
+                        );
+                        next();
+                    },
+                );
+            };
+            const assert2 = function (next) {
+                client.execute(
+                    util.format(selectQuery, table2, id2),
+                    function (err, result) {
+                        assert.ifError(err);
+                        assert.ok(result);
+                        assert.ok(result.first());
+                        assert.strictEqual(
+                            result.first()["text_sample"],
+                            "value 2 with timestamp",
+                        );
+                        assert.strictEqual(
+                            result.first()["writetime(text_sample)"].toString(),
+                            timestamp.toString(),
+                        );
+                        next();
+                    },
+                );
+            };
             utils.series(
                 [
                     function (next) {
                         client.batch(queries, { timestamp: timestamp }, next);
                     },
-                    function assertValue1(next) {
-                        client.execute(
-                            util.format(selectQuery, table1, id1),
-                            function (err, result) {
-                                assert.ifError(err);
-                                assert.ok(result);
-                                assert.ok(result.first());
-                                assert.strictEqual(
-                                    result.first()["text_sample"],
-                                    "value 1 with timestamp",
-                                );
-                                helper.assertInstanceOf(
-                                    result.first()["writetime(text_sample)"],
-                                    types.Long,
-                                );
-                                assert.strictEqual(
-                                    result
-                                        .first()
-                                    ["writetime(text_sample)"].toString(),
-                                    timestamp.toString(),
-                                );
-                                next();
-                            },
-                        );
-                    },
-                    function assertValue2(next) {
-                        client.execute(
-                            util.format(selectQuery, table2, id2),
-                            function (err, result) {
-                                assert.ifError(err);
-                                assert.ok(result);
-                                assert.ok(result.first());
-                                assert.strictEqual(
-                                    result.first()["text_sample"],
-                                    "value 2 with timestamp",
-                                );
-                                assert.strictEqual(
-                                    result
-                                        .first()
-                                    ["writetime(text_sample)"].toString(),
-                                    timestamp.toString(),
-                                );
-                                next();
-                            },
-                        );
-                    },
+                    (next) => assert1(next),
+                    (next) => assert2(next),
                 ],
                 done,
             );
-        }); */
+        });
+
         vit("2.1", "should support serial consistency", function (done) {
             const insertQuery =
                 "INSERT INTO %s (id, text_sample) VALUES (?, ?)";
@@ -772,7 +769,7 @@ describe("Client @SERVER_API", function () {
             },
         );
 
-        // No support for timestamp
+        // No support for decimal type
         // TODO: Fix this test
         /* vit(
             "2.0",
@@ -1014,9 +1011,8 @@ describe("Client @SERVER_API", function () {
                 },
             );
         }); */
-        // No support for timestamp
-        // TODO: Fix this test
-        /* vit(
+
+        vit(
             "2.0",
             "should execute batch containing the same query multiple times",
             function (done) {
@@ -1034,7 +1030,7 @@ describe("Client @SERVER_API", function () {
                 ];
                 client.batch(queries, { prepare: true }, function (err) {
                     assert.ifError(err);
-                    //Check values inserted
+                    // Check values inserted
                     const selectQuery = util.format(
                         "SELECT int_sample FROM %s WHERE id = ?",
                         table1,
@@ -1048,7 +1044,7 @@ describe("Client @SERVER_API", function () {
                     });
                 });
             },
-        ); */
+        );
         // Would require correct error throwing
         // TODO: Fix this test
         /* it("should not use keyspace if set on options for lower protocol versions", function () {
