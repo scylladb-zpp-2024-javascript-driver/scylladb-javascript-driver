@@ -165,22 +165,31 @@ impl SessionWrapper {
 /// Creates object representing a prepared batch of statements.
 /// Requires each passed statement to be already prepared.
 #[napi]
-pub fn create_prepared_batch(queries: Vec<&PreparedStatementWrapper>) -> BatchWrapper {
+pub fn create_prepared_batch(
+    statements: Vec<&PreparedStatementWrapper>,
+    options: &QueryOptionsWrapper,
+) -> napi::Result<BatchWrapper> {
     let mut batch: Batch = Default::default();
-    queries
+    statements
         .iter()
         .for_each(|q| batch.append_statement(q.prepared.clone()));
-    BatchWrapper { inner: batch }
+    batch = apply_batch_options(batch, options)?;
+    Ok(BatchWrapper { inner: batch })
 }
 
 /// Creates object representing unprepared batch of statements.
 #[napi]
-pub fn create_unprepared_batch(queries: Vec<String>) -> BatchWrapper {
+pub fn create_unprepared_batch(
+    statements: Vec<String>,
+    options: &QueryOptionsWrapper,
+) -> napi::Result<BatchWrapper> {
     let mut batch: Batch = Default::default();
-    queries
+    statements
         .into_iter()
         .for_each(|q| batch.append_statement(q.as_str()));
-    BatchWrapper { inner: batch }
+
+    batch = apply_batch_options(batch, options)?;
+    Ok(BatchWrapper { inner: batch })
 }
 
 /// Macro to allow applying options to any query type
@@ -234,6 +243,7 @@ macro_rules! make_apply_options {
 }
 
 make_apply_options!(PreparedStatement, apply_prepared_options);
+make_apply_options!(Batch, apply_batch_options);
 
 /// Provides driver self identity, filling information on application based on session options.
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
