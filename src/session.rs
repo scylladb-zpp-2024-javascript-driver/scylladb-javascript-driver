@@ -131,7 +131,7 @@ impl SessionWrapper {
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
-        let query = apply_options(query.prepared.clone(), options)?;
+        let query = apply_prepared_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
             self.inner
                 .execute_unpaged(&query, params_vec)
@@ -183,51 +183,57 @@ pub fn create_unprepared_batch(queries: Vec<String>) -> BatchWrapper {
     BatchWrapper { inner: batch }
 }
 
-/// Apply options to the prepared statement
-fn apply_options(
-    mut prepared: PreparedStatement,
-    options: &QueryOptionsWrapper,
-) -> napi::Result<PreparedStatement> {
-    if let Some(o) = options.consistency {
-        prepared.set_consistency(
-            Consistency::try_from(o)
-                .map_err(|_| js_error(format!("Unknown consistency value: {o}")))?,
-        );
-    }
+/// Macro to allow applying options to any query type
+macro_rules! make_apply_options {
+    ($statement_type: ty, $fn_name: ident) => {
+        fn $fn_name(
+            mut statement: $statement_type,
+            options: &QueryOptionsWrapper,
+        ) -> napi::Result<$statement_type> {
+            if let Some(o) = options.consistency {
+                statement.set_consistency(
+                    Consistency::try_from(o)
+                        .map_err(|_| js_error(format!("Unknown consistency value: {o}")))?,
+                );
+            }
 
-    if let Some(o) = options.serial_consistency {
-        prepared.set_serial_consistency(Some(
-            SerialConsistency::try_from(o)
-                .map_err(|_| js_error(format!("Unknown serial consistency value: {o}")))?,
-        ));
-    }
+            if let Some(o) = options.serial_consistency {
+                statement
+                    .set_serial_consistency(Some(SerialConsistency::try_from(o).map_err(
+                        |_| js_error(format!("Unknown serial consistency value: {o}")),
+                    )?));
+            }
 
-    if let Some(o) = options.is_idempotent {
-        prepared.set_is_idempotent(o);
-    }
-    // TODO: Update it and check all edge-cases:
-    // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/pull/92#discussion_r1864461799
-    // Currently there is no support for paging, so there is no need for this option
-    /* if let Some(o) = options.fetch_size {
-        if o.is_negative() {
-            return Err(js_error("fetch size cannot be negative"));
+            if let Some(o) = options.is_idempotent {
+                statement.set_is_idempotent(o);
+            }
+            // TODO: Update it and check all edge-cases:
+            // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/pull/92#discussion_r1864461799
+            // Currently there is no support for paging, so there is no need for this option
+            /* if let Some(o) = options.fetch_size {
+                if o.is_negative() {
+                    return Err(js_error("fetch size cannot be negative"));
+                }
+                query.set_page_size(o);
+            } */
+            if let Some(o) = &options.timestamp {
+                statement.set_timestamp(Some(bigint_to_i64(
+                    o.clone(),
+                    "Timestamp cannot overflow i64",
+                )?));
+            }
+            // TODO: Update it to allow collection of information from traced query
+            // Currently it's just passing the value, but not able to access any tracing information
+            if let Some(o) = options.trace_query {
+                statement.set_tracing(o);
+            }
+
+            Ok(statement)
         }
-        query.set_page_size(o);
-    } */
-    if let Some(o) = &options.timestamp {
-        prepared.set_timestamp(Some(bigint_to_i64(
-            o.clone(),
-            "Timestamp cannot overflow i64",
-        )?));
-    }
-    // TODO: Update it to allow collection of information from traced query
-    // Currently it's just passing the value, but not able to access any tracing information
-    if let Some(o) = options.trace_query {
-        prepared.set_tracing(o);
-    }
-
-    Ok(prepared)
+    };
 }
+
+make_apply_options!(PreparedStatement, apply_prepared_options);
 
 /// Provides driver self identity, filling information on application based on session options.
 fn get_self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
