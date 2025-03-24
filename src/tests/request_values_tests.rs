@@ -3,6 +3,7 @@ use scylla::{
     value::{CqlDecimal, CqlTime},
 };
 use std::{
+    borrow::Cow,
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
 };
@@ -36,6 +37,26 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
         "List" => (CqlType::List, Some(CqlType::Text), None),
         "Map" => (CqlType::Map, Some(CqlType::Ascii), Some(CqlType::Double)),
         "Set" => (CqlType::Set, Some(CqlType::Int), None),
+        "UserDefinedType" => {
+            return ComplexType::from_udt_column_type(
+                &[
+                    (
+                        Cow::Owned("field1".to_owned()),
+                        ColumnType::Native(NativeType::Text),
+                    ),
+                    (
+                        Cow::Owned("field2".to_owned()),
+                        ColumnType::Native(NativeType::Int),
+                    ),
+                    (
+                        Cow::Owned("field3".to_owned()),
+                        ColumnType::Native(NativeType::Int),
+                    ),
+                ],
+                "name".to_owned(),
+                "keyspace".to_owned(),
+            );
+        }
         "SmallInt" => (CqlType::SmallInt, None, None),
         "TinyInt" => (CqlType::TinyInt, None, None),
         "Time" => (CqlType::Time, None, None),
@@ -102,6 +123,15 @@ pub fn tests_from_value(test: String, value: ParameterWrapper) {
             (CqlValue::Ascii("Text2".to_owned()), CqlValue::Double(0.2)),
         ]),
         "Set" => CqlValue::Set(vec![CqlValue::Int(4), CqlValue::Int(7), CqlValue::Int(15)]),
+        "UserDefinedType" => CqlValue::UserDefinedType {
+            keyspace: "keyspace".to_owned(),
+            name: "name".to_owned(),
+            fields: vec![
+                ("field1".to_owned(), Some(CqlValue::Text("Test".to_owned()))),
+                ("field2".to_owned(), Some(CqlValue::Int(1))),
+                ("field3".to_owned(), None),
+            ],
+        },
         "SmallInt" => CqlValue::SmallInt(1_i16),
         "TinyInt" => CqlValue::TinyInt(-1_i8),
         "Time" => CqlValue::Time(CqlTime(4312)),
