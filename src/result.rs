@@ -516,7 +516,14 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             ),
             other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
         },
-        ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
+        ColumnType::UserDefinedType {
+            frozen: _,
+            definition,
+        } => ComplexType::from_udt(
+            definition.field_types.as_slice(),
+            definition.name.to_string(),
+            definition.keyspace.to_string(),
+        ),
         ColumnType::Tuple(t) => ComplexType::from_tuple(t.as_slice()),
         ColumnType::Vector {
             typ: _,
