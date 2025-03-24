@@ -180,6 +180,22 @@ describe("Cql value wrapper", function () {
         assert.deepEqual(value, ["some text", Number(1)]);
     });
 
+    it("should get udt type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperUdt();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.UserDefinedType);
+        let value = getCqlObject(element);
+        /* Corresponding value:
+        let element = CqlValue::UserDefinedType(
+            vec![
+                CqlValue::Text("some text".to_owned()),
+                CqlValue::Int(1),
+            ],
+            vec!["field1".to_owned(), "field2".to_owned()],
+        ); */
+        assert.deepEqual(value, { field1: "some text", field2: 1 });
+    });
+
     it("should get map type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperMap();
         let type = element.getType();
