@@ -9,16 +9,19 @@ use scylla::value::CqlValue;
 use crate::options;
 use crate::requests::parameter_wrappers::QueryParameterWrapper;
 use crate::requests::request::QueryOptionsWrapper;
+use crate::result::EncodingOptions;
 use crate::utils::{bigint_to_i64, js_error};
 use crate::{
     requests::request::PreparedStatementWrapper, result::QueryResultWrapper, utils::err_to_napi,
 };
 
 #[napi]
+#[derive(Clone)]
 pub struct SessionOptions {
     pub connect_points: Vec<String>,
     pub application_name: Option<String>,
     pub application_version: Option<String>,
+    pub encoding_options: Option<EncodingOptions>,
 }
 
 #[napi]
@@ -29,6 +32,7 @@ pub struct BatchWrapper {
 #[napi]
 pub struct SessionWrapper {
     inner: Session,
+    pub(crate) options: SessionOptions,
 }
 
 #[napi]
@@ -39,6 +43,7 @@ impl SessionOptions {
             connect_points: vec![],
             application_name: None,
             application_version: None,
+            encoding_options: None,
         }
     }
 }
@@ -53,7 +58,10 @@ impl SessionWrapper {
             .build()
             .await
             .map_err(err_to_napi)?;
-        Ok(SessionWrapper { inner: s })
+        Ok(SessionWrapper {
+            inner: s,
+            options: options.clone(),
+        })
     }
 
     #[napi]
@@ -72,7 +80,7 @@ impl SessionWrapper {
             .query_unpaged(query, &[])
             .await
             .map_err(err_to_napi)?;
-        QueryResultWrapper::from_query(query_result)
+        QueryResultWrapper::from_query(query_result, self)
     }
 
     /// Executes unprepared query. This assumes the types will be either guessed or provided by user.
@@ -93,7 +101,7 @@ impl SessionWrapper {
             .query_unpaged(query, params_vec)
             .await
             .map_err(err_to_napi)?;
-        QueryResultWrapper::from_query(query_result)
+        QueryResultWrapper::from_query(query_result, &self)
     }
 
     /// Prepares a statement through rust driver for a given session
@@ -131,6 +139,7 @@ impl SessionWrapper {
                 .execute_unpaged(&query, params_vec)
                 .await
                 .map_err(err_to_napi)?,
+            self,
         )
     }
 
@@ -149,6 +158,7 @@ impl SessionWrapper {
                 .batch(&batch.inner, params_vec)
                 .await
                 .map_err(err_to_napi)?,
+            self,
         )
     }
 }

@@ -1,4 +1,5 @@
 use crate::{
+    session::SessionWrapper,
     types::{
         local_date::LocalDateWrapper,
         time_uuid::TimeUuidWrapper,
@@ -29,7 +30,7 @@ enum QueryResultVariant {
     RowsResult(QueryRowsResult),
 }
 
-#[napi]
+#[napi(object)]
 #[derive(Clone)]
 pub struct EncodingOptions {
     pub use_big_int_as_long: bool,
@@ -62,7 +63,10 @@ pub struct MetaColumnWrapper {
 
 #[napi]
 impl QueryResultWrapper {
-    pub fn from_query(internal: QueryResult) -> napi::Result<QueryResultWrapper> {
+    pub fn from_query(
+        internal: QueryResult,
+        client: &SessionWrapper,
+    ) -> napi::Result<QueryResultWrapper> {
         let value = match internal.into_rows_result() {
             Ok(v) => QueryResultVariant::RowsResult(v),
             Err(IntoRowsResultError::ResultNotRows(v)) => QueryResultVariant::EmptyResult(v),
@@ -70,13 +74,13 @@ impl QueryResultWrapper {
                 return Err(err_to_napi(e));
             }
         };
-        let empty_decoding_options = EncodingOptions {
-            use_big_int_as_long: false,
-            use_big_int_as_varint: false,
-        };
         Ok(QueryResultWrapper {
             internal: value,
-            decoding_options: empty_decoding_options,
+            decoding_options: client
+                .options
+                .encoding_options
+                .clone()
+                .unwrap_or(EncodingOptions::default()),
         })
     }
 
@@ -451,5 +455,14 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             dimensions: _,
         } => todo!(),
         other => unimplemented!("Missing implementation for CQL type {:?}", other),
+    }
+}
+
+impl EncodingOptions {
+    pub(crate) fn default() -> EncodingOptions {
+        EncodingOptions {
+            use_big_int_as_long: true,
+            use_big_int_as_varint: false,
+        }
     }
 }
