@@ -1,4 +1,5 @@
 use crate::{
+    session::SessionWrapper,
     types::{
         local_date::LocalDateWrapper,
         time_uuid::TimeUuidWrapper,
@@ -29,9 +30,17 @@ enum QueryResultVariant {
     RowsResult(QueryRowsResult),
 }
 
+#[napi(object)]
+#[derive(Clone)]
+pub struct EncodingOptions {
+    pub use_big_int_as_long: bool,
+    pub use_big_int_as_varint: bool,
+}
+
 #[napi]
 pub struct QueryResultWrapper {
     internal: QueryResultVariant,
+    decoding_options: EncodingOptions,
 }
 
 #[napi]
@@ -54,7 +63,10 @@ pub struct MetaColumnWrapper {
 
 #[napi]
 impl QueryResultWrapper {
-    pub fn from_query(internal: QueryResult) -> napi::Result<QueryResultWrapper> {
+    pub fn from_query(
+        internal: QueryResult,
+        client: &SessionWrapper,
+    ) -> napi::Result<QueryResultWrapper> {
         let value = match internal.into_rows_result() {
             Ok(v) => QueryResultVariant::RowsResult(v),
             Err(IntoRowsResultError::ResultNotRows(v)) => QueryResultVariant::EmptyResult(v),
@@ -62,7 +74,14 @@ impl QueryResultWrapper {
                 return Err(err_to_napi(e));
             }
         };
-        Ok(QueryResultWrapper { internal: value })
+        Ok(QueryResultWrapper {
+            internal: value,
+            decoding_options: client
+                .options
+                .encoding_options
+                .clone()
+                .unwrap_or(EncodingOptions::default()),
+        })
     }
 
     #[napi]
@@ -133,6 +152,11 @@ impl QueryResultWrapper {
             QueryResultVariant::RowsResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
             QueryResultVariant::EmptyResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
         }
+    }
+
+    #[napi]
+    pub fn get_decoding_options(&self) -> EncodingOptions {
+        self.decoding_options.clone()
     }
 }
 
@@ -431,5 +455,14 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             dimensions: _,
         } => todo!(),
         other => unimplemented!("Missing implementation for CQL type {:?}", other),
+    }
+}
+
+impl EncodingOptions {
+    pub(crate) fn default() -> EncodingOptions {
+        EncodingOptions {
+            use_big_int_as_long: true,
+            use_big_int_as_varint: false,
+        }
     }
 }

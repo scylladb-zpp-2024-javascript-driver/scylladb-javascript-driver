@@ -34,6 +34,16 @@ describe("Cql value wrapper", function () {
         assert.strictEqual(Long.fromString("69").equals(value), true);
     });
 
+    it("should get bigInt type correctly from napi, as bigint", function () {
+        let element = rust.testsGetCqlWrapperBigint();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.BigInt);
+        let value = getCqlObject(element, { useBigIntAsLong: true });
+        /* Corresponding value:
+        let element = CqlValue::BigInt(69); */
+        assert.strictEqual(BigInt(69), value);
+    });
+
     it("should get boolean type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperBoolean();
         let type = element.getType();
