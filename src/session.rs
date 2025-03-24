@@ -3,7 +3,7 @@ use scylla::client::session_builder::SessionBuilder;
 use scylla::client::SelfIdentity;
 use scylla::statement::batch::Batch;
 use scylla::statement::prepared::PreparedStatement;
-use scylla::statement::{Consistency, SerialConsistency};
+use scylla::statement::{Consistency, SerialConsistency, Statement};
 use scylla::value::CqlValue;
 
 use crate::options;
@@ -71,11 +71,12 @@ impl SessionWrapper {
     pub async fn query_unpaged_no_values(
         &self,
         query: String,
-        _options: &QueryOptionsWrapper,
+        options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
+        let statement: Statement = apply_statement_options(query.into(), options)?;
         let query_result = self
             .inner
-            .query_unpaged(query, &[])
+            .query_unpaged(statement, &[])
             .await
             .map_err(err_to_napi)?;
         QueryResultWrapper::from_query(query_result)
@@ -92,11 +93,13 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<Option<&QueryParameterWrapper>>,
+        options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
+        let statement: Statement = apply_statement_options(query.into(), options)?;
         let params_vec: Vec<Option<CqlValue>> = QueryParameterWrapper::extract_parameters(params);
         let query_result = self
             .inner
-            .query_unpaged(query, params_vec)
+            .query_unpaged(statement, params_vec)
             .await
             .map_err(err_to_napi)?;
         QueryResultWrapper::from_query(query_result)
@@ -242,6 +245,7 @@ macro_rules! make_apply_options {
     };
 }
 
+make_apply_options!(Statement, apply_statement_options);
 make_apply_options!(PreparedStatement, apply_prepared_options);
 make_apply_options!(Batch, apply_batch_options);
 
