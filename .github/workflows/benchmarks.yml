@@ -1,0 +1,56 @@
+name: Run benchmarks
+env:
+  DEBUG: napi:*
+  APP_NAME: scylladb-javascript-driver
+  PEDANTIC: true
+on:
+    workflow_dispatch:
+        
+jobs:
+  build-and-run-benchmarks:
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: npm run build -- --target x86_64-unknown-linux-gnu
+        node: [ 20 ]
+    name: Build and run benchmarks - benchmarks-only - node@${{ matrix.node }}
+    runs-on: benchmarks-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.settings.target }}
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.napi-rs
+            .cargo-cache
+            target/
+          key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
+      - name: Install dependencies
+        run: npm i
+      - name: Build
+        run: ${{ matrix.settings.build }}
+        shell: bash
+      - name: Install benchmarks dependencies
+        run: |
+          cd benchmark
+          npm i
+      - name: Run all benchmarks
+        run: SCYLLA_URI=172.42.0.2:9042 python benchmark/runner.py
+        env:
+          DISCORD_BENCHMARKS_WEBHOOK: ${{ secrets.DISCORD_BENCHMARKS_WEBHOOK }}
