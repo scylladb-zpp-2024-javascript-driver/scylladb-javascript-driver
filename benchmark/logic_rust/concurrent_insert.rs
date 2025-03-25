@@ -32,10 +32,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|s| s.parse::<i32>().ok())
         .unwrap_or(100);
 
-    let session = SessionBuilder::new()
-        .known_node("172.17.0.2:9042")
-        .build()
-        .await?;
+    let uri: String = env::var("SCYLLA_URI").unwrap_or_else(|_| "172.42.0.2:9042".to_string());
+
+    let session = SessionBuilder::new().known_node(uri).build().await?;
 
     session
         .query_unpaged(

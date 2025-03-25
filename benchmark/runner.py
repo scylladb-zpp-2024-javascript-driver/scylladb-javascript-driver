@@ -109,7 +109,8 @@ for ben in benchmarks:
                                name_rust[ben] + " -r ")
 
             if data.returncode != 0:
-                raise Exception("Run error: Rust, ", name_rust[ben])
+                raise Exception("Run error: Rust, ", data.stderr,
+                                name_rust[ben])
 
             s, mem = parse_time(data)
             offset = extract_build_time(data.stderr)
@@ -124,11 +125,11 @@ for ben in benchmarks:
             results = []
             results_mem = []
             for _ in range(repeat):
-                data = run_process("/usr/bin/time -v node logic/" + ben + " " +
-                                   str(lib) + " " + str(n))
+                data = run_process("/usr/bin/time -v node benchmark/logic/" +
+                                   ben + " " + str(lib) + " " + str(n))
 
                 if data.returncode != 0:
-                    raise Exception("Run error: ", str(lib), ben)
+                    raise Exception("Run error: ", str(lib), ben, data.stderr)
 
                 s, mem = parse_time(data)
                 results.append(s)
