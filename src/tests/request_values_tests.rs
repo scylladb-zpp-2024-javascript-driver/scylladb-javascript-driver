@@ -30,6 +30,23 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
         "List" => (CqlType::List, Some(CqlType::Text), None),
         "Map" => (CqlType::Map, Some(CqlType::Ascii), Some(CqlType::Double)),
         "Set" => (CqlType::Set, Some(CqlType::Int), None),
+        "UserDefinedType" => {
+            return ComplexType::full_type(
+                CqlType::UserDefinedType,
+                Some(ComplexType::simple_type(CqlType::Text)),
+                Some(ComplexType::full_type(
+                    CqlType::UserDefinedType,
+                    Some(ComplexType::simple_type(CqlType::Int)),
+                    None,
+                    Some("field2".to_owned()),
+                    None,
+                    None,
+                )),
+                Some("field1".to_owned()),
+                Some("keyspace".to_owned()),
+                Some("name".to_owned()),
+            )
+        }
         "SmallInt" => (CqlType::SmallInt, None, None),
         "TinyInt" => (CqlType::TinyInt, None, None),
         "Time" => (CqlType::Time, None, None),
@@ -88,6 +105,14 @@ pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
             (CqlValue::Ascii("Text2".to_owned()), CqlValue::Double(0.2)),
         ]),
         "Set" => CqlValue::Set(vec![CqlValue::Int(4), CqlValue::Int(7), CqlValue::Int(15)]),
+        "UserDefinedType" => CqlValue::UserDefinedType {
+            keyspace: "keyspace".to_owned(),
+            name: "name".to_owned(),
+            fields: vec![
+                ("field1".to_owned(), Some(CqlValue::Text("Test".to_owned()))),
+                ("field2".to_owned(), Some(CqlValue::Int(1))),
+            ],
+        },
         "SmallInt" => CqlValue::SmallInt(1_i16),
         "TinyInt" => CqlValue::TinyInt(-1_i8),
         "Time" => CqlValue::Time(CqlTime(4312)),

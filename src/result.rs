@@ -345,6 +345,25 @@ impl CqlValueWrapper {
     }
 
     #[napi]
+    pub fn get_udt_values(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
+        match self.inner.as_udt() {
+            Some(r) => Ok(r
+                .iter()
+                .map(|f| f.1.clone().map(|f| CqlValueWrapper { inner: f }))
+                .collect()),
+            None => Err(Self::generic_error("user_defined_type")),
+        }
+    }
+
+    #[napi]
+    pub fn get_udt_names(&self) -> napi::Result<Vec<String>> {
+        match self.inner.as_udt() {
+            Some(r) => Ok(r.iter().map(|f| f.0.clone()).collect()),
+            None => Err(Self::generic_error("user_defined_type")),
+        }
+    }
+
+    #[napi]
     pub fn get_small_int(&self) -> napi::Result<i16> {
         match self.inner.as_smallint() {
             Some(r) => Ok(r),
@@ -433,7 +452,14 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             ),
             other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
         },
-        ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
+        ColumnType::UserDefinedType {
+            frozen: _,
+            definition,
+        } => ComplexType::from_udt(
+            definition.field_types.as_slice(),
+            Some(definition.name.to_string()),
+            Some(definition.keyspace.to_string()),
+        ),
         ColumnType::Tuple(t) => ComplexType::from_tuple(t.as_slice()),
         ColumnType::Vector {
             typ: _,

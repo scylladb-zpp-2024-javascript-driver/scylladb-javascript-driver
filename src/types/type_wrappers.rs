@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::result::map_column_type_to_complex_type;
 use scylla::frame::response::result::ColumnType;
 
@@ -38,6 +40,9 @@ pub struct ComplexType {
     pub base_type: CqlType,
     pub(crate) support_type_1: Option<Box<ComplexType>>,
     pub(crate) support_type_2: Option<Box<ComplexType>>,
+    pub(crate) field_name: Option<String>,
+    pub(crate) udt_keyspace: Option<String>,
+    pub(crate) udt_name: Option<String>,
 }
 
 #[napi]
@@ -46,9 +51,25 @@ impl ComplexType {
     pub fn get_first_support_type(&self) -> Option<ComplexType> {
         self.support_type_1.as_ref().map(|f| *f.clone())
     }
+
     #[napi]
     pub fn get_second_support_type(&self) -> Option<ComplexType> {
         self.support_type_2.as_ref().map(|f| *f.clone())
+    }
+
+    #[napi]
+    pub fn get_field_name(&self) -> Option<String> {
+        self.field_name.clone()
+    }
+
+    #[napi]
+    pub fn get_udt_keyspace(&self) -> Option<String> {
+        self.udt_keyspace.clone()
+    }
+
+    #[napi]
+    pub fn get_udt_name(&self) -> Option<String> {
+        self.udt_name.clone()
     }
 }
 
@@ -66,10 +87,24 @@ impl ComplexType {
         support1: Option<ComplexType>,
         support2: Option<ComplexType>,
     ) -> Self {
+        ComplexType::full_type(base_type, support1, support2, None, None, None)
+    }
+
+    pub(crate) fn full_type(
+        base_type: CqlType,
+        support1: Option<ComplexType>,
+        support2: Option<ComplexType>,
+        field_name: Option<String>,
+        udt_keyspace: Option<String>,
+        udt_name: Option<String>,
+    ) -> Self {
         ComplexType {
             base_type,
             support_type_1: support1.map(Box::new),
             support_type_2: support2.map(Box::new),
+            field_name,
+            udt_keyspace,
+            udt_name,
         }
     }
 
@@ -84,4 +119,27 @@ impl ComplexType {
             },
         )
     }
+
+    pub(crate) fn from_udt(
+        items: &[(Cow<str>, ColumnType)],
+        name: Option<String>,
+        keyspace: Option<String>,
+    ) -> Self {
+        ComplexType::full_type(
+            CqlType::UserDefinedType,
+            items
+                .first()
+                .map(|(_, v)| map_column_type_to_complex_type(v)),
+            if items.is_empty() {
+                None
+            } else {
+                Some(ComplexType::from_udt(&items[1..], None, None))
+            },
+            items.first().map(|(name, _)| name.to_string()),
+            keyspace,
+            name,
+        )
+    }
+
+    // pub(crate) fn from_udt
 }
