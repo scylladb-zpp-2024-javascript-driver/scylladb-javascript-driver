@@ -23,9 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Scylla docker setup copied from https://github.com/scylladb/scylla-rust-driver/blob/main/.github/workflows/rust.yml
-      - name: Setup 3-node Scylla cluster
-        run: |
-          docker compose -f .github/docker-compose.yml up -d --wait
+      # - name: Setup 3-node Scylla cluster
+        # run: |
+          # docker compose -f .github/docker-compose.yml up -d --wait
       - name: Setup node
         uses: actions/setup-node@v4
         with:
@@ -57,12 +57,15 @@ jobs:
           cd benchmark
           npm i
       - name: Run all benchmarks
-        run: SCYLLA_URI=172.42.0.2:9042 python runner.py
-      - name: Stop the cluster
-        if: ${{ always() }}
-        run: docker compose -f .github/docker-compose.yml stop
-      - name: Print the cluster logs
-        if: ${{ always() }}
-        run: docker compose -f .github/docker-compose.yml logs
-      - name: Remove cluster
-        run: docker compose -f .github/docker-compose.yml down
+        run: SCYLLA_URI=172.42.0.2:9042 python benchmark/runner.py
+        env:
+          DISCORD_BENCHMARKS_WEBHOOK: ${{ secrets.DISCORD_BENCHMARKS_WEBHOOK }}
+
+      # - name: Stop the cluster
+        # if: ${{ always() }}
+        # run: docker compose -f .github/docker-compose.yml stop
+      # - name: Print the cluster logs
+        # if: ${{ always() }}
+        # run: docker compose -f .github/docker-compose.yml logs
+      # - name: Remove cluster
+        # run: docker compose -f .github/docker-compose.yml down
