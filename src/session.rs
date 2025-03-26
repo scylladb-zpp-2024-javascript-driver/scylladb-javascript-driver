@@ -64,24 +64,6 @@ impl SessionWrapper {
         self.inner.get_keyspace().as_deref().map(ToOwned::to_owned)
     }
 
-    /// Executes unprepared statement with no parameters.
-    ///
-    /// Returns a wrapper of the result provided by the rust driver
-    #[napi]
-    pub async fn query_unpaged_no_values(
-        &self,
-        query: String,
-        options: &QueryOptionsWrapper,
-    ) -> napi::Result<QueryResultWrapper> {
-        let statement: Statement = apply_statement_options(query.into(), options)?;
-        let query_result = self
-            .inner
-            .query_unpaged(statement, &[])
-            .await
-            .map_err(err_to_napi)?;
-        QueryResultWrapper::from_query(query_result)
-    }
-
     /// Executes unprepared statement. This assumes the types will be either guessed or provided by user.
     ///
     /// Returns a wrapper of the result provided by the rust driver
