@@ -65,9 +65,9 @@ n_min = {}
 """ n_min["select.js"] = 200 """
 
 
-n_min["concurent_insert.js"] = 4_000_000 / 16
-n_min["insert.js"] = 300_000 / 16
-n_min["select.js"] = 15_000 / 16
+n_min["concurent_insert.js"] = 4_000_000 / 64
+n_min["insert.js"] = 300_000 / 64
+n_min["select.js"] = 15_000 / 64
 
 steps = {}
 
