@@ -163,6 +163,14 @@ impl RowWrapper {
     }
 }
 
+impl From<Row> for RowWrapper {
+    fn from(value: Row) -> Self {
+        RowWrapper {
+            inner: value.columns,
+        }
+    }
+}
+
 #[napi]
 impl CqlValueWrapper {
     #[napi]
