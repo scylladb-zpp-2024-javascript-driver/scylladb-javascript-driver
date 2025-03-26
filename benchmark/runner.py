@@ -60,15 +60,15 @@ repeat = 1
 n_min = {}
 # n_max = {}
 
-n_min["concurent_insert.js"] = 2_000
-n_min["insert.js"] = 200
-n_min["select.js"] = 200
+""" n_min["concurent_insert.js"] = 2_000 """
+""" n_min["insert.js"] = 200 """
+""" n_min["select.js"] = 200 """
 
-'''
-n_max["concurent_insert.js"] = 4_000_000
-n_max["insert.js"] = 300_000
-n_max["select.js"] = 15_000
-'''
+
+n_min["concurent_insert.js"] = 4_000_000 / 16
+n_min["insert.js"] = 300_000 / 16
+n_min["select.js"] = 15_000 / 16
+
 steps = {}
 
 step = 2
