@@ -5,17 +5,14 @@ const sinon = require("sinon");
 
 const helper = require("../../test-helper.js");
 const Client = require("../../../lib/client.js");
-const types = require("../../../lib/types");
+const types = require("../../../lib/types/index.js");
 const utils = require("../../../lib/utils.js");
 const errors = require("../../../lib/errors.js");
 const vit = helper.vit;
 
 describe("Client", function () {
     this.timeout(120000);
-    // Tests fail due to timeout
-    // INVESTIGATE(@wprzytula)
-    // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/runs/11703077607/job/32592642939#step:12:727
-    /* describe("#eachRow(query, params, {prepare: 0})", function () {
+    describe("#eachRow(query, params, {prepare: 0})", function () {
         const setupInfo = helper.setup(1);
         it("should callback per row and the end callback", function (done) {
             const client = newInstance();
@@ -33,7 +30,6 @@ describe("Client", function () {
                 function (err) {
                     assert.ifError(err);
                     assert.strictEqual(counter, 1);
-                    client.shutdown();
                     done();
                 },
             );
@@ -132,7 +128,7 @@ describe("Client", function () {
                             function (err, result) {
                                 assert.ifError(err);
                                 assert.strictEqual(counter, length);
-                                //rowLength should be exposed
+                                // rowLength should be exposed
                                 assert.strictEqual(counter, result.rowLength);
                                 next();
                             },
@@ -203,7 +199,7 @@ describe("Client", function () {
                         );
                     },
                     function selectDataMultiplePages(seriesNext) {
-                        //It should fetch 3 times, a total of 100 rows (45+45+10)
+                        // It should fetch 3 times, a total of 100 rows (45+45+10)
                         const query = util.format("SELECT * FROM %s", table);
                         let rowCount = 0;
                         client.eachRow(
@@ -222,7 +218,7 @@ describe("Client", function () {
                         );
                     },
                     function selectDataOnePage(seriesNext) {
-                        //It should fetch 1 time, a total of 100 rows (even if asked more)
+                        // It should fetch 1 time, a total of 100 rows (even if asked more)
                         const query = util.format("SELECT * FROM %s", table);
                         let rowCount = 0;
                         client.eachRow(
@@ -554,7 +550,9 @@ describe("Client", function () {
                 }
             },
         );
-        vit("2.0", "should use pageState and fetchSize", function (done) {
+        // TODO: Fix this test
+        // Lack of support for pageState and fetchSize
+        /* vit("2.0", "should use pageState and fetchSize", function (done) {
             const client = newInstance({
                 keyspace: setupInfo.keyspace,
                 queryOptions: { consistency: types.consistencies.quorum },
@@ -565,7 +563,7 @@ describe("Client", function () {
                 [
                     helper.toTask(insertTestData, null, client, table, 131),
                     function selectData(seriesNext) {
-                        //Only fetch 70
+                        // Only fetch 70
                         let counter = 0;
                         client.eachRow(
                             util.format("SELECT * FROM %s", table),
@@ -585,7 +583,7 @@ describe("Client", function () {
                         );
                     },
                     function selectDataRemaining(seriesNext) {
-                        //The remaining
+                        // The remaining
                         let counter = 0;
                         client.eachRow(
                             util.format("SELECT * FROM %s", table),
@@ -604,7 +602,7 @@ describe("Client", function () {
                         );
                     },
                     function selectDataRemainingWithMetaPageState(seriesNext) {
-                        //The remaining
+                        // The remaining
                         let counter = 0;
                         client.eachRow(
                             util.format("SELECT * FROM %s", table),
@@ -629,8 +627,10 @@ describe("Client", function () {
                 ],
                 done,
             );
-        });
-        vit("2.0", "should expose result.nextPage() method", function (done) {
+        }); */
+        // TODO: Fix this test
+        // No support for pagingState variable
+        /* vit("2.0", "should expose result.nextPage() method", function (done) {
             const client = newInstance({
                 keyspace: setupInfo.keyspace,
                 queryOptions: { consistency: types.consistencies.quorum },
@@ -642,7 +642,7 @@ describe("Client", function () {
                     client.connect.bind(client),
                     helper.toTask(insertTestData, null, client, table, 110),
                     function selectData(seriesNext) {
-                        //Only fetch 60 the first time, 50 the following
+                        // Only fetch 60 the first time, 50 the following
                         client.eachRow(
                             util.format("SELECT * FROM %s", table),
                             [],
@@ -659,7 +659,7 @@ describe("Client", function () {
                                     types.ResultSet,
                                 );
                                 if (!nextPageRows) {
-                                    //the first time, it should have a next page
+                                    // the first time, it should have a next page
                                     assert.strictEqual(
                                         typeof result.nextPage,
                                         "function",
@@ -670,11 +670,11 @@ describe("Client", function () {
                                     );
                                     nextPageRows = [];
                                     pageState = result.pageState;
-                                    //call to retrieve the following page rows.
+                                    // call to retrieve the following page rows.
                                     result.nextPage();
                                     return;
                                 }
-                                //the following times, there shouldn't be any additional page
+                                // the following times, there shouldn't be any additional page
                                 assert.strictEqual(
                                     typeof result.nextPage,
                                     "undefined",
@@ -685,7 +685,7 @@ describe("Client", function () {
                         );
                     },
                     function selectDataRemaining(seriesNext) {
-                        //Select the remaining with pageState and compare the results.
+                        // Select the remaining with pageState and compare the results.
                         let counter = 0;
                         client.eachRow(
                             util.format("SELECT * FROM %s", table),
@@ -715,7 +715,7 @@ describe("Client", function () {
                 ],
                 done,
             );
-        });
+        }); */
         vit(
             "2.0",
             "should not expose result.nextPage() method when no more rows",
@@ -768,7 +768,9 @@ describe("Client", function () {
                 );
             },
         );
-        it("should retrieve the trace id when queryTrace flag is set", function (done) {
+        // TODO: Fix this test
+        // No support for trace ID
+        /* it("should retrieve the trace id when queryTrace flag is set", function (done) {
             const client = newInstance({
                 keyspace: setupInfo.keyspace,
                 queryOptions: { consistency: types.consistencies.quorum },
@@ -852,8 +854,10 @@ describe("Client", function () {
                 ],
                 done,
             );
-        });
-        vit(
+        }); */
+        // TODO: Fix this test
+        // No support for warnings in ResultSet
+        /* vit(
             "2.2",
             "should include the warning in the ResultSet",
             function (done) {
@@ -902,7 +906,7 @@ describe("Client", function () {
                     },
                 );
             },
-        );
+        ); */
         if (!helper.isWin()) {
             vit(
                 "2.0",
@@ -1028,7 +1032,7 @@ describe("Client", function () {
                 );
             });
         });
-    }); */
+    });
 });
 
 /**

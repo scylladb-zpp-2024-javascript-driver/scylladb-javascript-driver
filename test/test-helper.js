@@ -398,13 +398,15 @@ const helper = {
             if (err) {
                 return callback(err);
             }
-            if (!client.hosts) {
+            // No support for client.hosts field
+            // TODO: Fix this
+            /* if (!client.hosts) {
                 throw new Error("No hosts on Client");
             }
             if (client.hosts.length === 1) {
                 return callback();
-            }
-            setTimeout(callback, 200 * client.hosts.length);
+            } */
+            setTimeout(callback, 200 /* * client.hosts.length */);
         };
     },
     /**
