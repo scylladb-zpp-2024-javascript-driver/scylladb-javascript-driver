@@ -320,8 +320,31 @@ macro_rules! make_apply_options {
     };
 }
 
-make_apply_options!(Statement, apply_statement_options);
-make_apply_options!(PreparedStatement, apply_prepared_options);
+/// Macro to allow applying options that can be used for queries other than batch
+macro_rules! make_non_batch_apply_options {
+    ($statement_type: ty, $fn_name: ident, $partial_name: ident) => {
+        make_apply_options!($statement_type, $partial_name);
+        fn $fn_name(
+            statement: $statement_type,
+            options: &QueryOptionsWrapper,
+        ) -> napi::Result<$statement_type> {
+            // Statement with partial options applied -
+            // those that are common with batch queries
+            let mut statement_with_part_of_options_applied = $partial_name(statement, options)?;
+            if let Some(o) = options.fetch_size {
+                statement_with_part_of_options_applied.set_page_size(o);
+            }
+            Ok(statement_with_part_of_options_applied)
+        }
+    };
+}
+
+make_non_batch_apply_options!(Statement, apply_statement_options, statement_opt_partial);
+make_non_batch_apply_options!(
+    PreparedStatement,
+    apply_prepared_options,
+    prepared_opt_partial
+);
 make_apply_options!(Batch, apply_batch_options);
 
 /// Provides driver self identity, filling information on application based on session options.
