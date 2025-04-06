@@ -40,16 +40,12 @@ async function example() {
         promises[i] = executeOneAtATime(info);
     }
 
-    try {
-        // The n promises are going to be resolved when all the executions are completed.
-        await Promise.all(promises);
+    // The n promises are going to be resolved when all the executions are completed.
+    await Promise.all(promises);
 
-        console.log(
-            `Finished executing ${info.totalLength} queries with a concurrency level of ${concurrencyLevel}.`,
-        );
-    } finally {
-        await client.shutdown();
-    }
+    console.log(
+        `Finished executing ${info.totalLength} queries with a concurrency level of ${concurrencyLevel}.`,
+    );
 }
 
 async function executeOneAtATime(info) {
