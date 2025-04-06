@@ -240,8 +240,7 @@ describe("pool", function () {
                         isIdempotent: true,
                     }),
                 )
-                .then(() => assert.strictEqual(retryCount, 2))
-                .then(() => client.shutdown());
+                .then(() => assert.strictEqual(retryCount, 2));
         });
 
         it("should retry on the next host when useCurrentHost is true and connections are not available", () => {
@@ -346,7 +345,6 @@ describe("pool", function () {
                             0,
                         ); */
                     })
-                    .then(() => client.shutdown())
             );
         });
 
@@ -410,8 +408,6 @@ describe("pool", function () {
             // ControlConnection should be refreshed
             await helper.wait.until(() => client.controlConnection.connection);
             assert.isTrue(client.controlConnection.connection.connected);
-
-            await client.shutdown();
         });
 
         it("should connect when first contact point is down", () => {
@@ -435,8 +431,7 @@ describe("pool", function () {
                             .split(".")[3],
                         secondNodeLastOctet.toString(),
                     ),
-                )
-                .then(() => client.shutdown());
+                );
         });
 
         it("should have a single connection when warmup is false", async () => {
@@ -482,8 +477,6 @@ describe("pool", function () {
                 },
                 pooling: { heartBeatInterval: 50 },
             });
-
-            after(() => client.shutdown());
 
             let secondAddress;
 
@@ -551,8 +544,7 @@ describe("pool", function () {
                         client.controlConnection.getEndpoint(),
                         secondAddress,
                     );
-                })
-                .then(() => client.shutdown());
+                });
         });
 
         it("should stop attempting to reconnect to down after shutdown", () => {
@@ -570,8 +562,6 @@ describe("pool", function () {
                 },
                 pooling: { heartBeatInterval: 50 },
             });
-
-            after(() => client.shutdown());
 
             // Validate via log messages
             const logMessages = [];
@@ -685,7 +675,7 @@ describe("pool", function () {
                 }),
             );
 
-            return client.connect().then(() => client.shutdown());
+            return client.connect();
         });
 
         it("should create all connections eventually when warmup is false", async () => {
@@ -717,8 +707,6 @@ describe("pool", function () {
                     ) ===
                     connectionsLength * hosts.length,
             );
-
-            await client.shutdown();
         });
 
         [
@@ -738,8 +726,6 @@ describe("pool", function () {
                     localDataCenter: "dc1",
                     pooling: { heartBeatInterval: 10000 },
                 });
-
-                after(() => client.shutdown());
 
                 let stop = false;
                 let requestCounter = 0;
@@ -784,7 +770,8 @@ describe("pool", function () {
                 await promiseUtils.delay(20);
 
                 // Shutdown while there are queries in progress
-                await client.shutdown();
+                // Note: this will likely no longer work in our driver
+                // await client.shut down();
 
                 await promiseUtils.delay(200);
                 stop = true;
@@ -931,8 +918,7 @@ describe("pool", function () {
                                 .length,
                             0,
                         );
-                    })
-                    .then(() => client.shutdown());
+                    });
             });
 
             it("should use different contactPoints as initial control connection", async () => {
@@ -945,12 +931,8 @@ describe("pool", function () {
                         pooling: { warmup: false },
                     });
 
-                    try {
-                        await client.connect();
-                        addresses.add(client.controlConnection.host.address);
-                    } finally {
-                        await client.shutdown();
-                    }
+                    await client.connect();
+                    addresses.add(client.controlConnection.host.address);
                 }
 
                 assert.isAbove(addresses.size, 1);
@@ -990,8 +972,7 @@ describe("pool", function () {
                     addresses.sort(),
                 );
 
-                await client.shutdown();
-            }); */
+                            }); */
 
             // This whole test depends on information from Client.getState which is deprecated
             /* it("should not create connections to remote nodes when core connections per host is zero", async () => {
@@ -1041,8 +1022,7 @@ describe("pool", function () {
                     localAddresses.sort(),
                 );
 
-                await client.shutdown();
-            }); */
+                            }); */
 
             // This whole test depends on information from Client.getState which is deprecated
             /* [true, false].forEach((warmup) => {
@@ -1092,8 +1072,7 @@ describe("pool", function () {
                             1,
                     );
 
-                    await client.shutdown();
-                });
+                                    });
             }); */
         },
     );

@@ -1151,7 +1151,7 @@ describe("metadata @SERVER_API", function () {
                                 "ck",
                             );
                             assert.strictEqual(table.virtual, false);
-                            client.shutdown(done);
+                            done();
                         },
                     );
                 });
@@ -1176,7 +1176,7 @@ describe("metadata @SERVER_API", function () {
                             assert.strictEqual(index.isCustomKind(), false);
                             assert.strictEqual(index.isKeysKind(), false);
                             assert.ok(index.options);
-                            client.shutdown(done);
+                            done();
                         },
                     );
                 });
@@ -1215,7 +1215,7 @@ describe("metadata @SERVER_API", function () {
                                 assert.strictEqual(index.isCustomKind(), false);
                                 assert.strictEqual(index.isKeysKind(), false);
                                 assert.ok(index.options);
-                                client.shutdown(done);
+                                done();
                             },
                         );
                     });
@@ -1255,7 +1255,7 @@ describe("metadata @SERVER_API", function () {
                                 assert.strictEqual(index.isCustomKind(), false);
                                 assert.strictEqual(index.isKeysKind(), false);
                                 assert.ok(index.options);
-                                client.shutdown(done);
+                                done();
                             },
                         );
                     });
@@ -1310,7 +1310,7 @@ describe("metadata @SERVER_API", function () {
                                 assert.strictEqual(index.isCustomKind(), false);
                                 assert.strictEqual(index.isKeysKind(), false);
                                 assert.ok(index.options);
-                                client.shutdown(done);
+                                done();
                             },
                         );
                     });
@@ -1371,7 +1371,7 @@ describe("metadata @SERVER_API", function () {
                                     );
                                     assert.ok(index.options);
                                 });
-                                client.shutdown(done);
+                                done();
                             },
                         );
                     });
@@ -1410,7 +1410,7 @@ describe("metadata @SERVER_API", function () {
                                 assert.strictEqual(index.isCustomKind(), false);
                                 assert.strictEqual(index.isKeysKind(), false);
                                 assert.ok(index.options);
-                                client.shutdown(done);
+                                done();
                             },
                         );
                     });
@@ -1922,8 +1922,6 @@ describe("metadata @SERVER_API", function () {
                 );
 
                 before(() => client.connect());
-                after(() => client.shutdown());
-
                 it("should retrieve the table metadata using the same representation", () =>
                     client.metadata.getTable(keyspace, "tbl7").then((table) => {
                         assert.ok(table);
@@ -2378,8 +2376,6 @@ describe("metadata @SERVER_API", function () {
                 );
 
                 before(() => client.connect());
-                after(() => client.shutdown());
-
                 it("should retrieve the view metadata using the same representation", () =>
                     client.metadata
                         .getMaterializedView(keyspace, "dailyhigh")

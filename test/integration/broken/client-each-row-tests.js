@@ -898,7 +898,7 @@ describe("Client", function () {
                         assert.match(result.info.warnings[0], /batch/i);
                         assert.match(result.info.warnings[0], /exceeding/);
                         assert.ok(loggedMessage);
-                        client.shutdown(done);
+                        done();
                     },
                 );
             },

@@ -137,7 +137,6 @@ describe("client read timeouts", function () {
             }),
             errors.OperationTimedOutError,
         );
-        await client.shutdown();
     });
 
     it("defunct the connection when the threshold passed", async () => {
@@ -166,8 +165,6 @@ describe("client read timeouts", function () {
         // Node should be marked as down
         assert.ok(hostDown);
         assert.strictEqual(hostDown.address, simulacronCluster.node(0).address);
-
-        await client.shutdown();
     });
 
     describe("with prepared batches", function () {
@@ -187,7 +184,6 @@ describe("client read timeouts", function () {
                 rs.info.queriedHost,
                 simulacronCluster.node(1).address,
             );
-            await client.shutdown();
         });
 
         it("should produce a NoHostAvailableError when execution timed out on all hosts", async () => {
@@ -205,8 +201,6 @@ describe("client read timeouts", function () {
             Object.values(err.innerErrors).forEach((err) => {
                 assert.instanceOf(err, errors.OperationTimedOutError);
             });
-
-            await client.shutdown();
         });
 
         it("should produce a NoHostAvailableError when prepare tried and timed out on all hosts", async () => {
@@ -228,8 +222,6 @@ describe("client read timeouts", function () {
                 ),
                 errors.NoHostAvailableError,
             );
-
-            await client.shutdown();
         });
     });
 });
@@ -271,7 +263,5 @@ function testNodeUsedAsCoordinator(nodeIndex, queryOptions, query) {
             rs.info.queriedHost,
             simulacronCluster.node(nodeIndex).address,
         );
-
-        await client.shutdown();
     };
 }

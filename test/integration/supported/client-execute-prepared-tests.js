@@ -1075,7 +1075,7 @@ describe("Client @SERVER_API", function () {
                         assert.ok(result.info.warnings.length >= 1);
                         helper.assertContains(result.info.warnings[0], "batch");
                         assert.ok(loggedMessage);
-                        client.shutdown(done);
+                        done();
                     },
                 );
             },
