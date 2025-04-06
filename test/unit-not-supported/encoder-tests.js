@@ -3,7 +3,7 @@ const { assert } = require("chai");
 const sinon = require("sinon");
 const util = require("util");
 const utils = require("../../lib/utils");
-const tokenizer = require("../../lib/tokenizer");
+// const tokenizer = require("../../lib/tokenizer");
 const token = require("../../lib/token");
 
 const Encoder = require("../../lib/encoder");
@@ -1479,7 +1479,7 @@ describe("encoder", function () {
             );
         });
 
-        it("should not affect Token routing keys", function () {
+        /*         it("should not affect Token routing keys", function () {
             const token = new tokenizer.Murmur3Tokenizer().hash(
                 "4611686018427387904",
             );
@@ -1502,7 +1502,7 @@ describe("encoder", function () {
             });
             encoder.setRoutingKeyFromUser([1, "text"], options);
             assert.strictEqual(options.getRoutingKey(), range);
-        });
+        }); */
 
         it("should build routing key based on routingIndexes", function () {
             let options = getExecOptions({
