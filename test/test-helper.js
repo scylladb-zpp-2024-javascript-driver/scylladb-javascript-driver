@@ -13,8 +13,9 @@ const http = require("http");
 const temp = require("temp").track(true);
 const Client = require("../lib/client");
 const defaultOptions = require("../lib/client-options").defaultOptions;
-const { Host, HostMap } = require("../lib/host");
-const OperationState = require("../lib/operation-state");
+// TODO: remove fully - Old import
+// const { Host, HostMap } = require("../lib/host");
+// const OperationState = require("../lib/operation-state");
 const promiseUtils = require("../lib/promise-utils");
 
 util.inherits(RetryMultipleTimes, policies.retry.RetryPolicy);
