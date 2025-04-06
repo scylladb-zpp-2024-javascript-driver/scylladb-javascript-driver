@@ -6,12 +6,7 @@ const client = new cassandra.Client(getClientArgs());
 client
     .connect()
     .then(function () {
-        console.log(
-            "Connected to cluster with %d host(s): %j",
-            client.hosts.length,
-            client.hosts.keys(),
-        );
-        console.log("Keyspaces: %j", Object.keys(client.metadata.keyspaces));
+        console.log("Connected to cluster");
         console.log("Shutting down");
         return client.shutdown();
     })
