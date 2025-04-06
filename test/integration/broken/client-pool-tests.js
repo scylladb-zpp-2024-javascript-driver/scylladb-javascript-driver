@@ -63,7 +63,7 @@ describe("Client", function () {
             client.connect(function (err) {
                 assert.ok(err);
                 helper.assertInstanceOf(err, errors.NoHostAvailableError);
-                client.shutdown(done);
+                done();
             });
         });
 
@@ -77,7 +77,7 @@ describe("Client", function () {
                     client.metadata.tokenizer,
                     Murmur3Tokenizer,
                 );
-                client.shutdown(done);
+                done();
             });
         });
 
@@ -90,7 +90,7 @@ describe("Client", function () {
                 },
                 function (err) {
                     assert.ifError(err);
-                    client.shutdown(done);
+                    done();
                 },
             );
         });
@@ -110,7 +110,7 @@ describe("Client", function () {
                 client.hosts.forEach(function (h) {
                     assert.notEqual(h.address, "localhost");
                 });
-                client.shutdown(done);
+                done();
             });
         });
 
@@ -156,7 +156,7 @@ describe("Client", function () {
                 assert.notEqual(hosts[2], contactPoints[1] + ":9042");
                 assert.notEqual(hosts[1], contactPoints[2] + ":9042");
                 assert.notEqual(hosts[2], contactPoints[2] + ":9042");
-                client.shutdown(done);
+                done();
             });
         });
 
@@ -191,7 +191,7 @@ describe("Client", function () {
                                 types.distance.local
                             ],
                         );
-                        client.shutdown(done);
+                        done();
                     },
                 );
             });
@@ -240,7 +240,7 @@ describe("Client", function () {
                                     types.distance.local
                                 ],
                             );
-                            client.shutdown(done);
+                            done();
                         }, 5000);
                     },
                 );
@@ -255,7 +255,7 @@ describe("Client", function () {
             });
             client.connect(function (err) {
                 assert.ifError(err);
-                client.shutdown(done);
+                done();
             });
         });
 
@@ -340,8 +340,6 @@ describe("Client", function () {
                     assert.strictEqual(host.pool.connections.length, 0);
                 }
             });
-
-            await client.shutdown();
         });
 
         it("should connect after unsuccessful attempt caused by a non-existent keyspace", function (done) {
@@ -382,15 +380,12 @@ describe("Client", function () {
         it("should set the defaults based on product type", () => {
             const client = newInstance();
 
-            return client
-                .connect()
-                .then(() => {
-                    assert.strictEqual(
-                        client.options.queryOptions.consistency,
-                        types.consistencies.localOne,
-                    );
-                })
-                .then(() => client.shutdown());
+            return client.connect().then(() => {
+                assert.strictEqual(
+                    client.options.queryOptions.consistency,
+                    types.consistencies.localOne,
+                );
+            });
         });
     });
 
@@ -431,8 +426,6 @@ describe("Client", function () {
             const username = "user2";
             const password = "12345678";
 
-            after(() => client.shutdown());
-
             return client
                 .connect()
                 .then(() => createRole(client, username, password))
@@ -445,12 +438,9 @@ describe("Client", function () {
                         ),
                     });
 
-                    after(() => client.shutdown());
-
                     return client.connect();
                 })
-                .then(() => client.execute(helper.queries.basic))
-                .then(() => client.shutdown());
+                .then(() => client.execute(helper.queries.basic));
         });
 
         it("should connect using the plain text authenticator when calling execute", function (done) {
@@ -520,7 +510,6 @@ describe("Client", function () {
                 err,
                 /requires authentication, but no authenticator found in the options/,
             );
-            await client.shutdown();
         });
 
         context("with credentials", () => {
@@ -535,8 +524,6 @@ describe("Client", function () {
                 const username = "user2";
                 const password = "12345678";
 
-                after(() => client.shutdown());
-
                 return client
                     .connect()
                     .then(() => createRole(client, username, password))
@@ -546,12 +533,9 @@ describe("Client", function () {
                             credentials: { username, password },
                         });
 
-                        after(() => client.shutdown());
-
                         return client.connect();
                     })
-                    .then(() => client.execute(helper.queries.basic))
-                    .then(() => client.shutdown());
+                    .then(() => client.execute(helper.queries.basic));
             });
 
             it("should fail with AuthenticationError when role does not exist", () => {
@@ -635,8 +619,6 @@ describe("Client", function () {
     describe("#connect() with nodes failing", function () {
         it("should connect after a failed attempt", function (done) {
             const client = newInstance();
-
-            after(() => client.shutdown());
 
             utils.series(
                 [
@@ -1133,8 +1115,6 @@ describe("Client", function () {
                 queryOptions: { isIdempotent: true },
             });
 
-            after(() => client.shutdown());
-
             const hosts = {};
             const hostsDown = [];
             utils.series(
@@ -1244,9 +1224,7 @@ describe("Client", function () {
             const hosts = {};
             const query = helper.queries.basic;
 
-            after(() => client.shutdown());
-
-            utils.series(
+                        utils.series(
                 [
                     function (next) {
                         // wait for all initial events to ensure we don't incidentally get an 'UP' event for node 2
