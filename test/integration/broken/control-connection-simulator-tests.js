@@ -73,14 +73,11 @@ describe("ControlConnection", function () {
                 localDataCenter: "dc1",
             });
 
-            return client
-                .connect()
-                .then(() => {
-                    const cc = client.controlConnection;
-                    assert.strictEqual(typeof cc.getLocalAddress(), "string");
-                    assert.ok(net.isIP(cc.getLocalAddress()));
-                })
-                .then(() => client.shutdown());
+            return client.connect().then(() => {
+                const cc = client.controlConnection;
+                assert.strictEqual(typeof cc.getLocalAddress(), "string");
+                assert.ok(net.isIP(cc.getLocalAddress()));
+            });
         });
     });
 });

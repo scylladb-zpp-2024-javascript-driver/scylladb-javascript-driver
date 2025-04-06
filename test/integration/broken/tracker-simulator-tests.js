@@ -71,8 +71,7 @@ describe("tracker", function () {
                                     query,
                                     parameters,
                                 ),
-                            )
-                            .then(() => client.shutdown());
+                            );
                     },
                 );
             });
@@ -96,8 +95,7 @@ describe("tracker", function () {
                         verifyError(requestTracker, query, parameters);
                         err = e;
                     })
-                    .then(() => assert.instanceOf(err, errors.ResponseError))
-                    .then(() => client.shutdown());
+                    .then(() => assert.instanceOf(err, errors.ResponseError));
             });
         });
 
@@ -127,8 +125,9 @@ describe("tracker", function () {
                         return client
                             .connect()
                             .then(() => client.batch(queries, { prepare }))
-                            .then(() => verifyResponse(requestTracker, queries))
-                            .then(() => client.shutdown());
+                            .then(() =>
+                                verifyResponse(requestTracker, queries),
+                            );
                     },
                 );
             });
@@ -147,8 +146,9 @@ describe("tracker", function () {
                 return client
                     .connect()
                     .then(() => client.execute(query, parameters))
-                    .catch(() => verifyError(requestTracker, query, parameters))
-                    .then(() => client.shutdown());
+                    .catch(() =>
+                        verifyError(requestTracker, query, parameters),
+                    );
             });
         });
 
@@ -192,8 +192,7 @@ describe("tracker", function () {
                                     query,
                                     parameters,
                                 ),
-                            )
-                            .then(() => client.shutdown());
+                            );
                     },
                 );
             });
@@ -232,8 +231,6 @@ describe("tracker", function () {
         });
 
         before(() => client.connect());
-        after(() => client.shutdown());
-
         const slowMessages = [];
         const largeMessages = [];
 
