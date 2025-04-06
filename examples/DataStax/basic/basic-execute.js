@@ -16,8 +16,7 @@ client
     .then(function (result) {
         const row = result.rows[0];
         console.log("Obtained row: ", row);
-    })
-    .finally(() => client.shutdown());
+    });
 
 // Exit on unhandledRejection
 process.on("unhandledRejection", (reason) => {

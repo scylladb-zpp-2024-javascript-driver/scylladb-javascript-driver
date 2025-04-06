@@ -30,12 +30,7 @@ client
         console.log("- Columns:", table.columns);
         console.log("- Partition keys:", table.partitionKeys);
         console.log("- Clustering keys:", table.clusteringKeys);
-        console.log("Shutting down");
-        return client.shutdown();
     })
     .catch(function (err) {
         console.error("There was an error", err);
-        return client.shutdown().then(() => {
-            throw err;
-        });
     });
