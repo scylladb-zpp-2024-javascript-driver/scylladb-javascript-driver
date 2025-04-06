@@ -388,17 +388,6 @@ const helper = {
     },
 
     /**
-     * Invokes client.shutdown() after this test finishes.
-     * @param {Client} client
-     * @returns {Client}
-     */
-    shutdownAfterThisTest: function (client) {
-        this.afterThisTest(() => client.shutdown());
-
-        return client;
-    },
-
-    /**
      * Returns a function that waits on schema agreement before executing callback
      * @param {Client} client
      * @param {Function} callback
