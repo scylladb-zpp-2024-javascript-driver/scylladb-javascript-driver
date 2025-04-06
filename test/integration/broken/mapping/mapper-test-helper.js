@@ -150,8 +150,6 @@ const mapperHelper = (module.exports = {
             utils.extend({ keyspace }, helper.baseOptions),
         );
         before(() => client.connect());
-        after(() => client.shutdown());
-
         const videoColumns = {};
         videoColumnsToProperties.forEach((v, k) => (videoColumns[k] = v));
 
