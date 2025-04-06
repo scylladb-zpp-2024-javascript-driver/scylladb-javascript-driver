@@ -1037,7 +1037,7 @@ describe("Client", function () {
 function newInstance(options) {
     options = options || {};
     options = utils.deepExtend(options, helper.baseOptions);
-    return helper.shutdownAfterThisTest(new Client(options));
+    return new Client(options);
 }
 
 function insertTestData(client, table, length, callback) {
