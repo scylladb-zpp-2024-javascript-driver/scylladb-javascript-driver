@@ -487,8 +487,6 @@ describe("LoadBalancingPolicy implementations", function () {
                 ],
             });
 
-            helper.shutdownAfterThisTest(client);
-
             await helper.assertThrowsAsync(
                 client.connect(),
                 errors.ArgumentError,
@@ -518,8 +516,6 @@ describe("LoadBalancingPolicy implementations", function () {
                 ],
             });
 
-            helper.shutdownAfterThisTest(client);
-
             await helper.assertThrowsAsync(
                 client.connect(),
                 errors.ArgumentError,
@@ -539,8 +535,6 @@ describe("LoadBalancingPolicy implementations", function () {
                     loadBalancing: policies.defaultLoadBalancingPolicy(dc),
                 },
             });
-
-            helper.shutdownAfterThisTest(client);
 
             await client.connect();
             const coordinators = new Set();

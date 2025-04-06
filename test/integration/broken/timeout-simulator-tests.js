@@ -252,8 +252,6 @@ function newInstance(options) {
         ),
     );
 
-    helper.shutdownAfterThisTest(client);
-
     return client;
 }
 

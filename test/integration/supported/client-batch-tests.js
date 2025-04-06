@@ -1084,7 +1084,5 @@ describe("Client @SERVER_API", function () {
  * @returns {Client}
  */
 function newInstance(options) {
-    return helper.shutdownAfterThisTest(
-        new Client(utils.deepExtend({}, helper.baseOptions, options)),
-    );
+    return new Client(utils.deepExtend({}, helper.baseOptions, options));
 }
