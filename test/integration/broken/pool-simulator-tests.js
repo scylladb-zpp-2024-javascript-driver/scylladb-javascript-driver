@@ -1196,7 +1196,5 @@ function newInstance(simulacronCluster, options) {
         ),
     );
 
-    helper.shutdownAfterThisTest(client);
-
     return client;
 }

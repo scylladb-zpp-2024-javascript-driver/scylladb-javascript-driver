@@ -1386,7 +1386,6 @@ function newInstance(options) {
     const client = new Client(
         utils.deepExtend({}, helper.baseOptions, options),
     );
-    helper.shutdownAfterThisTest(client);
     return client;
 }
 

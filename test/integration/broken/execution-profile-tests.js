@@ -85,7 +85,7 @@ describe("ProfileManager", function () {
             options,
         );
 
-        return helper.shutdownAfterThisTest(new Client(options));
+        return new Client(options);
     }
 
     function ensureOnlyHostsUsed(nodeIndexes, profile) {
