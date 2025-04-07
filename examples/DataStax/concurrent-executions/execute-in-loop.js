@@ -8,7 +8,7 @@ const client = new cassandra.Client(getClientArgs());
 /**
  * Inserts multiple rows in a table limiting the amount of parallel requests.
  *
- * Note that here is a built-in method in the driver <code>executeConcurrent()</code> that allows you to execute
+ * Note that here is a built-in method in the driver `executeConcurrent()` that allows you to execute
  * multiple simultaneous requests using an Array or a Stream. Check out execute-concurrent-array.js for more
  * information.
  *

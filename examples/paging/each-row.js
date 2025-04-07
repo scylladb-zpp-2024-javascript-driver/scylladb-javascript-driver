@@ -10,7 +10,7 @@ const client = new cassandra.Client(getClientArgs());
  * See https://github.com/caolan/async
  * Alternately you can use the Promise-based API.
  *
- * Inserts 100 rows and retrieves them with ``eachRow()`` with manual paging
+ * Inserts 100 rows and retrieves them with `eachRow()` with manual paging
  */
 
 async.series(
@@ -34,7 +34,7 @@ async.series(
         },
         async function insert(next) {
             // This can also be done concurrently to speed up this process.
-            // Check ``concurrent-executions`` to how it can be done.
+            // Check `concurrent-executions` to how it can be done.
             const query =
                 "INSERT INTO examples.eachRow (id, txt, val) VALUES (?, ?, ?)";
             for (let i = 0; i < 100; i++) {

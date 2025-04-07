@@ -7,7 +7,7 @@ const Uuid = cassandra.types.Uuid;
 const client = new cassandra.Client(getClientArgs());
 
 /**
- * Inserts multiple rows in a table from an Array using the built in method <code>executeConcurrent()</code>,
+ * Inserts multiple rows in a table from an Array using the built in method `executeConcurrent()`,
  * limiting the amount of parallel requests.
  */
 async function example() {
