@@ -1,11 +1,13 @@
 "use strict";
 const rust = require("../../index");
+const assert = require("assert");
 const { getWrapped } = require("../../lib/types/cql-utils");
 const utils = require("../../lib/utils");
 const Duration = require("../../lib/types/duration");
 const InetAddress = require("../../lib/types/inet-address");
 const LocalTime = require("../../lib/types/local-time");
 const TimeUuid = require("../../lib/types/time-uuid");
+const Tuple = require("../../lib/types/tuple");
 const Uuid = require("../../lib/types/uuid");
 const Long = require("long");
 
@@ -34,6 +36,7 @@ const testCases = [
     ["TinyInt", -1],
     ["Time", new LocalTime(Long.fromInt(4312))],
     ["Timeuuid", TimeUuid.fromString("8e14e760-7fa8-11eb-bc66-000000000001")],
+    ["Tuple", new Tuple("First", 1, null)],
     ["Uuid", Uuid.fromString("ffffffff-eeee-ffff-ffff-ffffffffffff")],
 ];
 
@@ -46,5 +49,16 @@ describe("Should correctly convert values into QueryParameterWrapper", function 
             // Assertion appears in rust code
             rust.testsFromValue(test[0], converted);
         });
+    });
+});
+
+describe("Should throw errors when length of types and values is not equal", function () {
+    it("Tuple", function () {
+        let value = new Tuple("First", 1);
+        let expectedType = rust.testsFromValueGetType("Tuple");
+        assert.throws(
+            () => getWrapped(expectedType, value),
+            new TypeError("Expected 3 elements in tuple, obtained 2"),
+        );
     });
 });
