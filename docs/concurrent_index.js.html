@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: concurrent/index.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: concurrent/index.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+
+const { Stream } = require("stream");
+const utils = require("../utils");
+const { Mutex } = require("async-mutex");
+const { env } = require("process");
+
+/**
+ * Utilities for concurrent query execution with the DataStax Node.js Driver.
+ * @module concurrent
+ */
+
+/**
+ * Executes multiple queries concurrently at the defined concurrency level.
+ * @static
+ * @param {Client} client The {@link Client} instance.
+ * @param {String|Array&lt;{query, params}>} query The query to execute per each parameter item.
+ * @param {Array&lt;Array>|Stream|Object} parameters An {@link Array} or a readable {@link Stream} composed of {@link Array}
+ * items representing each individual set of parameters. Per each item in the {@link Array} or {@link Stream}, an
+ * execution is going to be made.
+ * @param {Object} [options] The execution options.
+ * @param {String} [options.executionProfile] The execution profile to be used.
+ * @param {Number} [options.concurrencyLevel=100] The concurrency level to determine the maximum amount of in-flight
+ * operations at any given time
+ * @param {Boolean} [options.raiseOnFirstError=true] Determines whether execution should stop after the first failed
+ * execution and the corresponding exception will be raised.
+ * @param {Boolean} [options.collectResults=false] Determines whether each individual
+ * [ResultSet]{@link module:types~ResultSet} instance should be collected in the grouped result.
+ * @param {Number} [options.maxErrors=100] The maximum amount of errors to be collected before ignoring the rest of
+ * the error results.
+ * @returns {Promise&lt;ResultSetGroup>} A &lt;code>Promise&lt;/code> of {@link ResultSetGroup} that is resolved when all the
+ * executions completed and it's rejected when &lt;code>raiseOnFirstError&lt;/code> is &lt;code>true&lt;/code> and there is one
+ * or more failures.
+ * @example &lt;caption>Using a fixed query and an Array of Arrays as parameters&lt;/caption>
+ * const query = 'INSERT INTO table1 (id, value) VALUES (?, ?)';
+ * const parameters = [[1, 'a'], [2, 'b'], [3, 'c'], ]; // ...
+ * const result = await executeConcurrent(client, query, parameters);
+ * @example &lt;caption>Using a fixed query and a readable stream&lt;/caption>
+ * const stream = csvStream.pipe(transformLineToArrayStream);
+ * const result = await executeConcurrent(client, query, stream);
+ * @example &lt;caption>Using a different queries&lt;/caption>
+ * const queryAndParameters = [
+ *   { query: 'INSERT INTO videos (id, name, user_id) VALUES (?, ?, ?)',
+ *     params: [ id, name, userId ] },
+ *   { query: 'INSERT INTO user_videos (user_id, id, name) VALUES (?, ?, ?)',
+ *     params: [ userId, id, name ] },
+ *   { query: 'INSERT INTO latest_videos (id, name, user_id) VALUES (?, ?, ?)',
+ *     params: [ id, name, userId ] },
+ * ];
+ *
+ * const result = await executeConcurrent(client, queryAndParameters);
+ */
+function executeConcurrent(client, query, parameters, options) {
+    if (!client) {
+        throw new TypeError("Client instance is not defined");
+    }
+
+    if (typeof query === "string") {
+        if (Array.isArray(parameters)) {
+            return new ArrayBasedExecutor(
+                client,
+                query,
+                parameters,
+                options,
+            ).execute();
+        }
+
+        if (parameters instanceof Stream) {
+            return new StreamBasedExecutor(
+                client,
+                query,
+                parameters,
+                options,
+            ).execute();
+        }
+
+        throw new TypeError(
+            "parameters should be an Array or a Stream instance",
+        );
+    }
+
+    if (Array.isArray(query)) {
+        options = parameters;
+        return new ArrayBasedExecutor(client, null, query, options).execute();
+    }
+
+    throw new TypeError(
+        "A string query or query and parameters array should be provided",
+    );
+}
+
+/**
+ * Wraps the functionality to execute given an Array.
+ * @ignore
+ */
+class ArrayBasedExecutor {
+    /**
+     * @param {Client} client
+     * @param {String} query
+     * @param {Array&lt;Array>|Array&lt;{query, params}>} parameters
+     * @param {Object} [options] The execution options.
+     * @private
+     */
+    constructor(client, query, parameters, options) {
+        this._client = client;
+        this._query = query;
+        this._parameters = parameters;
+        options = options || utils.emptyObject;
+        this._raiseOnFirstError = options.raiseOnFirstError !== false;
+        this._concurrencyLevel = Math.min(
+            options.concurrencyLevel || 100,
+            this._parameters.length,
+        );
+        if (env.NO_CONCURRENCY) {
+            this._concurrencyLevel = 1;
+        }
+        this._queryOptions = {
+            prepare: true,
+            executionProfile: options.executionProfile,
+        };
+        this._result = new ResultSetGroup(options);
+        this._stop = false;
+    }
+
+    execute() {
+        const promises = new Array(this._concurrencyLevel);
+
+        for (let i = 0; i &lt; this._concurrencyLevel; i++) {
+            promises[i] = this._executeOneAtATime(i, 0);
+        }
+
+        return Promise.all(promises).then(() => this._result);
+    }
+
+    _executeOneAtATime(initialIndex, iteration) {
+        const index = initialIndex + this._concurrencyLevel * iteration;
+
+        if (index >= this._parameters.length || this._stop) {
+            return Promise.resolve();
+        }
+
+        const item = this._parameters[index];
+        let query;
+        let params;
+
+        if (this._query === null) {
+            query = item.query;
+            params = item.params;
+        } else {
+            query = this._query;
+            params = item;
+        }
+
+        return this._client
+            .execute(query, params, this._queryOptions)
+            .then((rs) => this._result.setResultItem(index, rs))
+            .catch((err) => this._setError(index, err))
+            .then(() => this._executeOneAtATime(initialIndex, iteration + 1));
+    }
+
+    _setError(index, err) {
+        this._result.setError(index, err);
+
+        if (this._raiseOnFirstError) {
+            this._stop = true;
+            throw err;
+        }
+    }
+}
+
+/**
+ * Wraps the functionality to execute given a Stream.
+ * @ignore
+ */
+class StreamBasedExecutor {
+    /**
+     * @param {Client} client
+     * @param {String} query
+     * @param {Stream} stream
+     * @param {Object} [options] The execution options.
+     * @private
+     */
+    constructor(client, query, stream, options) {
+        this._mutex = new Mutex();
+        this._client = client;
+        this._query = query;
+        this._stream = stream;
+        options = options || utils.emptyObject;
+        this._raiseOnFirstError = options.raiseOnFirstError !== false;
+        this._concurrencyLevel = options.concurrencyLevel || 100;
+        this._queryOptions = {
+            prepare: true,
+            executionProfile: options.executionProfile,
+        };
+        this._inFlight = 0;
+        this._index = 0;
+        this._result = new ResultSetGroup(options);
+        this._resolveCallback = null;
+        this._rejectCallback = null;
+        this._readEnded = false;
+    }
+
+    execute() {
+        return new Promise((resolve, reject) => {
+            this._resolveCallback = resolve;
+            this._rejectCallback = reject;
+
+            this._stream
+                .on("data", (params) => this._executeOne(params))
+                .on("error", (err) => this._setReadEnded(err))
+                .on("end", () => this._setReadEnded());
+        });
+    }
+
+    async _executeOne(params) {
+        if (!Array.isArray(params)) {
+            return this._setReadEnded(
+                new TypeError(
+                    "Stream should be in objectMode and should emit Array instances",
+                ),
+            );
+        }
+
+        if (this._readEnded) {
+            // Read ended abruptly because of incorrect format or error event being emitted.
+            // We shouldn't consider additional items.
+            return;
+        }
+
+        this._inFlight++;
+        const release = env.NO_CONCURRENCY ? await this._mutex.acquire() : () => { };
+        const index = this._index++;
+
+        this._client
+            .execute(this._query, params, this._queryOptions)
+            .then((rs) => {
+                this._result.setResultItem(index, rs);
+                this._inFlight--;
+            })
+            .catch((err) => {
+                this._inFlight--;
+                this._setError(index, err);
+            })
+            .then(() => {
+                release();
+                if (this._stream.isPaused()) {
+                    this._stream.resume();
+                }
+
+                if (this._readEnded &amp;&amp; this._inFlight === 0) {
+                    // When read ended and there are no more in-flight requests
+                    // We yield the result to the user.
+                    // It could have ended prematurely when there is a read error
+                    // or there was an execution error and raiseOnFirstError is true
+                    // In that case, calling the resolve callback has no effect
+                    this._resolveCallback(this._result);
+                }
+            });
+
+        if (this._inFlight >= this._concurrencyLevel) {
+            this._stream.pause();
+        }
+    }
+
+    /**
+     * Marks the stream read process as ended.
+     * @param {Error} [err] The stream read error.
+     * @private
+     */
+    _setReadEnded(err) {
+        if (!this._readEnded) {
+            this._readEnded = true;
+
+            if (err) {
+                // There was an error while reading from the input stream.
+                // This should be surfaced as a failure
+                this._rejectCallback(err);
+            } else if (this._inFlight === 0) {
+                // Ended signaled and there are no more pending messages.
+                this._resolveCallback(this._result);
+            }
+        }
+    }
+
+    _setError(index, err) {
+        this._result.setError(index, err);
+
+        if (this._raiseOnFirstError) {
+            this._readEnded = true;
+            this._rejectCallback(err);
+        }
+    }
+}
+
+/**
+ * Represents results from different related executions.
+ */
+class ResultSetGroup {
+    /**
+     * Creates a new instance of {@link ResultSetGroup}.
+     * @ignore
+     */
+    constructor(options) {
+        this._collectResults = options.collectResults;
+        this._maxErrors = options.maxErrors || 100;
+        this.totalExecuted = 0;
+        this.errors = [];
+
+        if (this._collectResults) {
+            /**
+             * Gets an {@link Array} containing the [ResultSet]{@link module:types~ResultSet} instances from each execution.
+             * &lt;p>
+             *   Note that when &lt;code>collectResults&lt;/code> is set to &lt;code>false&lt;/code>, accessing this property will
+             *   throw an error.
+             * &lt;/p>
+             * @type {Array}
+             */
+            this.resultItems = [];
+        } else {
+            Object.defineProperty(this, "resultItems", {
+                enumerable: false,
+                get: () => {
+                    throw new Error(
+                        "Property resultItems can not be accessed when collectResults is set to false",
+                    );
+                },
+            });
+        }
+    }
+
+    /** @ignore */
+    setResultItem(index, rs) {
+        this.totalExecuted++;
+
+        if (this._collectResults) {
+            this.resultItems[index] = rs;
+        }
+    }
+
+    /**
+     * Internal method to set the error of an execution.
+     * @ignore
+     */
+    setError(index, err) {
+        this.totalExecuted++;
+
+        if (this.errors.length &lt; this._maxErrors) {
+            this.errors.push(err);
+        }
+
+        if (this._collectResults) {
+            this.resultItems[index] = err;
+        }
+    }
+}
+
+exports.executeConcurrent = executeConcurrent;
+exports.ResultSetGroup = ResultSetGroup;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="AuthResponseRequest.html">AuthResponseRequest</a></li><li><a href="BatchRequest.html">BatchRequest</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Connection.html">Connection</a></li><li><a href="ControlConnection.html">ControlConnection</a></li><li><a href="CredentialsRequest.html">CredentialsRequest</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecuteRequest.html">ExecuteRequest</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="FrameReader.html">FrameReader</a></li><li><a href="FrameWriter.html">FrameWriter</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostConnectionPool.html">HostConnectionPool</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Murmur3Tokenizer.html">Murmur3Tokenizer</a></li><li><a href="OperationState.html">OperationState</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="PrepareHandler.html">PrepareHandler</a></li><li><a href="QueryRequest.html">QueryRequest</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="RandomTokenizer.html">RandomTokenizer</a></li><li><a href="Request.html">Request</a></li><li><a href="RequestExecution.html">RequestExecution</a></li><li><a href="RequestHandler.html">RequestHandler</a></li><li><a href="StartupRequest.html">StartupRequest</a></li><li><a href="StreamIdStack.html">StreamIdStack</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="Tokenizer.html">Tokenizer</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="WriteQueue.html">WriteQueue</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Integer">Integer</a></li><li><a href="global.html#Parser">Parser</a></li><li><a href="global.html#Protocol">Protocol</a></li><li><a href="global.html#ResultEmitter">ResultEmitter</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arbitraryValueToBigInt">arbitraryValueToBigInt</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#bigintToLong">bigintToLong</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#convertHints">convertHints</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#defaultReleaseDelay">defaultReleaseDelay</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeListLike">encodeListLike</a></li><li><a href="global.html#encodeMap">encodeMap</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#ensureNumber">ensureNumber</a></li><li><a href="global.html#ensureValue">ensureValue</a></li><li><a href="global.html#errorCodes">errorCodes</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#fromSignedByte">fromSignedByte</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getColumnsMetadata">getColumnsMetadata</a></li><li><a href="global.html#getCqlObject">getCqlObject</a></li><li><a href="global.html#getDefaultOptions">getDefaultOptions</a></li><li><a href="global.html#getRowsFromResultsWrapper">getRowsFromResultsWrapper</a></li><li><a href="global.html#getWrapped">getWrapped</a></li><li><a href="global.html#groupSize">groupSize</a></li><li><a href="global.html#guessTypeChecked">guessTypeChecked</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#longToBigint">longToBigint</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxGroupsFor2Bytes">maxGroupsFor2Bytes</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#napiErrorHandler">napiErrorHandler</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseParams">parseParams</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#queryOptionsIntoWrapper">queryOptionsIntoWrapper</a></li><li><a href="global.html#releasableSize">releasableSize</a></li><li><a href="global.html#resultFlag">resultFlag</a></li><li><a href="global.html#rowBuffer">rowBuffer</a></li><li><a href="global.html#rustConvertHint">rustConvertHint</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#shiftToGroup">shiftToGroup</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li><li><a href="global.html#wrapValueBasedOnType">wrapValueBasedOnType</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Tue Apr 08 2025 11:50:06 GMT+0000 (Coordinated Universal Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
