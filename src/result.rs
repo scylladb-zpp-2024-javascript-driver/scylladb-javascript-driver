@@ -10,7 +10,7 @@ use crate::{
     utils::err_to_napi,
 };
 use napi::{
-    bindgen_prelude::{BigInt, Buffer},
+    bindgen_prelude::{BigInt, Buffer, ToNapiValue},
     Error, Status,
 };
 use scylla::{
@@ -38,7 +38,9 @@ pub struct QueryResultWrapper {
 }
 
 /// Wrapper for a single row of the query result
-#[napi]
+///
+/// Whenever it's returned from NAPI function call
+/// it's automatically converted to the inner vector
 pub struct RowWrapper {
     inner: Vec<Option<CqlValue>>,
 }
@@ -160,17 +162,24 @@ impl QueryResultWrapper {
     }
 }
 
-#[napi]
-impl RowWrapper {
-    #[napi]
-    /// Get the CQL value wrappers for each column in the given row
-    pub fn get_columns(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
-        let s: Vec<Option<CqlValueWrapper>> = self
-            .inner
-            .iter()
-            .map(|f| f.clone().map(|f| CqlValueWrapper { inner: f }))
-            .collect();
-        Ok(s)
+impl ToNapiValue for RowWrapper {
+    /// # Safety
+    ///
+    /// Valid pointer to napi env must be provided
+    unsafe fn to_napi_value(
+        env: napi::sys::napi_env,
+        val: Self,
+    ) -> napi::Result<napi::sys::napi_value> {
+        // Caller of this function ensures a valid pointer to napi env is provided
+        unsafe {
+            Vec::to_napi_value(
+                env,
+                val.inner
+                    .into_iter()
+                    .map(|e| e.map(|f| CqlValueWrapper { inner: f }))
+                    .collect(),
+            )
+        }
     }
 }
 
