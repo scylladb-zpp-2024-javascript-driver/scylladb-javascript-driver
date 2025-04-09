@@ -1,7 +1,6 @@
 "use strict";
 
 const { assert } = require("chai");
-const sinon = require("sinon");
 const util = require("util");
 const path = require("path");
 const policies = require("../lib/policies");
@@ -12,9 +11,7 @@ const childProcessExec = require("child_process").exec;
 const http = require("http");
 const temp = require("temp").track(true);
 const Client = require("../lib/client");
-const defaultOptions = require("../lib/client-options").defaultOptions;
-const { Host, HostMap } = require("../lib/host");
-const OperationState = require("../lib/operation-state");
+const { HostMap } = require("../lib/host");
 const promiseUtils = require("../lib/promise-utils");
 
 util.inherits(RetryMultipleTimes, policies.retry.RetryPolicy);
@@ -922,84 +919,6 @@ const helper = {
             remoteLength || 1;
         pooling.coreConnectionsPerHost[types.distance.ignored] = 0;
         return pooling;
-    },
-    getHostsMock: function (
-        hostsInfo,
-        prepareQueryCb,
-        sendStreamCb,
-        protocolVersion,
-    ) {
-        return hostsInfo.map(function (info, index) {
-            protocolVersion =
-                protocolVersion || types.protocolVersion.maxSupported;
-            const h = new Host(
-                index.toString(),
-                protocolVersion,
-                defaultOptions(),
-                {},
-            );
-            h.isUp = function () {
-                return !(info.isUp === false);
-            };
-            h.checkHealth = utils.noop;
-            h.log = utils.noop;
-            h.shouldBeIgnored = !!info.ignored;
-            h.prepareCalled = 0;
-            h.sendStreamCalled = 0;
-            h.connectionKeyspace = [];
-            h.borrowConnection = function () {
-                if (!h.isUp() || h.shouldBeIgnored) {
-                    throw new Error("This host should not be used");
-                }
-
-                return {
-                    protocolVersion: protocolVersion,
-                    keyspace: "ks",
-                    changeKeyspace: (keyspace) => {
-                        this.keyspace = keyspace;
-                        h.connectionKeyspace.push(keyspace);
-                        return Promise.resolve();
-                    },
-                    prepareOnce: function (q, ks, cb) {
-                        h.prepareCalled++;
-                        if (prepareQueryCb) {
-                            return prepareQueryCb(q, h, cb);
-                        }
-                        cb(null, { id: 1, meta: {} });
-                    },
-                    sendStream: function (r, o, cb) {
-                        h.sendStreamCalled++;
-                        if (sendStreamCb) {
-                            return sendStreamCb(r, h, cb);
-                        }
-                        const op = new OperationState(r, o, cb);
-                        setImmediate(function () {
-                            op.setResult(null, {});
-                        });
-                        return op;
-                    },
-                    prepareOnceAsync: function (q, ks) {
-                        return new Promise((resolve, reject) => {
-                            h.prepareCalled++;
-
-                            if (prepareQueryCb) {
-                                return prepareQueryCb(q, h, (err, result) => {
-                                    if (err) {
-                                        reject(err);
-                                    } else {
-                                        resolve(result);
-                                    }
-                                });
-                            }
-
-                            resolve({ id: 1, meta: {} });
-                        });
-                    },
-                };
-            };
-
-            return sinon.spy(h);
-        });
     },
     getLoadBalancingPolicyFake: function getLoadBalancingPolicyFake(
         hostsInfo,
