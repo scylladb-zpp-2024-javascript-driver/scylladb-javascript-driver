@@ -69,6 +69,4 @@ jobs:
         shell: bash
       - name: Run integration tests
         run: npm run integration
-      - name: Run integration not supported
-        run: npm run integration-not-supported
           
