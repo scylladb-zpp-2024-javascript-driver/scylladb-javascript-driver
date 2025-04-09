@@ -1543,59 +1543,6 @@ helper.ads.start = function (cb) {
     });
 };
 
-/**
- * Invokes a klist to list the current registered tickets and their expiration if trace is enabled.
- *
- * This is really only useful for debugging.
- *
- * @param {Function} cb Callback to invoke on completion.
- */
-helper.ads.listTickets = function (cb) {
-    this._exec("klist", [], cb);
-};
-
-/**
- * Acquires a ticket for the given username and its principal.
- * @param {String} username Username to acquire ticket for (i.e. cassandra).
- * @param {String} principal Principal to acquire ticket for (i.e. cassandra@DATASTAX.COM).
- * @param {Function} cb Callback to invoke on completion.
- */
-helper.ads.acquireTicket = function (username, principal, cb) {
-    helper.trace("Acquiring ticket");
-    const keytab = this.getKeytabPath(username);
-
-    // Use ktutil on windows, kinit otherwise.
-    const processName = "kinit";
-    const params = ["-t", keytab, "-k", principal];
-    if (process.platform.indexOf("win") === 0) {
-        // Not really sure what to do here yet...
-    }
-
-    this._exec(processName, params, cb);
-};
-
-/**
- * Destroys all tickets for the given principal.
- * @param {String} principal Principal for whom its tickets will be destroyed (i.e. dse/127.0.0.1@DATASTAX.COM).
- * @param {Function} cb Callback to invoke on completion.
- */
-helper.ads.destroyTicket = function (principal, cb) {
-    if (typeof principal === "function") {
-        // noinspection JSValidateTypes
-        cb = principal;
-        principal = null;
-    }
-
-    // Use ktutil on windows, kdestroy otherwise.
-    const processName = "kdestroy";
-    const params = [];
-    if (process.platform.indexOf("win") === 0) {
-        // Not really sure what to do here yet...
-    }
-
-    this._exec(processName, params, cb);
-};
-
 helper.ads._exec = function (processName, params, callback) {
     if (params.length === 0) {
         childProcessExec(processName, callback);
