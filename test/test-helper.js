@@ -1028,20 +1028,7 @@ const helper = {
             getDistance: function () {
                 return types.distance.local;
             },
-
-            /**
-             * Shutdowns the hosts and invoke the optional callback.
-             */
-            shutdown: function (cb) {
-                hosts.forEach((h) => h.shutdown(false));
-
-                if (cb) {
-                    cb();
-                }
-            },
         };
-
-        helper.afterThisTest(() => fake.shutdown());
 
         return fake;
     },
