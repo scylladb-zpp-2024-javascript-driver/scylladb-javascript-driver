@@ -7,7 +7,6 @@ const events = require("events");
 
 const hostModule = require("../../lib/host");
 const Host = hostModule.Host;
-const HostConnectionPool = require("../../lib/host-connection-pool");
 const Metadata = require("../../lib/metadata");
 const HostMap = hostModule.HostMap;
 const types = require("../../lib/types");

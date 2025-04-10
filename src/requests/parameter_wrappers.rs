@@ -1,31 +1,30 @@
 use napi::bindgen_prelude::{BigInt, Buffer};
-use scylla::{
-    frame::{
-        response::result::CqlValue,
-        value::{Counter, CqlTimestamp, CqlTimeuuid},
-    },
-    prepared_statement::PreparedStatement,
-};
+use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
-    result::map_column_type_to_complex_type,
     types::{
-        duration::DurationWrapper, inet::InetAddressWrapper, local_time::LocalTimeWrapper,
-        type_wrappers::ComplexType, uuid::UuidWrapper,
+        duration::DurationWrapper, inet::InetAddressWrapper, local_date::LocalDateWrapper,
+        local_time::LocalTimeWrapper, uuid::UuidWrapper,
     },
     utils::{bigint_to_i64, js_error},
 };
 
-/// Structure wraps CqlValue type. Use for passing parameters for queries
+#[napi]
+pub struct MaybeUnsetQueryParameterWrapper {
+    pub(crate) parameter: MaybeUnset<CqlValue>,
+}
+
+/// Structure wraps CqlValue type. Use for passing parameters for requests.
+///
+/// Exposes functions from___ for each CQL type. They can be used to
+/// create QueryParameterWrapper from a given value. For complex types,
+/// like list or map, it requires the values to be provided as QueryParameterWrapper.
+///
+/// Currently there is no type validation for complex types, meaning this code
+/// will accept for example vector with multiple types of values, which is not a valid CQL object.
 #[napi]
 pub struct QueryParameterWrapper {
     pub(crate) parameter: CqlValue,
-}
-
-#[napi]
-/// Wrapper for struct representing Prepared statement to the database
-pub struct PreparedStatementWrapper {
-    pub(crate) prepared: PreparedStatement,
 }
 
 #[napi]
@@ -66,6 +65,13 @@ impl QueryParameterWrapper {
                 "Value casted into counter type shouldn't overflow i64",
             )?)),
         })
+    }
+
+    #[napi]
+    pub fn from_local_date(val: &LocalDateWrapper) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Date(val.get_cql_date()),
+        }
     }
 
     #[napi]
@@ -189,11 +195,11 @@ impl QueryParameterWrapper {
     }
 }
 
-impl QueryParameterWrapper {
+impl MaybeUnsetQueryParameterWrapper {
     /// Takes vector of QueryParameterWrapper references and turns it into vector of CqlValue
     pub(crate) fn extract_parameters(
-        row: Vec<Option<&QueryParameterWrapper>>,
-    ) -> Vec<Option<CqlValue>> {
+        row: Vec<Option<&MaybeUnsetQueryParameterWrapper>>,
+    ) -> Vec<Option<MaybeUnset<CqlValue>>> {
         row.iter()
             .map(|e| e.as_ref().map(|v| v.parameter.clone()))
             .collect()
@@ -201,14 +207,20 @@ impl QueryParameterWrapper {
 }
 
 #[napi]
-impl PreparedStatementWrapper {
+impl MaybeUnsetQueryParameterWrapper {
     #[napi]
-    /// Get array of expected types for this prepared statement.
-    pub fn get_expected_types(&self) -> Vec<ComplexType> {
-        self.prepared
-            .get_variable_col_specs()
-            .iter()
-            .map(|e| map_column_type_to_complex_type(e.typ()))
-            .collect()
+    pub fn from_non_null_non_unset_value(
+        val: &QueryParameterWrapper,
+    ) -> MaybeUnsetQueryParameterWrapper {
+        MaybeUnsetQueryParameterWrapper {
+            parameter: MaybeUnset::Set(val.parameter.clone()),
+        }
+    }
+
+    #[napi]
+    pub fn unset() -> MaybeUnsetQueryParameterWrapper {
+        MaybeUnsetQueryParameterWrapper {
+            parameter: MaybeUnset::Unset,
+        }
     }
 }

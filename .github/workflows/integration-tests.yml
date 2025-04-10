@@ -5,6 +5,8 @@ env:
   DEBUG: napi:*
   APP_NAME: scylladb-javascript-driver
   RUST_BACKTRACE: full
+  PEDANTIC: true
+  NO_CONCURRENCY: true
 "on":
   push:
     branches:
@@ -67,6 +69,4 @@ jobs:
         shell: bash
       - name: Run integration tests
         run: npm run integration
-      - name: Run integration not supported
-        run: npm run integration-not-supported
           

@@ -4,7 +4,7 @@ import {
   ExecutionProfile,
   policies,
   types,
-} from "../../../main";
+} from "../../main";
 
 /*
  * TypeScript definitions compilation tests for Client class.

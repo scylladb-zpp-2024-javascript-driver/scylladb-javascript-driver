@@ -1,5 +1,6 @@
 use crate::{
     types::{
+        local_date::LocalDateWrapper,
         time_uuid::TimeUuidWrapper,
         type_wrappers::{ComplexType, CqlType},
         uuid::UuidWrapper,
@@ -11,9 +12,11 @@ use napi::{
     Error, Status,
 };
 use scylla::{
-    frame::response::result::{ColumnType, CqlValue, Row},
-    transport::query_result::IntoRowsResultError,
-    QueryResult, QueryRowsResult,
+    cluster::metadata::{CollectionType, NativeType},
+    errors::IntoRowsResultError,
+    frame::response::result::ColumnType,
+    response::query_result::{QueryResult, QueryRowsResult},
+    value::{CqlValue, Row},
 };
 
 use crate::types::duration::DurationWrapper;
@@ -26,21 +29,29 @@ enum QueryResultVariant {
     RowsResult(QueryRowsResult),
 }
 
+/// Wrapper for a whole query result
 #[napi]
 pub struct QueryResultWrapper {
-    internal: QueryResultVariant,
+    inner: QueryResultVariant,
 }
 
+/// Wrapper for a single row of the query result
 #[napi]
 pub struct RowWrapper {
-    internal: Vec<Option<CqlValue>>,
+    inner: Vec<Option<CqlValue>>,
 }
 
+/// Wrapper for a single CQL value
+///
+/// CqlValueWrapper exposes functions get____ for each CQL type,
+/// which extract value from the object,
+/// assuming this wrapper stores a value of the requested CQL type.
 #[napi]
 pub struct CqlValueWrapper {
     pub(crate) inner: CqlValue,
 }
 
+/// Wrapper for the information required in the ResultSet.columns field
 #[napi]
 pub struct MetaColumnWrapper {
     pub ksname: String,
@@ -51,41 +62,43 @@ pub struct MetaColumnWrapper {
 
 #[napi]
 impl QueryResultWrapper {
-    pub fn from_query(internal: QueryResult) -> napi::Result<QueryResultWrapper> {
-        let value = match internal.into_rows_result() {
+    /// Converts rust query result into query result wrapper that can be passed to NAPI-RS
+    pub fn from_query(result: QueryResult) -> napi::Result<QueryResultWrapper> {
+        let value = match result.into_rows_result() {
             Ok(v) => QueryResultVariant::RowsResult(v),
             Err(IntoRowsResultError::ResultNotRows(v)) => QueryResultVariant::EmptyResult(v),
             Err(IntoRowsResultError::ResultMetadataLazyDeserializationError(e)) => {
                 return Err(err_to_napi(e));
             }
         };
-        Ok(QueryResultWrapper { internal: value })
+        Ok(QueryResultWrapper { inner: value })
     }
 
+    /// Extracts all the rows of the result into a vector of rows
     #[napi]
     pub fn get_rows(&self) -> napi::Result<Option<Vec<RowWrapper>>> {
-        let r2 = match &self.internal {
+        let result = match &self.inner {
             QueryResultVariant::RowsResult(v) => v,
             QueryResultVariant::EmptyResult(_) => {
                 return Ok(None);
             }
         };
 
-        let rows = r2.rows::<Row>()
+        let rows = result.rows::<Row>()
             .expect("Type check against the Row type has failed; this is a bug in the underlying Rust driver");
         Ok(Some(
             rows.map(|f| RowWrapper {
                 // TODO: Correctly handle such errors
-                internal: f.expect("Unhandled row Deserialization Error ").columns,
+                inner: f.expect("Unhandled row Deserialization Error ").columns,
             })
             .collect(),
         ))
     }
 
+    /// Get the names of the columns in order, as they appear in the query result
     #[napi]
-    /// Get the names of the columns in order
     pub fn get_columns_names(&self) -> Vec<String> {
-        match &self.internal {
+        match &self.inner {
             QueryResultVariant::RowsResult(v) => v,
             QueryResultVariant::EmptyResult(_) => {
                 return vec![];
@@ -97,9 +110,10 @@ impl QueryResultWrapper {
         .collect()
     }
 
+    /// Get the specification of all columns as they appear in the query result
     #[napi]
     pub fn get_columns_specs(&self) -> Vec<MetaColumnWrapper> {
-        match &self.internal {
+        match &self.inner {
             QueryResultVariant::RowsResult(v) => v,
             QueryResultVariant::EmptyResult(_) => {
                 return vec![];
@@ -116,17 +130,19 @@ impl QueryResultWrapper {
         .collect()
     }
 
+    /// Get all warnings generated in the query
     #[napi]
     pub fn get_warnings(&self) -> Vec<String> {
-        match &self.internal {
+        match &self.inner {
             QueryResultVariant::RowsResult(v) => v.warnings().map(|e| e.to_owned()).collect(),
             QueryResultVariant::EmptyResult(v) => v.warnings().map(|e| e.to_owned()).collect(),
         }
     }
 
+    /// Get all tracing ids generated in the query
     #[napi]
     pub fn get_trace_id(&self) -> Option<UuidWrapper> {
-        match &self.internal {
+        match &self.inner {
             QueryResultVariant::RowsResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
             QueryResultVariant::EmptyResult(v) => v.tracing_id().map(UuidWrapper::from_cql_uuid),
         }
@@ -139,7 +155,7 @@ impl RowWrapper {
     /// Get the CQL value wrappers for each column in the given row
     pub fn get_columns(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
         let s: Vec<Option<CqlValueWrapper>> = self
-            .internal
+            .inner
             .iter()
             .map(|f| f.clone().map(|f| CqlValueWrapper { inner: f }))
             .collect();
@@ -156,16 +172,16 @@ impl CqlValueWrapper {
     }
 
     #[napi]
-    /// Get type of value in this object
+    /// Get type of CQL value that is stored in this object
     pub fn get_type(&self) -> CqlType {
-        match self.inner {
+        match &self.inner {
             CqlValue::Ascii(_) => CqlType::Ascii,
             CqlValue::BigInt(_) => CqlType::BigInt,
             CqlValue::Boolean(_) => CqlType::Boolean,
             CqlValue::Blob(_) => CqlType::Blob,
             CqlValue::Counter(_) => CqlType::Counter,
             CqlValue::Decimal(_) => CqlType::Decimal, // NOI
-            CqlValue::Date(_) => CqlType::Date,       // NOI
+            CqlValue::Date(_) => CqlType::Date,
             CqlValue::Double(_) => CqlType::Double,
             CqlValue::Duration(_) => CqlType::Duration,
             CqlValue::Empty => CqlType::Empty,
@@ -185,6 +201,7 @@ impl CqlValueWrapper {
             CqlValue::Tuple(_) => CqlType::Tuple, // NOI
             CqlValue::Uuid(_) => CqlType::Uuid,
             CqlValue::Varint(_) => CqlType::Varint, // NOI
+            other => unimplemented!("Missing implementation for CQL value {:?}", other),
         }
     }
 
@@ -232,6 +249,14 @@ impl CqlValueWrapper {
         match self.inner.as_counter() {
             Some(r) => Ok(r.0.into()),
             None => Err(Self::generic_error("counter")),
+        }
+    }
+
+    #[napi]
+    pub fn get_local_date(&self) -> napi::Result<LocalDateWrapper> {
+        match self.inner.as_cql_date() {
+            Some(r) => Ok(LocalDateWrapper::from_cql_date(r)),
+            None => Err(Self::generic_error("local_date")),
         }
     }
 
@@ -371,41 +396,55 @@ impl CqlValueWrapper {
     }
 }
 
+/// Maps rust driver ColumnType representing type of the column with support types
+/// into ComplexType used in this code.
 pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
     match typ {
-        ColumnType::Custom(_) => panic!("No support for custom type"),
-        ColumnType::Ascii => ComplexType::simple_type(CqlType::Ascii),
-        ColumnType::Boolean => ComplexType::simple_type(CqlType::Boolean),
-        ColumnType::Blob => ComplexType::simple_type(CqlType::Blob),
-        ColumnType::Counter => ComplexType::simple_type(CqlType::Counter),
-        ColumnType::Date => ComplexType::simple_type(CqlType::Date),
-        ColumnType::Decimal => ComplexType::simple_type(CqlType::Decimal),
-        ColumnType::Double => ComplexType::simple_type(CqlType::Double),
-        ColumnType::Duration => ComplexType::simple_type(CqlType::Duration),
-        ColumnType::Float => ComplexType::simple_type(CqlType::Float),
-        ColumnType::Int => ComplexType::simple_type(CqlType::Int),
-        ColumnType::BigInt => ComplexType::simple_type(CqlType::BigInt),
-        ColumnType::Text => ComplexType::simple_type(CqlType::Text),
-        ColumnType::Timestamp => ComplexType::simple_type(CqlType::Timestamp),
-        ColumnType::Inet => ComplexType::simple_type(CqlType::Inet),
-        ColumnType::List(t) => {
-            ComplexType::one_support(CqlType::List, Some(map_column_type_to_complex_type(t)))
-        }
-        ColumnType::Map(t, v) => ComplexType::two_support(
-            CqlType::Map,
-            Some(map_column_type_to_complex_type(t)),
-            Some(map_column_type_to_complex_type(v)),
-        ),
-        ColumnType::Set(t) => {
-            ComplexType::one_support(CqlType::Set, Some(map_column_type_to_complex_type(t)))
-        }
+        ColumnType::Native(native) => ComplexType::simple_type(match native {
+            NativeType::Ascii => CqlType::Ascii,
+            NativeType::Boolean => CqlType::Boolean,
+            NativeType::Blob => CqlType::Blob,
+            NativeType::Counter => CqlType::Counter,
+            NativeType::Date => CqlType::Date,
+            NativeType::Decimal => CqlType::Decimal,
+            NativeType::Double => CqlType::Double,
+            NativeType::Duration => CqlType::Duration,
+            NativeType::Float => CqlType::Float,
+            NativeType::Int => CqlType::Int,
+            NativeType::BigInt => CqlType::BigInt,
+            NativeType::Text => CqlType::Text,
+            NativeType::Timestamp => CqlType::Timestamp,
+            NativeType::Inet => CqlType::Inet,
+            NativeType::SmallInt => CqlType::SmallInt,
+            NativeType::TinyInt => CqlType::TinyInt,
+            NativeType::Time => CqlType::Time,
+            NativeType::Timeuuid => CqlType::Timeuuid,
+            NativeType::Uuid => CqlType::Uuid,
+            NativeType::Varint => CqlType::Varint,
+            other => unimplemented!("Missing implementation for CQL native type {:?}", other),
+        }),
+        ColumnType::Collection { frozen: _, typ } => match typ {
+            CollectionType::List(column_type) => ComplexType::one_support(
+                CqlType::List,
+                Some(map_column_type_to_complex_type(column_type)),
+            ),
+            CollectionType::Map(column_type, column_type1) => ComplexType::two_support(
+                CqlType::Map,
+                Some(map_column_type_to_complex_type(column_type)),
+                Some(map_column_type_to_complex_type(column_type1)),
+            ),
+            CollectionType::Set(column_type) => ComplexType::one_support(
+                CqlType::Set,
+                Some(map_column_type_to_complex_type(column_type)),
+            ),
+            other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
+        },
         ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
-        ColumnType::SmallInt => ComplexType::simple_type(CqlType::SmallInt),
-        ColumnType::TinyInt => ComplexType::simple_type(CqlType::TinyInt),
-        ColumnType::Time => ComplexType::simple_type(CqlType::Time),
-        ColumnType::Timeuuid => ComplexType::simple_type(CqlType::Timeuuid),
         ColumnType::Tuple(_) => ComplexType::simple_type(CqlType::Tuple),
-        ColumnType::Uuid => ComplexType::simple_type(CqlType::Uuid),
-        ColumnType::Varint => ComplexType::simple_type(CqlType::Varint),
+        ColumnType::Vector {
+            typ: _,
+            dimensions: _,
+        } => todo!(),
+        other => unimplemented!("Missing implementation for CQL type {:?}", other),
     }
 }

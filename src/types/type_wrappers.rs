@@ -29,6 +29,9 @@ pub enum CqlType {
     Custom,
 }
 
+/// Keeps whole CQL type, including support types.
+/// It has similar information to [scylla::frame::response::result::ColumnType],
+/// but can be passes to NAPI-RS
 #[napi]
 #[derive(Clone)]
 pub struct ComplexType {
@@ -50,14 +53,17 @@ impl ComplexType {
 }
 
 impl ComplexType {
+    /// Constructor for a simple object, like text or int
     pub(crate) fn simple_type(base_type: CqlType) -> Self {
         ComplexType::one_support(base_type, None)
     }
 
+    /// Constructor for a object with one support type, like list
     pub(crate) fn one_support(base_type: CqlType, support1: Option<ComplexType>) -> Self {
         ComplexType::two_support(base_type, support1, None)
     }
 
+    /// Constructor for a object with two support types currently only map
     pub(crate) fn two_support(
         base_type: CqlType,
         support1: Option<ComplexType>,

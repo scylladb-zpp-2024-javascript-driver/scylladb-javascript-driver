@@ -1,5 +1,16 @@
 "use strict";
 
+// In pedantic mode, when any warnings are detected, exit program imminently 
+const process = require('node:process');
+if (process.env.PEDANTIC == "true") {
+  process.on('warning', (warning) => {
+    console.warn(`Warning found in pedantic mode:`);
+    console.warn(warning.message);
+    console.warn(warning.stack);
+    process.exit(1);
+  });
+}
+
 const clientOptions = require("./lib/client-options");
 exports.Client = require("./lib/client");
 exports.ExecutionProfile = require("./lib/execution-profile").ExecutionProfile;
