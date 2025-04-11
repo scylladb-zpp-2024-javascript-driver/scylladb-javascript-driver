@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    requests::parameter_wrappers::QueryParameterWrapper,
+    requests::parameter_wrappers::ParameterWrapper,
     types::type_wrappers::{ComplexType, CqlType},
 };
 
@@ -45,7 +45,7 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
 }
 
 #[napi]
-pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
+pub fn tests_from_value(test: String, value: ParameterWrapper) {
     let v = match test.as_str() {
         "Ascii" => CqlValue::Ascii("Some arbitrary value".to_owned()),
         "BigInt" => CqlValue::BigInt(i64::MAX),
@@ -82,5 +82,16 @@ pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
         "Uuid" => CqlValue::Uuid(uuid!("ffffffff-eeee-ffff-ffff-ffffffffffff")),
         _ => CqlValue::Empty,
     };
-    assert_eq!(value.parameter, v);
+    assert_eq!(
+        match value.row {
+            Some(v) => {
+                match v {
+                    scylla::value::MaybeUnset::Unset => panic!("Expected set value"),
+                    scylla::value::MaybeUnset::Set(w) => w,
+                }
+            }
+            None => panic!("Expected some value"),
+        },
+        v
+    );
 }
