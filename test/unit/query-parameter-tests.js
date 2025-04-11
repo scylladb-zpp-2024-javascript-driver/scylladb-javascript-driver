@@ -1,6 +1,5 @@
 "use strict";
 const rust = require("../../index");
-const assert = require("assert");
 const { getWrapped } = require("../../lib/types/cql-utils");
 const utils = require("../../lib/utils");
 const Duration = require("../../lib/types/duration");
@@ -40,7 +39,7 @@ const testCases = [
     ["Uuid", Uuid.fromString("ffffffff-eeee-ffff-ffff-ffffffffffff")],
 ];
 
-describe("Should correctly convert values into QueryParameterWrapper", function () {
+describe("Should correctly convert some set values into Parameter wrapper", function () {
     testCases.forEach((test) => {
         it(test[0], function () {
             let value = test[1];
