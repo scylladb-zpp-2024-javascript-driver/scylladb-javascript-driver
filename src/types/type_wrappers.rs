@@ -29,6 +29,11 @@ pub enum CqlType {
     Custom,
 }
 
+#[napi]
+pub struct CqlTypeClass {
+    pub typ: CqlType,
+}
+
 /// Keeps whole CQL type, including support types.
 /// It has similar information to [scylla::frame::response::result::ColumnType],
 /// but can be passes to NAPI-RS
