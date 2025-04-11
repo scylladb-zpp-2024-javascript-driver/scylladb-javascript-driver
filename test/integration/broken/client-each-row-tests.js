@@ -898,7 +898,7 @@ describe("Client", function () {
                         assert.match(result.info.warnings[0], /batch/i);
                         assert.match(result.info.warnings[0], /exceeding/);
                         assert.ok(loggedMessage);
-                        client.shutdown(done);
+                        done();
                     },
                 );
             },
@@ -1037,7 +1037,7 @@ describe("Client", function () {
 function newInstance(options) {
     options = options || {};
     options = utils.deepExtend(options, helper.baseOptions);
-    return helper.shutdownAfterThisTest(new Client(options));
+    return new Client(options);
 }
 
 function insertTestData(client, table, length, callback) {

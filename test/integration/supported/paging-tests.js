@@ -52,8 +52,6 @@ module.exports = function (keyspace, prepare) {
             ),
         );
 
-        after(() => client.shutdown());
-
         it("should use pageState and fetchSize", async () => {
             const fetchSize = 70;
 

@@ -7,13 +7,8 @@ client
     .connect()
     .then(function () {
         console.log("Connected to cluster.");
-
-        console.log("Shutting down");
-        return client.shutdown();
+        return;
     })
     .catch(function (err) {
         console.error("There was an error when connecting", err);
-        return client.shutdown().then(() => {
-            throw err;
-        });
     });

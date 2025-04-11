@@ -487,15 +487,11 @@ describe("LoadBalancingPolicy implementations", function () {
                 ],
             });
 
-            helper.shutdownAfterThisTest(client);
-
             await helper.assertThrowsAsync(
                 client.connect(),
                 errors.ArgumentError,
                 /'localDataCenter' is not defined in Client options .* Available DCs are: \[dc1,dc2]/,
             );
-
-            await client.shutdown();
         });
 
         it("should validate that the local dc matches the topology and include available dcs in the error", async () => {
@@ -518,15 +514,11 @@ describe("LoadBalancingPolicy implementations", function () {
                 ],
             });
 
-            helper.shutdownAfterThisTest(client);
-
             await helper.assertThrowsAsync(
                 client.connect(),
                 errors.ArgumentError,
                 /Datacenter dc_invalid was not found\. Available DCs are: \[dc1,dc2]/,
             );
-
-            await client.shutdown();
         });
     });
 
@@ -540,8 +532,6 @@ describe("LoadBalancingPolicy implementations", function () {
                 },
             });
 
-            helper.shutdownAfterThisTest(client);
-
             await client.connect();
             const coordinators = new Set();
 
@@ -554,8 +544,6 @@ describe("LoadBalancingPolicy implementations", function () {
             coordinators.forEach((address) =>
                 assert.strictEqual(client.hosts.get(address).datacenter, dc),
             );
-
-            await client.shutdown();
         });
     });
 });

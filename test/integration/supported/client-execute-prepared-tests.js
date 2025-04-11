@@ -1075,7 +1075,7 @@ describe("Client @SERVER_API", function () {
                         assert.ok(result.info.warnings.length >= 1);
                         helper.assertContains(result.info.warnings[0], "batch");
                         assert.ok(loggedMessage);
-                        client.shutdown(done);
+                        done();
                     },
                 );
             },
@@ -2363,8 +2363,6 @@ describe("Client @SERVER_API", function () {
                     contactPoints: helper.baseOptions.contactPoints,
                 });
 
-                helper.shutdownAfterThisTest(client);
-
                 /** Pre-calculated based on partitioner and initial tokens *\/
                 const replicaByKey = new Map([
                     ["0", "1"],
@@ -2644,7 +2642,7 @@ function newInstance(options) {
         helper.baseOptions,
     );
 
-    return helper.shutdownAfterThisTest(new Client(options));
+    return new Client(options);
 }
 
 function serializationTest(client, values, columns, done) {

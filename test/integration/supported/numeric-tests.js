@@ -37,7 +37,6 @@ module.exports = function (keyspace, prepare) {
         before(() => client.connect());
         before(() => client.execute(createTableNumericValuesCql));
         before(() => client.execute(createTableNumericCollectionsCql));
-        after(() => client.shutdown());
 
         it("should support setting numeric values using strings", () => {
             const insertQuery = `INSERT INTO tbl_numeric_values
@@ -141,8 +140,6 @@ module.exports = function (keyspace, prepare) {
                 },
             });
 
-            after(() => client.shutdown());
-
             const insertQuery =
                 "INSERT INTO tbl_numeric_values (id, bigint_value, varint_value) VALUES (?, ?, ?)";
             const hints = !prepare ? [null, "bigint", "varint"] : null;
@@ -197,7 +194,6 @@ module.exports = function (keyspace, prepare) {
          set2 set<varint>, PRIMARY KEY ((id1, id2)))`,
             ),
         );
-        after(() => client.shutdown());
 
         const int64TextValues = [
             "1",
