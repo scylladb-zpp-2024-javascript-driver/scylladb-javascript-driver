@@ -35,6 +35,7 @@ pub enum CqlType {
 #[napi]
 #[derive(Clone)]
 pub struct ComplexType {
+    pub is_unset: bool,
     pub base_type: CqlType,
     pub(crate) support_type_1: Option<Box<ComplexType>>,
     pub(crate) support_type_2: Option<Box<ComplexType>>,
@@ -49,6 +50,24 @@ impl ComplexType {
     #[napi]
     pub fn get_second_support_type(&self) -> Option<ComplexType> {
         self.support_type_2.as_ref().map(|f| *f.clone())
+    }
+
+    #[napi]
+    pub fn remap_list_support_type(&self, new_subtype: &ComplexType) -> ComplexType {
+        ComplexType::one_support(self.base_type, Some(new_subtype.clone()))
+    }
+
+    #[napi]
+    pub fn remap_map_support_type(
+        &self,
+        key_new_subtype: &ComplexType,
+        val_new_subtype: &ComplexType,
+    ) -> ComplexType {
+        ComplexType::two_support(
+            self.base_type,
+            Some(key_new_subtype.clone()),
+            Some(val_new_subtype.clone()),
+        )
     }
 }
 
@@ -70,6 +89,7 @@ impl ComplexType {
         support2: Option<ComplexType>,
     ) -> Self {
         ComplexType {
+            is_unset: false,
             base_type,
             support_type_1: support1.map(Box::new),
             support_type_2: support2.map(Box::new),
