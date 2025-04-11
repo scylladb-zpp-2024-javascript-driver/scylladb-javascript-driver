@@ -1,235 +1,197 @@
-use napi::bindgen_prelude::{BigInt, Buffer};
+use napi::{
+    bindgen_prelude::{Array, BigInt, Buffer, FromNapiValue, Undefined},
+    Status,
+};
 use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
     types::{
-        duration::DurationWrapper, inet::InetAddressWrapper, local_date::LocalDateWrapper,
-        local_time::LocalTimeWrapper, uuid::UuidWrapper,
+        duration::DurationWrapper,
+        inet::InetAddressWrapper,
+        local_date::LocalDateWrapper,
+        local_time::LocalTimeWrapper,
+        type_wrappers::{ComplexType, CqlType},
+        uuid::UuidWrapper,
     },
     utils::{bigint_to_i64, js_error},
 };
 
-#[napi]
-pub struct MaybeUnsetQueryParameterWrapper {
-    pub(crate) parameter: MaybeUnset<CqlValue>,
+pub struct ParameterWrapper {
+    pub(crate) row: Option<MaybeUnset<CqlValue>>,
 }
 
-/// Structure wraps CqlValue type. Use for passing parameters for requests.
+/// Converts an array of values into Vec of CqlValue based on the provided type.
+fn cql_value_vec_from_array(typ: &ComplexType, arr: &Array) -> napi::Result<Vec<CqlValue>> {
+    Result::from_iter((0..arr.len()).map(|i| cql_value_from_napi_value(typ, arr, i)))
+}
+/// Creates a Vec of (key, value) pairs, each of CqlValue type,
+/// from provided array and type.
 ///
-/// Exposes functions from___ for each CQL type. They can be used to
-/// create QueryParameterWrapper from a given value. For complex types,
-/// like list or map, it requires the values to be provided as QueryParameterWrapper.
-///
-/// Currently there is no type validation for complex types, meaning this code
-/// will accept for example vector with multiple types of values, which is not a valid CQL object.
-#[napi]
-pub struct QueryParameterWrapper {
-    pub(crate) parameter: CqlValue,
+/// It requires that each element of the `arr` array is at least two element array itself.
+fn cql_value_vec_from_map(
+    typ: &ComplexType,
+    arr: &Array,
+) -> napi::Result<Vec<(CqlValue, CqlValue)>> {
+    let mut res = vec![];
+    let parsing_error = || {
+        napi::Error::new(
+            Status::InvalidArg,
+            "Unexpected data when parsing parameters row".to_owned(),
+        )
+    };
+    for i in 0..arr.len() {
+        let elem = arr.get::<Array>(i)?.ok_or_else(parsing_error)?;
+
+        let key = cql_value_from_napi_value(
+            &(typ.get_first_support_type().ok_or_else(parsing_error)?),
+            &elem,
+            0,
+        )?;
+        let val = cql_value_from_napi_value(
+            &(typ.get_second_support_type().ok_or_else(parsing_error)?),
+            &elem,
+            1,
+        )?;
+        res.push((key, val));
+    }
+    Ok(res)
 }
 
-#[napi]
-impl QueryParameterWrapper {
-    #[napi]
-    pub fn from_ascii(val: String) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Ascii(val),
+fn cql_value_vec_from_tuple(
+    types: &ComplexType,
+    arr: &Array,
+) -> napi::Result<Vec<Option<CqlValue>>> {
+    let mut res = vec![];
+    let support_types = types.get_inner_types();
+
+    // JS arrays can hold up to 2^32 - 2 values.
+    // Here we assume usize is at least 4 bytes.
+    if support_types.len() != arr.len().try_into().unwrap() {
+        return Err(napi::Error::new(
+            Status::InvalidArg,
+            "Tuple has different amount of types and values".to_owned(),
+        ));
+    }
+
+    // i will be capped at JS array size: an unsigned 32 bit value
+    // this allows us to safely convert i to u32
+    for (i, typ) in support_types.into_iter().enumerate() {
+        if let Ok(Some(_)) = arr.get::<Undefined>(i.try_into().unwrap()) {
+            res.push(None);
+        } else {
+            let value = cql_value_from_napi_value(&typ, arr, i.try_into().unwrap())?;
+            res.push(Some(value));
         }
     }
 
-    #[napi]
-    pub fn from_bigint(val: BigInt) -> napi::Result<QueryParameterWrapper> {
-        Ok(QueryParameterWrapper {
-            parameter: CqlValue::BigInt(bigint_to_i64(val, "Cannot fit value in CqlBigInt")?),
-        })
-    }
-
-    #[napi]
-    pub fn from_boolean(val: bool) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Boolean(val),
-        }
-    }
-
-    #[napi]
-    pub fn from_blob(val: Buffer) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Blob(val.to_vec()),
-        }
-    }
-
-    #[napi]
-    pub fn from_counter(val: BigInt) -> napi::Result<QueryParameterWrapper> {
-        Ok(QueryParameterWrapper {
-            parameter: CqlValue::Counter(Counter(bigint_to_i64(
-                val,
-                "Value casted into counter type shouldn't overflow i64",
-            )?)),
-        })
-    }
-
-    #[napi]
-    pub fn from_local_date(val: &LocalDateWrapper) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Date(val.get_cql_date()),
-        }
-    }
-
-    #[napi]
-    pub fn from_double(val: f64) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Double(val),
-        }
-    }
-
-    #[napi]
-    pub fn from_duration(val: &DurationWrapper) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Duration(val.get_cql_duration()),
-        }
-    }
-
-    #[napi]
-    pub fn from_float(val: f64) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Float(val as f32),
-        }
-    }
-
-    #[napi]
-    pub fn from_int(val: i32) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Int(val),
-        }
-    }
-
-    #[napi]
-    pub fn from_text(val: String) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Text(val),
-        }
-    }
-
-    #[napi]
-    pub fn from_timestamp(val: BigInt) -> napi::Result<QueryParameterWrapper> {
-        Ok(QueryParameterWrapper {
-            parameter: CqlValue::Timestamp(CqlTimestamp(bigint_to_i64(
-                val,
-                "timestamp cannot overflow i64",
-            )?)),
-        })
-    }
-
-    #[napi]
-    pub fn from_inet(val: &InetAddressWrapper) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Inet(val.get_ip_addr()),
-        }
-    }
-
-    #[napi]
-    pub fn from_list(val: Vec<&QueryParameterWrapper>) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::List(val.iter().map(|f| f.parameter.clone()).collect()),
-        }
-    }
-
-    #[napi]
-    pub fn from_set(val: Vec<&QueryParameterWrapper>) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Set(val.iter().map(|f| f.parameter.clone()).collect()),
-        }
-    }
-
-    #[napi]
-    pub fn from_map(
-        val: Vec<(&QueryParameterWrapper, &QueryParameterWrapper)>,
-    ) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Map(
-                val.iter()
-                    .map(|f| (f.0.parameter.clone(), f.1.parameter.clone()))
-                    .collect(),
-            ),
-        }
-    }
-
-    #[napi]
-    pub fn from_small_int(val: i32) -> napi::Result<QueryParameterWrapper> {
-        Ok(QueryParameterWrapper {
-            parameter: CqlValue::SmallInt(
-                val.try_into()
-                    .map_err(|_| js_error("Value must fit in i16 type to be small int"))?,
-            ),
-        })
-    }
-
-    #[napi]
-    pub fn from_local_time(val: &LocalTimeWrapper) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Time(val.get_cql_time()),
-        }
-    }
-
-    #[napi]
-    pub fn from_tiny_int(val: i32) -> napi::Result<QueryParameterWrapper> {
-        Ok(QueryParameterWrapper {
-            parameter: CqlValue::TinyInt(
-                val.try_into()
-                    .map_err(|_| js_error("Value must fit in i16 type to be small int"))?,
-            ),
-        })
-    }
-
-    #[napi]
-    pub fn from_uuid(val: &UuidWrapper) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Uuid(val.get_cql_uuid()),
-        }
-    }
-
-    #[napi]
-    pub fn from_tuple(val: Vec<Option<&QueryParameterWrapper>>) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Tuple(
-                val.iter().map(|f| f.map(|e| e.parameter.clone())).collect(),
-            ),
-        }
-    }
-
-    #[napi]
-    pub fn from_time_uuid(val: &UuidWrapper) -> QueryParameterWrapper {
-        QueryParameterWrapper {
-            parameter: CqlValue::Timeuuid(CqlTimeuuid::from_bytes(val.get_cql_uuid().into_bytes())),
-        }
-    }
+    Ok(res)
 }
 
-impl MaybeUnsetQueryParameterWrapper {
-    /// Takes vector of QueryParameterWrapper references and turns it into vector of CqlValue
-    pub(crate) fn extract_parameters(
-        row: Vec<Option<&MaybeUnsetQueryParameterWrapper>>,
-    ) -> Vec<Option<MaybeUnset<CqlValue>>> {
-        row.iter()
-            .map(|e| e.as_ref().map(|v| v.parameter.clone()))
-            .collect()
+/// Convert element at pos position in elem Array into CqlValue, based on the provided type
+fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi::Result<CqlValue> {
+    macro_rules! get_element {
+        ($statement_type: ty) => {
+            elem.get::<$statement_type>(pos)?.ok_or(napi::Error::new(
+                Status::InvalidArg,
+                "Unexpected data when parsing parameters row".to_owned(),
+            ))?
+        };
     }
+    let value: CqlValue = match typ.base_type {
+        CqlType::Ascii => CqlValue::Ascii(get_element!(String)),
+        CqlType::Boolean => CqlValue::Boolean(get_element!(bool)),
+        CqlType::Blob => CqlValue::Blob(get_element!(Buffer).to_vec()),
+        CqlType::Counter => CqlValue::Counter(Counter(bigint_to_i64(
+            get_element!(BigInt),
+            "Value cast into counter type shouldn't overflow i64",
+        )?)),
+        CqlType::Decimal => todo!(),
+        CqlType::Date => CqlValue::Date(get_element!(&LocalDateWrapper).get_cql_date()),
+        CqlType::Double => CqlValue::Double(get_element!(f64)),
+        CqlType::Duration => CqlValue::Duration(get_element!(&DurationWrapper).get_cql_duration()),
+        CqlType::Float => CqlValue::Float(get_element!(f64) as f32),
+        CqlType::Int => CqlValue::Int(get_element!(i32)),
+        CqlType::BigInt => CqlValue::BigInt(bigint_to_i64(
+            get_element!(BigInt),
+            "Cannot fit value in CqlBigInt",
+        )?),
+        CqlType::Text => CqlValue::Text(get_element!(String)),
+        CqlType::Timestamp => CqlValue::Timestamp(CqlTimestamp(bigint_to_i64(
+            get_element!(BigInt),
+            "timestamp cannot overflow i64",
+        )?)),
+        CqlType::Inet => CqlValue::Inet(get_element!(&InetAddressWrapper).get_ip_addr()),
+        CqlType::List => CqlValue::List(cql_value_vec_from_array(
+            typ.support_type_1
+                .as_ref()
+                .expect("Expected support type for list"),
+            &get_element!(Array),
+        )?),
+        CqlType::Map => CqlValue::Map(cql_value_vec_from_map(typ, &get_element!(Array))?),
+        CqlType::Set => CqlValue::Set(cql_value_vec_from_array(
+            typ.support_type_1
+                .as_ref()
+                .expect("Expected support type for list"),
+            &get_element!(Array),
+        )?),
+        CqlType::UserDefinedType => todo!(),
+        CqlType::SmallInt => CqlValue::SmallInt(
+            get_element!(i32)
+                .try_into()
+                .map_err(|_| js_error("Value must fit in i16 type to be small int"))?,
+        ),
+        CqlType::TinyInt => CqlValue::TinyInt(
+            get_element!(i32)
+                .try_into()
+                .map_err(|_| js_error("Value must fit in i8 type to be tiny int"))?,
+        ),
+        CqlType::Time => CqlValue::Time(get_element!(&LocalTimeWrapper).get_cql_time()),
+        CqlType::Timeuuid => CqlValue::Timeuuid(CqlTimeuuid::from_bytes(
+            get_element!(&UuidWrapper).get_cql_uuid().into_bytes(),
+        )),
+        CqlType::Tuple => CqlValue::Tuple(cql_value_vec_from_tuple(typ, &get_element!(Array))?),
+        CqlType::Uuid => CqlValue::Uuid(get_element!(&UuidWrapper).get_cql_uuid()),
+        CqlType::Varint => todo!(),
+        CqlType::Unprovided => return Err(js_error("Expected type information for the value")),
+        CqlType::Empty => unreachable!("Should not receive Empty type here."),
+        CqlType::Custom => unreachable!("Should not receive Custom type here."),
+    };
+    Ok(value)
 }
 
-#[napi]
-impl MaybeUnsetQueryParameterWrapper {
-    #[napi]
-    pub fn from_non_null_non_unset_value(
-        val: &QueryParameterWrapper,
-    ) -> MaybeUnsetQueryParameterWrapper {
-        MaybeUnsetQueryParameterWrapper {
-            parameter: MaybeUnset::Set(val.parameter.clone()),
-        }
-    }
+impl FromNapiValue for ParameterWrapper {
+    /// # Safety
+    ///
+    /// Valid pointer to napi env must be provided
+    unsafe fn from_napi_value(
+        env: napi::sys::napi_env,
+        napi_val: napi::sys::napi_value,
+    ) -> napi::Result<Self> {
+        let parsing_error = || {
+            napi::Error::new(
+                Status::InvalidArg,
+                "Unexpected data when parsing parameters row".to_owned(),
+            )
+        };
 
-    #[napi]
-    pub fn unset() -> MaybeUnsetQueryParameterWrapper {
-        MaybeUnsetQueryParameterWrapper {
-            parameter: MaybeUnset::Unset,
-        }
+        // Caller of this function ensures a valid pointer to napi env is provided
+        let elem = unsafe { Array::from_napi_value(env, napi_val)? };
+        // If we received:
+        //   - 0 element array - null value was provided
+        //   - 1 element array - unset value was provided
+        //   - 2 element array - [type, value] was provided
+        let val = match elem.len() {
+            0 => None,
+            1 => Some(MaybeUnset::Unset),
+            2 => {
+                let typ = elem.get::<&ComplexType>(0)?.ok_or_else(parsing_error)?;
+                Some(MaybeUnset::Set(cql_value_from_napi_value(typ, &elem, 1)?))
+            }
+            _ => {
+                return Err(parsing_error());
+            }
+        };
+
+        Ok(ParameterWrapper { row: val })
     }
 }
