@@ -1,12 +1,14 @@
 use scylla::client::session::Session;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::client::SelfIdentity;
+use scylla::response::PagingState;
 use scylla::statement::batch::Batch;
 use scylla::statement::prepared::PreparedStatement;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
 use scylla::value::{CqlValue, MaybeUnset};
 
 use crate::options;
+use crate::paging::{PagingResult, PagingStateWrapper};
 use crate::requests::parameter_wrappers::MaybeUnsetQueryParameterWrapper;
 use crate::requests::request::QueryOptionsWrapper;
 use crate::utils::{bigint_to_i64, js_error};
@@ -147,6 +149,73 @@ impl SessionWrapper {
                 .map_err(err_to_napi)?,
         )
     }
+
+    /// Query a single page of a prepared statement
+    ///
+    /// For the first page, paging state is not required.
+    /// For the following pages you need to provide page state
+    /// received from the previous page
+    ///
+    /// Currently it clones each argument on each call -- quite inefficient
+    #[napi]
+    pub async fn query_single_page(
+        &self,
+        query: String,
+        params: Vec<Option<&MaybeUnsetQueryParameterWrapper>>,
+        options: &QueryOptionsWrapper,
+        paging_state: Option<&PagingStateWrapper>,
+    ) -> napi::Result<PagingResult> {
+        let statement: Statement = apply_statement_options(query.into(), options)?;
+        let paging_state = paging_state
+            .map(|e| e.inner.clone())
+            .unwrap_or(PagingState::start());
+        let values: Vec<Option<MaybeUnset<CqlValue>>> =
+            MaybeUnsetQueryParameterWrapper::extract_parameters(params);
+
+        let (result, paging_state_response) = self
+            .inner
+            .query_single_page(statement, values, paging_state)
+            .await
+            .map_err(err_to_napi)?;
+
+        Ok(PagingResult {
+            result: QueryResultWrapper::from_query(result)?,
+            paging_state: paging_state_response.into(),
+        })
+    }
+
+    /// Execute a single page of a prepared statement
+    ///
+    /// For the first page, paging state is not required.
+    /// For the following pages you need to provide page state
+    /// received from the previous page
+    ///
+    /// Currently it clones each argument on each call -- quite infective
+    #[napi]
+    pub async fn execute_single_page(
+        &self,
+        query: &PreparedStatementWrapper,
+        params: Vec<Option<&MaybeUnsetQueryParameterWrapper>>,
+        options: &QueryOptionsWrapper,
+        paging_state: Option<&PagingStateWrapper>,
+    ) -> napi::Result<PagingResult> {
+        let paging_state = paging_state
+            .map(|e| e.inner.clone())
+            .unwrap_or(PagingState::start());
+        let values: Vec<Option<MaybeUnset<CqlValue>>> =
+            MaybeUnsetQueryParameterWrapper::extract_parameters(params);
+        let prepared = apply_prepared_options(query.prepared.clone(), options)?;
+
+        let (result, paging_state) = self
+            .inner
+            .execute_single_page(&prepared, values, paging_state)
+            .await
+            .map_err(err_to_napi)?;
+        Ok(PagingResult {
+            result: QueryResultWrapper::from_query(result)?,
+            paging_state: paging_state.into(),
+        })
+    }
 }
 
 /// Creates object representing a prepared batch of statements.
@@ -251,8 +320,31 @@ macro_rules! make_apply_options {
     };
 }
 
-make_apply_options!(Statement, apply_statement_options);
-make_apply_options!(PreparedStatement, apply_prepared_options);
+/// Macro to allow applying options that can be used for queries other than batch
+macro_rules! make_non_batch_apply_options {
+    ($statement_type: ty, $fn_name: ident, $partial_name: ident) => {
+        make_apply_options!($statement_type, $partial_name);
+        fn $fn_name(
+            statement: $statement_type,
+            options: &QueryOptionsWrapper,
+        ) -> napi::Result<$statement_type> {
+            // Statement with partial options applied -
+            // those that are common with batch queries
+            let mut statement_with_part_of_options_applied = $partial_name(statement, options)?;
+            if let Some(o) = options.fetch_size {
+                statement_with_part_of_options_applied.set_page_size(o);
+            }
+            Ok(statement_with_part_of_options_applied)
+        }
+    };
+}
+
+make_non_batch_apply_options!(Statement, apply_statement_options, statement_opt_partial);
+make_non_batch_apply_options!(
+    PreparedStatement,
+    apply_prepared_options,
+    prepared_opt_partial
+);
 make_apply_options!(Batch, apply_batch_options);
 
 /// Provides driver self identity, filling information on application based on session options.

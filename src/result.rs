@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     types::{
         local_date::LocalDateWrapper,
@@ -39,6 +41,12 @@ pub struct QueryResultWrapper {
 #[napi]
 pub struct RowWrapper {
     inner: Vec<Option<CqlValue>>,
+}
+
+#[napi]
+pub struct PagedRowWrapper {
+    pub(crate) inner: Vec<Option<CqlValue>>,
+    pub(crate) names: Arc<Vec<String>>,
 }
 
 /// Wrapper for a single CQL value
@@ -153,6 +161,33 @@ impl QueryResultWrapper {
 impl RowWrapper {
     #[napi]
     /// Get the CQL value wrappers for each column in the given row
+    pub fn get_columns(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
+        let s: Vec<Option<CqlValueWrapper>> = self
+            .inner
+            .iter()
+            .map(|f| f.clone().map(|f| CqlValueWrapper { inner: f }))
+            .collect();
+        Ok(s)
+    }
+}
+
+impl From<Row> for RowWrapper {
+    fn from(value: Row) -> Self {
+        RowWrapper {
+            inner: value.columns,
+        }
+    }
+}
+
+#[napi]
+impl PagedRowWrapper {
+    #[napi]
+    pub fn get_columns_names(&self) -> Vec<String> {
+        (*self.names).clone()
+    }
+
+    /// Get the CQL value wrappers for each column in the given row
+    #[napi]
     pub fn get_columns(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
         let s: Vec<Option<CqlValueWrapper>> = self
             .inner
