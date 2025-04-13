@@ -11,7 +11,6 @@ use crate::{
         local_date::LocalDateWrapper,
         local_time::LocalTimeWrapper,
         type_wrappers::{ComplexType, CqlType},
-        uuid::UuidWrapper,
     },
     utils::{bigint_to_i64, js_error},
 };
@@ -133,10 +132,18 @@ unsafe fn cql_value_from_napi_value(
         ),
         CqlType::Time => CqlValue::Time(get_element!(&LocalTimeWrapper).get_cql_time()),
         CqlType::Timeuuid => CqlValue::Timeuuid(CqlTimeuuid::from_bytes(
-            get_element!(&UuidWrapper).get_cql_uuid().into_bytes(),
+            get_element!(Buffer)
+                .to_vec()
+                .try_into()
+                .map_err(|_| parsing_error())?,
         )),
         CqlType::Tuple => todo!(),
-        CqlType::Uuid => CqlValue::Uuid(get_element!(&UuidWrapper).get_cql_uuid()),
+        CqlType::Uuid => CqlValue::Uuid(
+            get_element!(Buffer)
+                .to_vec()
+                .try_into()
+                .map_err(|_| parsing_error())?,
+        ),
         CqlType::Varint => todo!(),
         CqlType::Custom => unreachable!("Should not receive Custom type here"),
         _ => todo!(),
