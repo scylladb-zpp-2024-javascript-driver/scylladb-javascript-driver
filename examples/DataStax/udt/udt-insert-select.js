@@ -4,6 +4,8 @@ const { getClientArgs } = require("../util");
 
 const client = new cassandra.Client(getClientArgs());
 
+const uniqueName = `The Rolling Stones ${Date.now()}-${Math.random()}`; // Unique primary key
+
 /**
  * Creates a table with a user-defined type, inserts a row and selects a row.
  */
@@ -12,7 +14,7 @@ client
     .then(function () {
         const query =
             "CREATE KEYSPACE IF NOT EXISTS examples WITH replication =" +
-            "{'class': 'SimpleStrategy', 'replication_factor': '1' }";
+            "{'class': 'NetworkTopologyStrategy', 'replication_factor': '1' }";
         return client.execute(query);
     })
     .then(function () {
@@ -38,19 +40,19 @@ client
         };
         const query =
             "INSERT INTO examples.udt_tbl1 (name, address) VALUES (?, ?)";
-        return client.execute(query, ["The Rolling Stones", address], {
+        return client.execute(query, [uniqueName, address], {
             prepare: true,
         });
     })
     .then(function () {
         const query =
             "SELECT name, address FROM examples.udt_tbl1 WHERE name = ?";
-        return client.execute(query, ["The Rolling Stones"], { prepare: true });
+        return client.execute(query, [uniqueName], { prepare: true });
     })
     .then(function (result) {
         const row = result.first();
-        console.log("Retrieved row: %j", row);
+        console.log(`Retrieved row: ${row}`);
     })
     .catch(function (err) {
-        console.error("There was an error", err);
+        console.error(`There was an error ${err}`);
     });
