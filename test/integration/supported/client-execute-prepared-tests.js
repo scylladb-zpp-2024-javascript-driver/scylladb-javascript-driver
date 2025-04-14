@@ -1409,7 +1409,7 @@ describe("Client @SERVER_API", function () {
 
         // No support for udt and tuples
         // TODO: fix this test
-        /* describe("with udt and tuple", function () {
+        describe("with udt and tuple", function () {
             before(function (done) {
                 const client = setupInfo.client;
                 utils.series(
@@ -1655,7 +1655,7 @@ describe("Client @SERVER_API", function () {
                         });
                 },
             );
-        }); */
+        });
 
         describe("with smallint and tinyint types", function () {
             const insertQuery =
