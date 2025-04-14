@@ -1,6 +1,6 @@
 "use strict";
 const cassandra = require("scylladb-javascript-driver");
-const { getClientArgs } = require("../util");
+const { getClientArgs } = require("../DataStax/util");
 
 const client = new cassandra.Client(getClientArgs());
 
@@ -18,7 +18,7 @@ client
     .then(function () {
         const query =
             "CREATE TABLE IF NOT EXISTS examples.tuple_forex " +
-            "(name text, time timeuuid, currencies frozen<tuple<text, text>>, value decimal, PRIMARY KEY (name, time))";
+            "(name text, time timeuuid, currencies frozen<tuple<text, text>>, PRIMARY KEY (name, time))";
         return client.execute(query);
     })
     .then(function () {
@@ -26,27 +26,19 @@ client
         // Create a new instance of a Tuple
         const currencies = new cassandra.types.Tuple("USD", "EUR");
         const query =
-            "INSERT INTO examples.tuple_forex (name, time, currencies, value)  VALUES (?, ?, ?, ?)";
-        const params = [
-            "market1",
-            cassandra.types.TimeUuid.now(),
-            currencies,
-            new cassandra.types.BigDecimal(11, 1),
-        ];
+            "INSERT INTO examples.tuple_forex (name, time, currencies)  VALUES (?, ?, ?)";
+        const params = ["market1", cassandra.types.TimeUuid.now(), currencies];
         return client.execute(query, params, { prepare: true });
     })
     .then(function () {
         const query =
-            "SELECT name, time, currencies, value FROM examples.tuple_forex where name = ?";
+            "SELECT name, time, currencies, FROM examples.tuple_forex where name = ?";
         return client.execute(query, ["market1"], { prepare: true });
     })
     .then(function (result) {
         const row = result.first();
         console.log(
-            "%s to %s: %s",
-            row["currencies"].get(0),
-            row["currencies"].get(1),
-            row["value"],
+            `${row["currencies"].get(0)} to ${row["currencies"].get(1)}`,
         );
     })
     .catch(function (err) {
