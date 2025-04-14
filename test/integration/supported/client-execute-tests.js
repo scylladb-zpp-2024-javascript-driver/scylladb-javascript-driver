@@ -1135,9 +1135,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // No support for udt and tuples
-        // TODO: Fix this test
-        /* describe("with udt and tuple", function () {
+        describe("with udt and tuple", function () {
             const sampleId = types.Uuid.random();
             const insertQuery =
                 "INSERT INTO tbl_udts (id, phone_col, address_col) VALUES (%s, %s, %s)";
@@ -1303,7 +1301,8 @@ describe("Client @SERVER_API", function () {
                     },
                 );
             });
-            vit(
+            // TODO: Add type guessing for UDT and Tuple
+            /* vit(
                 "2.1",
                 "should allow udt parameter hints and retrieve metadata",
                 function (done) {
@@ -1453,7 +1452,7 @@ describe("Client @SERVER_API", function () {
                     ],
                     done,
                 );
-            });
+            }); */
             vit("2.2", "should allow insertions as json", function (done) {
                 const client = setupInfo.client;
                 const o = {
@@ -1495,7 +1494,7 @@ describe("Client @SERVER_API", function () {
                     done,
                 );
             });
-        }); */
+        });
 
         // No support for named parameters
         // TODO: Fix this test
