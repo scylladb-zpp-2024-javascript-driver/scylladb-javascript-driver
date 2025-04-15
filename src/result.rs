@@ -245,7 +245,7 @@ impl CqlValueWrapper {
             CqlValue::TinyInt(_) => CqlType::TinyInt,
             CqlValue::Time(_) => CqlType::Time,
             CqlValue::Timeuuid(_) => CqlType::Timeuuid,
-            CqlValue::Tuple(_) => CqlType::Tuple, // NOI
+            CqlValue::Tuple(_) => CqlType::Tuple,
             CqlValue::Uuid(_) => CqlType::Uuid,
             CqlValue::Varint(_) => CqlType::Varint, // NOI
             other => unimplemented!("Missing implementation for CQL value {:?}", other),
@@ -435,6 +435,17 @@ impl CqlValueWrapper {
     }
 
     #[napi]
+    pub fn get_tuple(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
+        match &self.inner {
+            CqlValue::Tuple(r) => Ok(r
+                .iter()
+                .map(|v| v.as_ref().map(|e| CqlValueWrapper { inner: e.clone() }))
+                .collect()),
+            _ => Err(Self::generic_error("tuple")),
+        }
+    }
+
+    #[napi]
     pub fn get_uuid(&self) -> napi::Result<UuidWrapper> {
         match self.inner.as_uuid() {
             Some(r) => Ok(UuidWrapper::from_cql_uuid(r)),
@@ -487,7 +498,7 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
         },
         ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
-        ColumnType::Tuple(_) => ComplexType::simple_type(CqlType::Tuple),
+        ColumnType::Tuple(t) => ComplexType::from_tuple(t.as_slice()),
         ColumnType::Vector {
             typ: _,
             dimensions: _,
