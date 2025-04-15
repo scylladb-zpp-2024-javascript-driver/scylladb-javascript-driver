@@ -1,3 +1,6 @@
+use crate::result::map_column_type_to_complex_type;
+use scylla::frame::response::result::ColumnType;
+
 #[napi]
 pub enum CqlType {
     Ascii,
@@ -38,6 +41,7 @@ pub struct ComplexType {
     pub base_type: CqlType,
     pub(crate) support_type_1: Option<Box<ComplexType>>,
     pub(crate) support_type_2: Option<Box<ComplexType>>,
+    pub(crate) inner_types: Vec<ComplexType>, // Used by Tuple and UDT
 }
 
 #[napi]
@@ -46,9 +50,16 @@ impl ComplexType {
     pub fn get_first_support_type(&self) -> Option<ComplexType> {
         self.support_type_1.as_ref().map(|f| *f.clone())
     }
+
     #[napi]
     pub fn get_second_support_type(&self) -> Option<ComplexType> {
         self.support_type_2.as_ref().map(|f| *f.clone())
+    }
+
+    #[napi]
+    pub fn get_inner_types(&self) -> Vec<ComplexType> {
+        // Batch query to NAPI minimizes number of calls
+        self.inner_types.clone()
     }
 }
 
@@ -73,6 +84,19 @@ impl ComplexType {
             base_type,
             support_type_1: support1.map(Box::new),
             support_type_2: support2.map(Box::new),
+            inner_types: vec![],
+        }
+    }
+
+    pub(crate) fn from_tuple(columns: &[ColumnType]) -> Self {
+        ComplexType {
+            base_type: CqlType::Tuple,
+            support_type_1: None,
+            support_type_2: None,
+            inner_types: columns
+                .iter()
+                .map(|column| map_column_type_to_complex_type(column))
+                .collect(),
         }
     }
 }
