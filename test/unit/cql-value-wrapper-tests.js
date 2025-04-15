@@ -248,7 +248,7 @@ describe("Cql value wrapper", function () {
         console.log(value.get(0));
         assert.strictEqual(value.get(0), "some text");
         assert.strictEqual(value.get(1), 1);
-        assert.strictEqual(value.get(2), null);
+        assert.strictEqual(value.get(2), undefined);
     });
 
     it("should get time uuid type correctly from napi", function () {

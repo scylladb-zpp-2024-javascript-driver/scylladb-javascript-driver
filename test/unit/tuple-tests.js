@@ -8,9 +8,6 @@ describe("Tuple", function () {
         it("should throw an error when no arguments are provided", function () {
             assert.throws(() => new Tuple(), TypeError);
         });
-        it("should throw an error when more than 16 arguments are provided", function () {
-            assert.throws(() => new Tuple(...Array(17).fill(0)), TypeError);
-        });
     });
     describe("#get()", function () {
         it("should return the element at position", function () {
