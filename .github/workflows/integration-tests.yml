@@ -6,13 +6,15 @@ env:
   APP_NAME: scylladb-javascript-driver
   RUST_BACKTRACE: full
   PEDANTIC: true
-  NO_CONCURRENCY: true
 "on":
   push:
     branches:
       - "**"
 jobs:
   build-and-run-tests:
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -21,52 +23,67 @@ jobs:
             target: x86_64-unknown-linux-gnu
             build: npm run build -- --target x86_64-unknown-linux-gnu
     name: Build and run integration tests - ${{ matrix.settings.target }} - node@20
-    runs-on: ${{ matrix.settings.host }}
+    runs-on: benchmarks-only
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # - uses: actions/checkout@v4
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.13' 
+      # - uses: actions/setup-java@v4
+      #   with:
+      #     distribution: 'temurin'
+      #     java-version: '8'        
+      # - name: Setup node
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: 22
+      #     cache: npm
+      # - name: Install
+      #   uses: dtolnay/rust-toolchain@nightly
+      #   with:
+      #     toolchain: nightly
+      #     targets: ${{ matrix.settings.target }}
+      # - name: Cache cargo
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       ~/.cargo/registry/index/
+      #       ~/.cargo/registry/cache/
+      #       ~/.cargo/git/db/
+      #       ~/.napi-rs
+      #       .cargo-cache
+      #       target/
+      #     key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
+      # - name: Install dependencies
+      #   run: npm i
+      # - name: Install ccm and get simulacron
+      #   # The tool used by unit tests to setup database https://github.com/riptano/ccm
+      #   run: |
+      #     wget https://github.com/datastax/simulacron/releases/download/0.12.0/simulacron-standalone-0.12.0.jar -O ~/simulacron.jar
+      #     pip install psutil
+      #     sudo pip install --upgrade psutil
+      #     git clone https://github.com/scylladb/scylla-ccm.git --depth 1
+      #     cd scylla-ccm
+      #     sudo ./setup.py install
+      #     sudo apt install valgrind
+      # - name: Build
+      #   run: ${{ matrix.settings.build }}
+      #   shell: bash
+      # - name: Prepare gdb
+      #   run: |
+      #     sudo apt install gdb
+      #     wget https://github.com/pwndbg/pwndbg/releases/download/2025.02.19/pwndbg_2025.02.19_amd64.deb
+      #     sudo apt install ./pwndbg_2025.02.19_amd64.deb
+      #     chmod +x ./vg.sh
+      #     chmod +x ./pwngdb.sh
+      # - name: Run integration tests
+        # run: bash ./vg.sh
+        # run: npm run integration
+      - name: Breakpoint if tests failed
+      #   if: failure()
+        uses: namespacelabs/breakpoint-action@v0
         with:
-          python-version: '3.13' 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '8'        
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - name: Install
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: ${{ matrix.settings.target }}
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/.napi-rs
-            .cargo-cache
-            target/
-          key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
-      - name: Install dependencies
-        run: npm i
-      - name: Install ccm and get simulacron
-        # The tool used by unit tests to setup database https://github.com/riptano/ccm
-        run: |
-          wget https://github.com/datastax/simulacron/releases/download/0.12.0/simulacron-standalone-0.12.0.jar -O ~/simulacron.jar
-          pip install psutil
-          sudo pip install --upgrade psutil
-          git clone https://github.com/scylladb/scylla-ccm.git --depth 1
-          cd scylla-ccm
-          sudo ./setup.py install
-      - name: Build
-        run: ${{ matrix.settings.build }}
-        shell: bash
-      - name: Run integration tests
-        run: npm run integration
+          duration: 90m
+          authorized-users: adespawn
           
