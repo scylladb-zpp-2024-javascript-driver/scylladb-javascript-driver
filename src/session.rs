@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::client::SelfIdentity;
@@ -6,12 +8,13 @@ use scylla::statement::batch::Batch;
 use scylla::statement::prepared::PreparedStatement;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
 use scylla::value::{CqlValue, MaybeUnset};
+use tokio::task::JoinSet;
 
-use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
 use crate::requests::parameter_wrappers::MaybeUnsetQueryParameterWrapper;
 use crate::requests::request::QueryOptionsWrapper;
 use crate::utils::{bigint_to_i64, js_error};
+use crate::options;
 use crate::{
     requests::request::PreparedStatementWrapper, result::QueryResultWrapper, utils::err_to_napi,
 };
@@ -36,7 +39,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    inner: CachingSession,
+    inner: Arc<CachingSession>,
 }
 
 #[napi]
@@ -67,7 +70,9 @@ impl SessionWrapper {
             session,
             options.cache_size.unwrap_or(DEFAULT_CACHE_SIZE) as usize,
         );
-        Ok(SessionWrapper { inner: session })
+        Ok(SessionWrapper {
+            inner: session.into(),
+        })
     }
 
     /// Returns the name of the current keyspace
@@ -119,6 +124,34 @@ impl SessionWrapper {
                 .await
                 .map_err(err_to_napi)?,
         })
+    }
+
+    #[napi]
+    pub async fn prepare_multiple(
+        &self,
+        statements: Vec<String>,
+    ) -> napi::Result<Vec<PreparedStatementWrapper>> {
+        let mut set = JoinSet::new();
+        let mut i = 0;
+        for e in statements {
+            let x = e.into();
+            let w = self.inner.clone();
+            set.spawn(async move { (w.add_prepared_statement(&x).await, i) });
+            i += 1;
+        }
+
+        let mut res: Vec<Option<PreparedStatementWrapper>> = Vec::new();
+        res.resize(i, None);
+        while let Some(task_result) = set.join_next().await {
+            let (prepared, index) = task_result.unwrap();
+            let prepared = prepared.map_err(err_to_napi)?;
+            res[index] = Some(PreparedStatementWrapper { prepared });
+        }
+        let res: Vec<PreparedStatementWrapper> = res.into_iter().flatten().collect();
+        if res.len() != i {
+            return Err(js_error("Some queries were not prepared"));
+        }
+        Ok(res)
     }
 
     /// Execute a given prepared statement against the database with provided parameters.
