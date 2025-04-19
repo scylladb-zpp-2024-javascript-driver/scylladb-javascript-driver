@@ -42,8 +42,6 @@ describe("Client", function () {
             return client.connect();
         });
 
-        after(() => client.shutdown());
-
         it("should send request to host used in options", (done) => {
             utils.times(
                 10,
@@ -161,8 +159,6 @@ describe("Client", function () {
         });
 
         afterEach(() => simulacronCluster.resumeReadsAsync());
-
-        after(() => client.shutdown());
 
         context("when connections are paused", () => {
             const query = "INSERT INTO table1 (id) VALUES (?)";

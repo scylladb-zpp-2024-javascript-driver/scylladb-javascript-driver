@@ -29,16 +29,12 @@ async function example() {
         x.toString(),
     ]);
 
-    try {
-        const query = "INSERT INTO tbl_sample_kv (id, value) VALUES (?, ?)";
-        await executeConcurrent(client, query, values);
+    const query = "INSERT INTO tbl_sample_kv (id, value) VALUES (?, ?)";
+    await executeConcurrent(client, query, values);
 
-        console.log(
-            `Finished executing ${values.length} queries with a concurrency level of ${concurrencyLevel}.`,
-        );
-    } finally {
-        await client.shutdown();
-    }
+    console.log(
+        `Finished executing ${values.length} queries with a concurrency level of ${concurrencyLevel}.`,
+    );
 }
 
 example();

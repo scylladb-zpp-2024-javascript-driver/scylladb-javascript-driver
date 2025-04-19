@@ -1,7 +1,6 @@
 "use strict";
 
 const { assert } = require("chai");
-const sinon = require("sinon");
 const util = require("util");
 const path = require("path");
 const policies = require("../lib/policies");
@@ -12,9 +11,7 @@ const childProcessExec = require("child_process").exec;
 const http = require("http");
 const temp = require("temp").track(true);
 const Client = require("../lib/client");
-const defaultOptions = require("../lib/client-options").defaultOptions;
-const { Host, HostMap } = require("../lib/host");
-const OperationState = require("../lib/operation-state");
+const { HostMap } = require("../lib/host");
 const promiseUtils = require("../lib/promise-utils");
 
 util.inherits(RetryMultipleTimes, policies.retry.RetryPolicy);
@@ -391,17 +388,6 @@ const helper = {
     },
 
     /**
-     * Invokes client.shutdown() after this test finishes.
-     * @param {Client} client
-     * @returns {Client}
-     */
-    shutdownAfterThisTest: function (client) {
-        this.afterThisTest(() => client.shutdown());
-
-        return client;
-    },
-
-    /**
      * Returns a function that waits on schema agreement before executing callback
      * @param {Client} client
      * @param {Function} callback
@@ -412,13 +398,15 @@ const helper = {
             if (err) {
                 return callback(err);
             }
-            if (!client.hosts) {
+            // No support for client.hosts field
+            // TODO: Fix this
+            /* if (!client.hosts) {
                 throw new Error("No hosts on Client");
             }
             if (client.hosts.length === 1) {
                 return callback();
-            }
-            setTimeout(callback, 200 * client.hosts.length);
+            } */
+            setTimeout(callback, 200 /* * client.hosts.length */);
         };
     },
     /**
@@ -923,84 +911,6 @@ const helper = {
         pooling.coreConnectionsPerHost[types.distance.ignored] = 0;
         return pooling;
     },
-    getHostsMock: function (
-        hostsInfo,
-        prepareQueryCb,
-        sendStreamCb,
-        protocolVersion,
-    ) {
-        return hostsInfo.map(function (info, index) {
-            protocolVersion =
-                protocolVersion || types.protocolVersion.maxSupported;
-            const h = new Host(
-                index.toString(),
-                protocolVersion,
-                defaultOptions(),
-                {},
-            );
-            h.isUp = function () {
-                return !(info.isUp === false);
-            };
-            h.checkHealth = utils.noop;
-            h.log = utils.noop;
-            h.shouldBeIgnored = !!info.ignored;
-            h.prepareCalled = 0;
-            h.sendStreamCalled = 0;
-            h.connectionKeyspace = [];
-            h.borrowConnection = function () {
-                if (!h.isUp() || h.shouldBeIgnored) {
-                    throw new Error("This host should not be used");
-                }
-
-                return {
-                    protocolVersion: protocolVersion,
-                    keyspace: "ks",
-                    changeKeyspace: (keyspace) => {
-                        this.keyspace = keyspace;
-                        h.connectionKeyspace.push(keyspace);
-                        return Promise.resolve();
-                    },
-                    prepareOnce: function (q, ks, cb) {
-                        h.prepareCalled++;
-                        if (prepareQueryCb) {
-                            return prepareQueryCb(q, h, cb);
-                        }
-                        cb(null, { id: 1, meta: {} });
-                    },
-                    sendStream: function (r, o, cb) {
-                        h.sendStreamCalled++;
-                        if (sendStreamCb) {
-                            return sendStreamCb(r, h, cb);
-                        }
-                        const op = new OperationState(r, o, cb);
-                        setImmediate(function () {
-                            op.setResult(null, {});
-                        });
-                        return op;
-                    },
-                    prepareOnceAsync: function (q, ks) {
-                        return new Promise((resolve, reject) => {
-                            h.prepareCalled++;
-
-                            if (prepareQueryCb) {
-                                return prepareQueryCb(q, h, (err, result) => {
-                                    if (err) {
-                                        reject(err);
-                                    } else {
-                                        resolve(result);
-                                    }
-                                });
-                            }
-
-                            resolve({ id: 1, meta: {} });
-                        });
-                    },
-                };
-            };
-
-            return sinon.spy(h);
-        });
-    },
     getLoadBalancingPolicyFake: function getLoadBalancingPolicyFake(
         hostsInfo,
         prepareQueryCb,
@@ -1028,20 +938,7 @@ const helper = {
             getDistance: function () {
                 return types.distance.local;
             },
-
-            /**
-             * Shutdowns the hosts and invoke the optional callback.
-             */
-            shutdown: function (cb) {
-                hosts.forEach((h) => h.shutdown(false));
-
-                if (cb) {
-                    cb();
-                }
-            },
         };
-
-        helper.afterThisTest(() => fake.shutdown());
 
         return fake;
     },
@@ -1635,59 +1532,6 @@ helper.ads.start = function (cb) {
             cb(err);
         });
     });
-};
-
-/**
- * Invokes a klist to list the current registered tickets and their expiration if trace is enabled.
- *
- * This is really only useful for debugging.
- *
- * @param {Function} cb Callback to invoke on completion.
- */
-helper.ads.listTickets = function (cb) {
-    this._exec("klist", [], cb);
-};
-
-/**
- * Acquires a ticket for the given username and its principal.
- * @param {String} username Username to acquire ticket for (i.e. cassandra).
- * @param {String} principal Principal to acquire ticket for (i.e. cassandra@DATASTAX.COM).
- * @param {Function} cb Callback to invoke on completion.
- */
-helper.ads.acquireTicket = function (username, principal, cb) {
-    helper.trace("Acquiring ticket");
-    const keytab = this.getKeytabPath(username);
-
-    // Use ktutil on windows, kinit otherwise.
-    const processName = "kinit";
-    const params = ["-t", keytab, "-k", principal];
-    if (process.platform.indexOf("win") === 0) {
-        // Not really sure what to do here yet...
-    }
-
-    this._exec(processName, params, cb);
-};
-
-/**
- * Destroys all tickets for the given principal.
- * @param {String} principal Principal for whom its tickets will be destroyed (i.e. dse/127.0.0.1@DATASTAX.COM).
- * @param {Function} cb Callback to invoke on completion.
- */
-helper.ads.destroyTicket = function (principal, cb) {
-    if (typeof principal === "function") {
-        // noinspection JSValidateTypes
-        cb = principal;
-        principal = null;
-    }
-
-    // Use ktutil on windows, kdestroy otherwise.
-    const processName = "kdestroy";
-    const params = [];
-    if (process.platform.indexOf("win") === 0) {
-        // Not really sure what to do here yet...
-    }
-
-    this._exec(processName, params, cb);
 };
 
 helper.ads._exec = function (processName, params, callback) {
