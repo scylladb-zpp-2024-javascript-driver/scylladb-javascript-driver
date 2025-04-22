@@ -116,3 +116,21 @@ pub fn tests_from_value(test: String, value: ParameterWrapper) {
         v
     );
 }
+
+#[napi]
+pub fn tests_parameters_wrapper_unset(value: ParameterWrapper) {
+    match value.row {
+        Some(v) => match v {
+            scylla::value::MaybeUnset::Unset => (),
+            scylla::value::MaybeUnset::Set(_) => panic!("Expected unset value"),
+        },
+        None => panic!("Expected some value"),
+    }
+}
+
+#[napi]
+pub fn tests_parameters_wrapper_null(value: ParameterWrapper) {
+    if value.row.is_some() {
+        panic!("Expected none value")
+    }
+}
