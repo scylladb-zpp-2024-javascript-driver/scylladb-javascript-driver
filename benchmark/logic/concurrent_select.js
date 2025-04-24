@@ -52,7 +52,7 @@ async.series(
                 });
             }
             try {
-                const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, {prepare: true});
+                const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, {prepare: true, collectResults: true });
             } catch (err) {
                 return next(err);
             }
