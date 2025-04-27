@@ -1,4 +1,4 @@
-use scylla::value::CqlTime;
+use scylla::value::{CqlTime, CqlVarint};
 use std::{
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
@@ -35,6 +35,8 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
         "Time" => (CqlType::Time, None, None),
         "Timeuuid" => (CqlType::Timeuuid, None, None),
         "Uuid" => (CqlType::Uuid, None, None),
+        "Varint" => (CqlType::Varint, None, None),
+        "Varint - Integer" => (CqlType::Varint, None, None),
         _ => (CqlType::Empty, None, None),
     };
     ComplexType::two_support(
@@ -80,7 +82,16 @@ pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
             CqlTimeuuid::from_str("8e14e760-7fa8-11eb-bc66-000000000001").unwrap(),
         ),
         "Uuid" => CqlValue::Uuid(uuid!("ffffffff-eeee-ffff-ffff-ffffffffffff")),
+        "Varint" => CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[
+            10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+            10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+        ])),
         _ => CqlValue::Empty,
     };
+    if test == "Varint" || test == "Varint - Integer" {
+        println!("Varint test");
+        println!("Value: {:?}", value.parameter);
+        println!("Expected: {:?}", v);
+    }
     assert_eq!(value.parameter, v);
 }
