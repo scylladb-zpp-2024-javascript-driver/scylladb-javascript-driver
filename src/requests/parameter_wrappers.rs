@@ -188,6 +188,15 @@ impl QueryParameterWrapper {
     }
 
     #[napi]
+    pub fn from_tuple(val: Vec<Option<&QueryParameterWrapper>>) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Tuple(
+                val.iter().map(|f| f.map(|e| e.parameter.clone())).collect(),
+            ),
+        }
+    }
+
+    #[napi]
     pub fn from_time_uuid(val: &UuidWrapper) -> QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Timeuuid(CqlTimeuuid::from_bytes(val.get_cql_uuid().into_bytes())),
