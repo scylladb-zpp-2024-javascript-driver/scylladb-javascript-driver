@@ -9,6 +9,7 @@ const TimeUuid = require("../../lib/types/time-uuid");
 const Tuple = require("../../lib/types/tuple");
 const Uuid = require("../../lib/types/uuid");
 const Long = require("long");
+const Integer = require("../../lib/types/integer");
 const { types } = require("../../main");
 
 const maxI64 = BigInt("9223372036854775807");
@@ -38,6 +39,19 @@ const testCases = [
     ["Timeuuid", TimeUuid.fromString("8e14e760-7fa8-11eb-bc66-000000000001")],
     ["Tuple", new Tuple("First", new Tuple(1, 2), null)],
     ["Uuid", Uuid.fromString("ffffffff-eeee-ffff-ffff-ffffffffffff")],
+    [
+        "Varint",
+        Integer.fromString(
+            "4540866244600635114649842549360310111892940575123159374096375843447573711370",
+            10,
+        ),
+    ],
+    [
+        "Varint",
+        BigInt(
+            "4540866244600635114649842549360310111892940575123159374096375843447573711370",
+        ),
+    ],
 ];
 
 describe("Should correctly convert ", function () {
