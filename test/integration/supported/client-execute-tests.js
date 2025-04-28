@@ -330,9 +330,7 @@ describe("Client @SERVER_API", function () {
             },
         ); */
 
-        // No support for auto paging
-        // TODO: Fix this test
-        /* vit("2.0", "should not autoPage", function (done) {
+        vit("2.0", "should not autoPage", function (done) {
             const client = setupInfo.client;
             utils.series(
                 [
@@ -372,11 +370,9 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
 
-        // No support for fetchSize and autoPage
-        // TODO: Fix this test
-        /* vit(
+        vit(
             "2.0",
             "should return ResultSet compatible with @@iterator",
             function (done) {
@@ -446,7 +442,7 @@ describe("Client @SERVER_API", function () {
                     done,
                 );
             },
-        ); */
+        );
 
         vit(
             "2.0",
@@ -2096,12 +2092,10 @@ describe("Client @SERVER_API", function () {
             });
         });
 
-        // No support for required client creation parameters
+        // No support for varint
         // TODO: Fix this test
         // numericTests(keyspace, false);
-        // No support for paging
-        // TODO: Fix this test
-        // pagingTests(keyspace, false);
+        pagingTests(keyspace, false);
 
         // No support for keyspace
         // TODO: Fix this test
