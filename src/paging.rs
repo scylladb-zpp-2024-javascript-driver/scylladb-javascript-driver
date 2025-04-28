@@ -1,4 +1,4 @@
-use napi::bindgen_prelude::ToNapiValue;
+use napi::bindgen_prelude::{Buffer, ToNapiValue};
 use scylla::response::{PagingState, PagingStateResponse};
 
 use crate::{result::QueryResultWrapper, utils::js_error};
@@ -11,6 +11,14 @@ pub struct PagingStateWrapper {
 #[napi]
 pub struct PagingStateResponseWrapper {
     inner: PagingStateResponse,
+}
+
+#[napi]
+impl PagingStateWrapper{
+    #[napi]
+    pub fn from_buffer(value: Buffer) -> PagingStateWrapper{
+        PagingStateWrapper{ inner: PagingState::new_from_raw_bytes(&*value) }
+    }
 }
 
 impl From<PagingStateResponse> for PagingStateResponseWrapper {
