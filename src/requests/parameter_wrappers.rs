@@ -1,5 +1,5 @@
 use napi::bindgen_prelude::{BigInt, Buffer};
-use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
+use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, CqlVarint, MaybeUnset};
 
 use crate::{
     types::{
@@ -200,6 +200,13 @@ impl QueryParameterWrapper {
     pub fn from_time_uuid(val: &UuidWrapper) -> QueryParameterWrapper {
         QueryParameterWrapper {
             parameter: CqlValue::Timeuuid(CqlTimeuuid::from_bytes(val.get_cql_uuid().into_bytes())),
+        }
+    }
+
+    #[napi]
+    pub fn from_varint(val: Buffer) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Varint(CqlVarint::from_signed_bytes_be(val.to_vec())),
         }
     }
 }
