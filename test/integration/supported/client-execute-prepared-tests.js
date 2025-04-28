@@ -951,9 +951,7 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for client keyspace option
-        // TODO: fix this test
-        /* vit("2.1.3", "should support nested collections", function (done) {
+        vit("2.1.3", "should support nested collections", function (done) {
             const client = newInstance({
                 keyspace: commonKs,
                 queryOptions: {
@@ -1031,7 +1029,7 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
 
         // No support for warnings in result set
         // TODO: fix this test
@@ -1721,9 +1719,8 @@ describe("Client @SERVER_API", function () {
                 },
             );
         });
-        // Would require better encoding, see #142
-        // TODO: fix this test
-        /* describe("with date and time types", function () {
+
+        describe("with date and time types", function () {
             const LocalDate = types.LocalDate;
             const LocalTime = types.LocalTime;
             const insertQuery =
@@ -1821,7 +1818,8 @@ describe("Client @SERVER_API", function () {
                     );
                 },
             );
-        }); */
+        });
+
         describe("with unset", function () {
             vit("2.2", "should allow unset as a valid value", function (done) {
                 const client1 = newInstance();
@@ -2406,12 +2404,12 @@ describe("Client @SERVER_API", function () {
             }); */
         });
 
-        // No support for paging
+        // No support for varint
         // TODO: fix this test
-        /* numericTests(commonKs, true);
-        pagingTests(commonKs, true); */
+        /* numericTests(commonKs, true);*/
+        pagingTests(commonKs, true);
 
-        // No support for client keyspace options
+        // No support for query keyspace options
         // TODO: fix this test
         /* it("should not use keyspace if set on options for lower protocol versions", function () {
             if (helper.isDseGreaterThan("6.0")) {
