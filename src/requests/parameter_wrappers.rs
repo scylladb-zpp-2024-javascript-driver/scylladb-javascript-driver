@@ -2,7 +2,7 @@ use napi::{
     bindgen_prelude::{Array, BigInt, Buffer, FromNapiValue, Undefined},
     Status,
 };
-use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
+use scylla::value::{Counter, CqlDecimal, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
     types::{
@@ -106,7 +106,13 @@ fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi:
             get_element!(BigInt),
             "Value cast into counter type shouldn't overflow i64",
         )?)),
-        CqlType::Decimal => todo!(),
+        CqlType::Decimal => {
+            let buf = get_element!(&[u8]);
+            CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(
+                &buf[4..],
+                i32::from_be_bytes(buf[0..4].try_into().unwrap()), // Buffer is guaranteed to be at least 4 bytes by CQL protocol
+            ))
+        }
         CqlType::Date => CqlValue::Date(get_element!(&LocalDateWrapper).get_cql_date()),
         CqlType::Double => CqlValue::Double(get_element!(f64)),
         CqlType::Duration => CqlValue::Duration(get_element!(&DurationWrapper).get_cql_duration()),
