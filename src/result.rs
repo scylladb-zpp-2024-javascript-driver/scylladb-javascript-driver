@@ -300,6 +300,23 @@ impl CqlValueWrapper {
     }
 
     #[napi]
+    /// Returned buffer is in format XXXXYYYY...YYY
+    /// where XXXX is the exponent of the decimal in big endian
+    /// and YYYY...YYY is the value of the decimal in big endian
+    pub fn get_decimal(&self) -> napi::Result<Buffer> {
+        match &self.inner {
+            CqlValue::Decimal(r) => {
+                let (value, len) = r.as_signed_be_bytes_slice_and_exponent();
+                let mut buf = vec![0u8; 4 + value.len()];
+                buf[0..4].copy_from_slice(&len.to_be_bytes());
+                buf[4..].copy_from_slice(value);
+                Ok(Buffer::from(buf))
+            }
+            _ => Err(Self::generic_error("decimal")),
+        }
+    }
+
+    #[napi]
     pub fn get_local_date(&self) -> napi::Result<LocalDateWrapper> {
         match self.inner.as_cql_date() {
             Some(r) => Ok(LocalDateWrapper::from_cql_date(r)),
