@@ -10,6 +10,7 @@ const Long = require("long");
 const InetAddress = require("../../lib/types/inet-address");
 const LocalDate = require("../../lib/types/local-date");
 const Tuple = require("../../lib/types/tuple");
+const BigDecimal = require("../../lib/types/big-decimal");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -54,6 +55,47 @@ describe("Cql value wrapper", function () {
         /* Corresponding value:
         let element = CqlValue::Counter(Counter(i64::MAX)); */
         assert.strictEqual(value, maxI64);
+    });
+
+    it("should get decimal type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperDecimal();
+        let value = getCqlObject(element);
+        assert.instanceOf(value, BigDecimal);
+        /* Corresponding value:
+        let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(
+            &[
+                1, 53, 169, 169, 173, 175, 83, 216, 15, 110, 137, 47, 175, 202, 192, 196, 222, 179,
+                11, 93, 98, 127, 51, 6, 161, 141, 90, 11, 80, 251, 28,
+            ],
+            69,
+        ));
+        */
+        let expectedDecimal = BigDecimal.fromString(
+            "2137.213721372137213721372137213721372137213721372137213721372137213721372",
+        );
+        assert.equal(value.equals(expectedDecimal), true);
+    });
+
+    it("should get decimal type with negative sign correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperDecimalNegative();
+        let value = getCqlObject(element);
+        assert.instanceOf(value, BigDecimal);
+        /* Corresponding value:
+        let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(&[246], 0));
+        */
+        let expectedDecimal = BigDecimal.fromString("-10");
+        assert.equal(value.equals(expectedDecimal), true);
+    });
+
+    it("should get decimal type with negative exponent correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperDecimalNegativeExponent();
+        let value = getCqlObject(element);
+        assert.instanceOf(value, BigDecimal);
+        /* Corresponding value:
+        let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(&[69], -10));
+        */
+        let expectedDecimal = new BigDecimal(69, -10);
+        assert.equal(value.equals(expectedDecimal), true);
     });
 
     it("should get LocalDate type correctly from napi", function () {
