@@ -9,6 +9,8 @@ const LocalTime = require("../../lib/types/local-time");
 const Long = require("long");
 const InetAddress = require("../../lib/types/inet-address");
 const LocalDate = require("../../lib/types/local-date");
+const Integer = require("../../lib/types/integer");
+const { defaultOptions } = require("../../lib/client-options");
 
 const maxI64 = BigInt("9223372036854775807");
 const maxI32 = Number(2147483647);
@@ -268,5 +270,44 @@ describe("Cql value wrapper", function () {
         let element = CqlValue::Inet(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))); */
         let expectedInet = InetAddress.fromString("127.0.0.1");
         assert.strictEqual(value.equals(expectedInet), true);
+    });
+
+    it("should get varint type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperVarint();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Varint);
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[
+            10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+            10, 10, 10, 10, 10, 10, 10, 10, 10,
+        ])) */
+        assert.strictEqual(
+            Integer.fromString(
+                "4540866244600635114649842549360310111892940575123159374096375843447573711370",
+                10,
+            ).equals(value),
+            true,
+        );
+    });
+
+    it("should get varint type as BigInt correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperVarint();
+        let type = element.getType();
+        assert.strictEqual(type, rust.CqlType.Varint);
+        let options = defaultOptions();
+        options.encoding.useBigIntAsVarint = true;
+        let value = getCqlObject(element, options);
+        /* Corresponding value: 
+        let element = CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[
+            10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+            10, 10, 10, 10, 10, 10, 10, 10, 10,
+        ])) */
+        assert.strictEqual(
+            BigInt(
+                "4540866244600635114649842549360310111892940575123159374096375843447573711370",
+            ),
+            value,
+        );
     });
 });
