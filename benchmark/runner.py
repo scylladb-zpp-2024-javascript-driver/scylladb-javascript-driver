@@ -168,6 +168,7 @@ for i, (test_name, data) in enumerate(df.items()):
 
     ax.set_xlabel("Number of requests")
     ax.set_ylabel("Time [s]")
+    ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_title(f"Benchmark - {test_name.split('.')[0]}")
     ax.legend()
@@ -192,6 +193,7 @@ for i, (test_name, data) in enumerate(df_mem.items()):
 
     ax.set_xlabel("Number of requests")
     ax.set_ylabel("Memory [MB]")
+    ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_title(f"Benchmark - {test_name.split('.')[0]}")
     ax.legend()
