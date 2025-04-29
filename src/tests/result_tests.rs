@@ -1,4 +1,6 @@
-use scylla::value::{Counter, CqlDate, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid, CqlValue};
+use scylla::value::{
+    Counter, CqlDate, CqlDecimal, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid, CqlValue,
+};
 use std::{
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
@@ -39,6 +41,39 @@ pub fn tests_get_cql_wrapper_blob() -> CqlValueWrapper {
 /// Test function returning sample CqlValueWrapper with Counter type
 pub fn tests_get_cql_wrapper_counter() -> CqlValueWrapper {
     let element = CqlValue::Counter(Counter(i64::MAX));
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with Decimal type
+pub fn tests_get_cql_wrapper_decimal() -> CqlValueWrapper {
+    let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(
+        &[
+            1, 53, 169, 169, 173, 175, 83, 216, 15, 110, 137, 47, 175, 202, 192, 196, 222, 179, 11,
+            93, 98, 127, 51, 6, 161, 141, 90, 11, 80, 251, 28,
+        ],
+        69,
+    ));
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with Decimal type with negative sign
+pub fn tests_get_cql_wrapper_decimal_negative() -> CqlValueWrapper {
+    let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(
+        &[246],
+        0,
+    ));
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with Decimal type with negative exponent
+pub fn tests_get_cql_wrapper_decimal_negative_exponent() -> CqlValueWrapper {
+    let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(
+        &[69],
+        -10,
+    ));
     CqlValueWrapper { inner: element }
 }
 
