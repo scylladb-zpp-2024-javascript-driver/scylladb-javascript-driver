@@ -8,6 +8,9 @@ const LocalTime = require("../../lib/types/local-time");
 const TimeUuid = require("../../lib/types/time-uuid");
 const Uuid = require("../../lib/types/uuid");
 const Long = require("long");
+const Integer = require("../../lib/types/integer");
+const { defaultOptions } = require("../../lib/client-options");
+const assert = require("assert");
 
 const maxI64 = BigInt("9223372036854775807");
 
@@ -35,6 +38,13 @@ const testCases = [
     ["Time", new LocalTime(Long.fromInt(4312))],
     ["Timeuuid", TimeUuid.fromString("8e14e760-7fa8-11eb-bc66-000000000001")],
     ["Uuid", Uuid.fromString("ffffffff-eeee-ffff-ffff-ffffffffffff")],
+    [
+        "Varint",
+        Integer.fromString(
+            "4540866244600635114649842549360310111892940575123159374096375843447573711370",
+            10,
+        ),
+    ],
 ];
 
 describe("Should correctly convert values into QueryParameterWrapper", function () {
@@ -46,5 +56,31 @@ describe("Should correctly convert values into QueryParameterWrapper", function 
             // Assertion appears in rust code
             rust.testsFromValue(test[0], converted);
         });
+    });
+});
+
+describe("Should correctly convert BigInt into Varint", function () {
+    it("BigInt", function () {
+        let value = BigInt(
+            "4540866244600635114649842549360310111892940575123159374096375843447573711370",
+        );
+        let expectedType = rust.testsFromValueGetType("Varint");
+        let options = defaultOptions();
+        options.encoding.useBigIntAsVarint = true;
+        let converted = getWrapped(expectedType, value, options);
+        // Assertion appears in rust code
+        rust.testsFromValue("Varint", converted);
+    });
+
+    it("Error on BigInt", function () {
+        let value = BigInt(
+            "4540866244600635114649842549360310111892940575123159374096375843447573711370",
+        );
+        let expectedType = rust.testsFromValueGetType("Varint");
+        let options = defaultOptions();
+        options.encoding.useBigIntAsVarint = false;
+        assert.throws(() => {
+            getWrapped(expectedType, value, options);
+        }, TypeError);
     });
 });
