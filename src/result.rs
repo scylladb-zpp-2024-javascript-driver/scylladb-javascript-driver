@@ -300,6 +300,20 @@ impl CqlValueWrapper {
     }
 
     #[napi]
+    pub fn get_decimal(&self) -> napi::Result<Buffer> {
+        match &self.inner {
+            CqlValue::Decimal(r) => {
+                let dec = r.as_signed_be_bytes_slice_and_exponent();
+                let mut buf = vec![0u8; 4 + dec.0.len()];
+                buf[0..4].copy_from_slice(&dec.1.to_be_bytes());
+                buf[4..].copy_from_slice(dec.0);
+                Ok(Buffer::from(buf))
+            }
+            _ => Err(Self::generic_error("decimal")),
+        }
+    }
+
+    #[napi]
     pub fn get_local_date(&self) -> napi::Result<LocalDateWrapper> {
         match self.inner.as_cql_date() {
             Some(r) => Ok(LocalDateWrapper::from_cql_date(r)),
