@@ -2,7 +2,7 @@ use napi::{
     bindgen_prelude::{Array, BigInt, Buffer, FromNapiValue, Undefined},
     Status,
 };
-use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
+use scylla::value::{Counter, CqlDecimal, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
     errors::js_error,
@@ -106,7 +106,20 @@ fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi:
             get_element!(BigInt),
             "Value cast into counter type shouldn't overflow i64",
         )?)),
-        CqlType::Decimal => todo!(),
+        CqlType::Decimal => {
+            const EXP_SIZE: usize = 4;
+            let buf = get_element!(&[u8]);
+            // JS driver returns decimal in the same format as Decimal from CQL protocol.
+            // Returned buffer is in format XXXXYYYY...YYY
+            // where XXXX (4 bytes) is the exponent of the decimal in big endian
+            // and YYYY...YYY is the value of the decimal in big endian.
+            CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(
+                &buf[EXP_SIZE..],
+                // Buffer is always guaranteed to be at least 4 bytes by
+                // JS part of the driver (it always returns at least 4 bytes).
+                i32::from_be_bytes(buf[0..EXP_SIZE].try_into().unwrap()),
+            ))
+        }
         CqlType::Date => CqlValue::Date(get_element!(&LocalDateWrapper).get_cql_date()),
         CqlType::Double => CqlValue::Double(get_element!(f64)),
         CqlType::Duration => CqlValue::Duration(get_element!(&DurationWrapper).get_cql_duration()),
