@@ -218,7 +218,22 @@ impl ToNapiValue for CqlValueWrapper {
                 BigInt::to_napi_value(env, val.0.into()),
                 CqlType::Counter,
             ),
-            CqlValue::Decimal(_) => todo!(),
+            CqlValue::Decimal(val) => {
+                const EXP_SIZE: usize = 4;
+                // JS driver expects decimal to be in the format of Decimal from CQL protocol.
+                // Returned buffer is in format XXXXYYYY...YYY
+                // where XXXX (4 bytes) is the exponent of the decimal in big endian
+                // and YYYY...YYY is the value of the decimal in big endian.
+                let (value, len) = val.as_signed_be_bytes_slice_and_exponent();
+                let mut buf = vec![0u8; EXP_SIZE + value.len()];
+                buf[0..EXP_SIZE].copy_from_slice(&len.to_be_bytes());
+                buf[EXP_SIZE..].copy_from_slice(value);
+                add_type_to_napi_value(
+                    env,
+                    Buffer::to_napi_value(env, Buffer::from(buf)),
+                    CqlType::Decimal,
+                )
+            }
             CqlValue::Date(val) => {
                 LocalDateWrapper::to_napi_value(env, LocalDateWrapper::from_cql_date(val))
             }
