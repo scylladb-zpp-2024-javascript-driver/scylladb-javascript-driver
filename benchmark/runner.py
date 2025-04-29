@@ -60,6 +60,7 @@ n_min["concurrent_select.js"] = 400_000 / 64
 n_min["insert.js"] = 400_000 / 64
 n_min["select.js"] = 100_000 / 64
 n_min["deser.js"] = 2_000 / 64
+n_min["concurrent_deser.js"] = 2_000 / 64
 
 steps = {}
 
@@ -68,7 +69,8 @@ step = 4
 # --------- libs and rust benchmark names ----------
 libs = ["scylladb-javascript-driver", "cassandra-driver"]
 benchmarks = ["concurrent_insert.js", "insert.js", "select.js",
-              "concurrent_select.js", "deser.js"]
+              "concurrent_select.js", "deser.js",
+              "concurrent_deser.js"]
 
 name_rust = {}
 name_rust["concurrent_insert.js"] = "concurrent_insert_benchmark"
@@ -76,6 +78,7 @@ name_rust["insert.js"] = "insert_benchmark"
 name_rust["select.js"] = "select_benchmark"
 name_rust["concurrent_select.js"] = "concurrent_select_benchmark"
 name_rust["deser.js"] = "deser_benchmark"
+name_rust["concurrent_deser.js"] = "concurrent_deser_benchmark"
 
 df = {}
 df_mem = {}
