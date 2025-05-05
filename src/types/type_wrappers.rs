@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::result::map_column_type_to_complex_type;
 use scylla::frame::response::result::ColumnType;
 
@@ -42,6 +44,9 @@ pub struct ComplexType {
     pub(crate) support_type_1: Option<Box<ComplexType>>,
     pub(crate) support_type_2: Option<Box<ComplexType>>,
     pub(crate) inner_types: Vec<ComplexType>, // Used by Tuple and UDT
+    pub(crate) field_names: Vec<String>,
+    pub(crate) udt_keyspace: Option<String>,
+    pub(crate) udt_name: Option<String>,
 }
 
 #[napi]
@@ -60,6 +65,22 @@ impl ComplexType {
     pub fn get_inner_types(&self) -> Vec<ComplexType> {
         // Batch query to NAPI minimizes number of calls
         self.inner_types.clone()
+    }
+
+    #[napi]
+    pub fn get_field_names(&self) -> Vec<String> {
+        // Batch query to NAPI minimizes number of calls
+        self.field_names.clone()
+    }
+
+    #[napi]
+    pub fn get_udt_keyspace(&self) -> Option<String> {
+        self.udt_keyspace.clone()
+    }
+
+    #[napi]
+    pub fn get_udt_name(&self) -> Option<String> {
+        self.udt_name.clone()
     }
 }
 
@@ -85,6 +106,9 @@ impl ComplexType {
             support_type_1: support1.map(Box::new),
             support_type_2: support2.map(Box::new),
             inner_types: vec![],
+            field_names: vec![],
+            udt_keyspace: None,
+            udt_name: None,
         }
     }
 
@@ -97,6 +121,28 @@ impl ComplexType {
                 .iter()
                 .map(|column| map_column_type_to_complex_type(column))
                 .collect(),
+            field_names: vec![],
+            udt_keyspace: None,
+            udt_name: None,
+        }
+    }
+
+    pub(crate) fn from_udt(
+        items: &[(Cow<str>, ColumnType)],
+        name: String,
+        keyspace: String,
+    ) -> Self {
+        ComplexType {
+            base_type: CqlType::UserDefinedType,
+            support_type_1: None,
+            support_type_2: None,
+            inner_types: items
+                .iter()
+                .map(|(_, column)| map_column_type_to_complex_type(column))
+                .collect(),
+            field_names: items.iter().map(|(name, _)| name.to_string()).collect(),
+            udt_keyspace: Some(keyspace),
+            udt_name: Some(name),
         }
     }
 }
