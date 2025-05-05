@@ -1,5 +1,5 @@
 use napi::bindgen_prelude::{BigInt, Buffer};
-use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
+use scylla::value::{Counter, CqlDecimal, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
     types::{
@@ -65,6 +65,16 @@ impl QueryParameterWrapper {
                 "Value casted into counter type shouldn't overflow i64",
             )?)),
         })
+    }
+
+    #[napi]
+    pub fn from_decimal(scale: i32, bytes: Buffer) -> QueryParameterWrapper {
+        QueryParameterWrapper {
+            parameter: CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_and_exponent(
+                bytes.to_vec(),
+                scale,
+            )),
+        }
     }
 
     #[napi]
