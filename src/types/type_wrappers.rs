@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::result::map_column_type_to_complex_type;
 use scylla::frame::response::result::ColumnType;
 
@@ -51,6 +53,9 @@ pub struct ComplexType {
     pub(crate) support_type_1: Option<Box<ComplexType>>,
     pub(crate) support_type_2: Option<Box<ComplexType>>,
     pub(crate) inner_types: Vec<ComplexType>, // Used by Tuple and UDT
+    pub(crate) field_names: Vec<String>,
+    pub(crate) udt_keyspace: Option<String>,
+    pub(crate) udt_name: Option<String>,
 }
 
 #[napi]
@@ -95,6 +100,22 @@ impl ComplexType {
         )
     }
 
+    #[napi]
+    pub fn get_field_names(&self) -> Vec<String> {
+        // Batch query to NAPI minimizes number of calls
+        self.field_names.clone()
+    }
+
+    #[napi]
+    pub fn get_udt_keyspace(&self) -> Option<String> {
+        self.udt_keyspace.clone()
+    }
+
+    #[napi]
+    pub fn get_udt_name(&self) -> Option<String> {
+        self.udt_name.clone()
+    }
+
     /// Create a new ComplexType for tuple with provided inner types.
     #[napi]
     pub fn remap_tuple_support_type(new_subtypes: Vec<Option<&ComplexType>>) -> ComplexType {
@@ -114,6 +135,36 @@ impl ComplexType {
                 })
                 .collect(),
         )
+    }
+
+    #[napi]
+    // Create a new ComplexType for UDT with provided inner types and previous type.
+    pub fn remap_udt_support_type(
+        old_type: &ComplexType,
+        new_subtypes: Vec<Option<&ComplexType>>,
+    ) -> ComplexType {
+        ComplexType {
+            base_type: CqlType::UserDefinedType,
+            support_type_1: None,
+            support_type_2: None,
+            inner_types: new_subtypes
+                .into_iter()
+                // HACK:
+                // There is a chance, user doesn't provide a type for some tuple value.
+                // If this value is null or unset, we can still correctly handle that case.
+                // For this reason we set here Unprovided type, a type that will never be used in request.
+                // If we encounter Unprovided in parsing value, this means, that unsufficient type information was provided.
+                //
+                // This will be fixed at a later time, as it requires more investigation into how UDT works.
+                .map(|e| {
+                    e.unwrap_or(&ComplexType::simple_type(CqlType::Unprovided))
+                        .clone()
+                })
+                .collect(),
+            field_names: old_type.field_names.clone(),
+            udt_keyspace: old_type.udt_keyspace.clone(),
+            udt_name: old_type.udt_name.clone(),
+        }
     }
 }
 
@@ -139,6 +190,9 @@ impl ComplexType {
             support_type_1: support1.map(Box::new),
             support_type_2: support2.map(Box::new),
             inner_types: vec![],
+            field_names: vec![],
+            udt_keyspace: None,
+            udt_name: None,
         }
     }
 
@@ -148,6 +202,26 @@ impl ComplexType {
             support_type_1: None,
             support_type_2: None,
             inner_types: columns,
+            field_names: vec![],
+            udt_keyspace: None,
+            udt_name: None,
+        }
+    }
+
+    pub(crate) fn from_udt(
+        items: Vec<ComplexType>,
+        names: Vec<String>,
+        name: String,
+        keyspace: String,
+    ) -> Self {
+        ComplexType {
+            base_type: CqlType::UserDefinedType,
+            support_type_1: None,
+            support_type_2: None,
+            inner_types: items,
+            field_names: names,
+            udt_keyspace: Some(keyspace),
+            udt_name: Some(name),
         }
     }
 
@@ -157,6 +231,22 @@ impl ComplexType {
                 .iter()
                 .map(|column| map_column_type_to_complex_type(column))
                 .collect(),
+        )
+    }
+
+    pub(crate) fn from_udt_column_type(
+        items: &[(Cow<str>, ColumnType)],
+        name: String,
+        keyspace: String,
+    ) -> Self {
+        ComplexType::from_udt(
+            items
+                .iter()
+                .map(|(_, column)| map_column_type_to_complex_type(column))
+                .collect(),
+            items.iter().map(|(name, _)| name.to_string()).collect(),
+            name,
+            keyspace,
         )
     }
 }
