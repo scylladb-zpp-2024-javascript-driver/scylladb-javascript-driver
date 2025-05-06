@@ -61,8 +61,8 @@ n_min["insert.js"] = 400_000 / 64
 n_min["select.js"] = 100_000 / 64
 n_min["deser.js"] = 2_000 / 64
 n_min["concurrent_deser.js"] = 2_000 / 64
-n_min["ser.js"] = 2_000 / 64
-n_min["concurrent_ser.js"] = 2_000 / 64
+n_min["ser.js"] = 900 / 64
+n_min["concurrent_ser.js"] = 1_200 / 64
 
 steps = {}
 
