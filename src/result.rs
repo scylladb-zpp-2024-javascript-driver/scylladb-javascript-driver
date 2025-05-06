@@ -247,7 +247,7 @@ impl CqlValueWrapper {
             CqlValue::Timeuuid(_) => CqlType::Timeuuid,
             CqlValue::Tuple(_) => CqlType::Tuple,
             CqlValue::Uuid(_) => CqlType::Uuid,
-            CqlValue::Varint(_) => CqlType::Varint, // NOI
+            CqlValue::Varint(_) => CqlType::Varint,
             other => unimplemented!("Missing implementation for CQL value {:?}", other),
         }
     }
@@ -450,6 +450,14 @@ impl CqlValueWrapper {
         match self.inner.as_uuid() {
             Some(r) => Ok(UuidWrapper::from_cql_uuid(r)),
             None => Err(Self::generic_error("uuid")),
+        }
+    }
+
+    #[napi]
+    pub fn get_varint(&self) -> napi::Result<Buffer> {
+        match &self.inner {
+            CqlValue::Varint(r) => Ok(Buffer::from(r.as_signed_bytes_be_slice())),
+            _ => Err(Self::generic_error("varint")),
         }
     }
 }
