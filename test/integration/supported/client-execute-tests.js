@@ -1139,9 +1139,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // No support for udt and tuples
-        // TODO: Fix this test
-        /* describe("with udt and tuple", function () {
+        describe("with udt and tuple", function () {
             const sampleId = types.Uuid.random();
             const insertQuery =
                 "INSERT INTO tbl_udts (id, phone_col, address_col) VALUES (%s, %s, %s)";
@@ -1499,7 +1497,7 @@ describe("Client @SERVER_API", function () {
                     done,
                 );
             });
-        }); */
+        });
 
         // No support for named parameters
         // TODO: Fix this test
