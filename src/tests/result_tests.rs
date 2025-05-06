@@ -1,4 +1,6 @@
-use scylla::value::{Counter, CqlDate, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid, CqlValue};
+use scylla::value::{
+    Counter, CqlDate, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid, CqlValue, CqlVarint,
+};
 use std::{
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
@@ -180,5 +182,15 @@ pub fn tests_get_cql_wrapper_time() -> CqlValueWrapper {
 /// Test function returning sample CqlValueWrapper with Inet type
 pub fn tests_get_cql_wrapper_inet() -> CqlValueWrapper {
     let element = CqlValue::Inet(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with Varint type
+pub fn tests_get_cql_wrapper_varint() -> CqlValueWrapper {
+    let element = CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[
+        10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+        10, 10, 10, 10, 10, 10, 10, 10, 10,
+    ]));
     CqlValueWrapper { inner: element }
 }
