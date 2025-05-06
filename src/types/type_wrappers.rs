@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::result::map_column_type_to_complex_type;
 use scylla::frame::response::result::ColumnType;
 
@@ -33,6 +35,14 @@ pub enum CqlType {
     Unprovided,
 }
 
+/// This struct is part of the `ComplexType` struct and is used to store information about UDTs.
+#[derive(Clone)]
+pub(crate) struct UdtMetadata {
+    pub(crate) keyspace: String,
+    pub(crate) name: String,
+    pub(crate) field_names: Vec<String>,
+}
+
 /// Keeps whole CQL type, including support types.
 /// It has similar information to [scylla::frame::response::result::ColumnType],
 /// but can be passes to NAPI-RS
@@ -43,6 +53,7 @@ pub struct ComplexType {
     pub(crate) support_type_1: Option<Box<ComplexType>>,
     pub(crate) support_type_2: Option<Box<ComplexType>>,
     pub(crate) inner_types: Vec<ComplexType>, // Used by Tuple and UDT
+    pub(crate) udt_metadata: Option<UdtMetadata>,
 }
 
 #[napi]
@@ -87,6 +98,28 @@ impl ComplexType {
         )
     }
 
+    #[napi]
+    pub fn get_udt_field_names(&self) -> Option<Vec<String>> {
+        // Batch query to NAPI minimizes number of calls
+        self.udt_metadata
+            .as_ref()
+            .map(|metadata| metadata.field_names.clone())
+    }
+
+    #[napi]
+    pub fn get_udt_keyspace(&self) -> Option<String> {
+        self.udt_metadata
+            .as_ref()
+            .map(|metadata| metadata.keyspace.clone())
+    }
+
+    #[napi]
+    pub fn get_udt_name(&self) -> Option<String> {
+        self.udt_metadata
+            .as_ref()
+            .map(|metadata| metadata.name.clone())
+    }
+
     /// Create a new ComplexType for tuple with provided inner types.
     #[napi]
     pub fn remap_tuple_support_type(new_subtypes: Vec<Option<&ComplexType>>) -> ComplexType {
@@ -106,6 +139,40 @@ impl ComplexType {
                 })
                 .collect(),
         )
+    }
+
+    /// Create a new ComplexType for UDT with provided inner types and field names. Used in JS part of the driver during type guessing.
+    #[napi]
+    pub fn new_udt_type(
+        new_subtypes: Vec<Option<&ComplexType>>,
+        field_names: Vec<String>,
+        keyspace: String,
+        name: String,
+    ) -> ComplexType {
+        ComplexType {
+            base_type: CqlType::UserDefinedType,
+            support_type_1: None,
+            support_type_2: None,
+            inner_types: new_subtypes
+                .into_iter()
+                // HACK:
+                // There is a chance, user doesn't provide a type for some UDT value.
+                // If this value is null or unset, we can still correctly handle that case.
+                // For this reason we set here Unprovided type, a type that will never be used in request.
+                // If we encounter Unprovided in parsing value, this means, that unsufficient type information was provided.
+                //
+                // This will be fixed at a later time, as it requires more investigation into how UDT works.
+                .map(|e| {
+                    e.cloned()
+                        .unwrap_or_else(|| ComplexType::simple_type(CqlType::Unprovided))
+                })
+                .collect(),
+            udt_metadata: Some(UdtMetadata {
+                keyspace,
+                name,
+                field_names,
+            }),
+        }
     }
 }
 
@@ -131,6 +198,7 @@ impl ComplexType {
             support_type_1: support1.map(Box::new),
             support_type_2: support2.map(Box::new),
             inner_types: vec![],
+            udt_metadata: None,
         }
     }
 
@@ -140,6 +208,7 @@ impl ComplexType {
             support_type_1: None,
             support_type_2: None,
             inner_types: columns,
+            udt_metadata: None,
         }
     }
 
@@ -150,5 +219,27 @@ impl ComplexType {
                 .map(|column| map_column_type_to_complex_type(column))
                 .collect(),
         )
+    }
+
+    /// Create a ComplexType from a UDT column type. Used when decoding UDTs from the database to the Rust driver.
+    pub(crate) fn from_udt_column_type(
+        items: &[(Cow<str>, ColumnType)],
+        name: String,
+        keyspace: String,
+    ) -> Self {
+        ComplexType {
+            base_type: CqlType::UserDefinedType,
+            support_type_1: None,
+            support_type_2: None,
+            inner_types: items
+                .iter()
+                .map(|(_, column)| map_column_type_to_complex_type(column))
+                .collect(),
+            udt_metadata: Some(UdtMetadata {
+                keyspace: keyspace.clone(),
+                name: name.clone(),
+                field_names: items.iter().map(|(name, _)| name.to_string()).collect(),
+            }),
+        }
     }
 }
