@@ -1,11 +1,7 @@
+use scylla::value::{Counter, CqlDate, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid, CqlValue};
 use std::{
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
-};
-
-use scylla::frame::{
-    response::result::CqlValue,
-    value::{Counter, CqlDuration, CqlTime, CqlTimestamp, CqlTimeuuid},
 };
 
 use crate::result::CqlValueWrapper;
@@ -43,6 +39,13 @@ pub fn tests_get_cql_wrapper_blob() -> CqlValueWrapper {
 /// Test function returning sample CqlValueWrapper with Counter type
 pub fn tests_get_cql_wrapper_counter() -> CqlValueWrapper {
     let element = CqlValue::Counter(Counter(i64::MAX));
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with CqlTime type
+pub fn tests_get_cql_wrapper_date() -> CqlValueWrapper {
+    let element = CqlValue::Date(CqlDate((1 << 31) + 7));
     CqlValueWrapper { inner: element }
 }
 
@@ -137,6 +140,17 @@ pub fn tests_get_cql_wrapper_small_int() -> CqlValueWrapper {
 /// Test function returning sample CqlValueWrapper with TinyInt type
 pub fn tests_get_cql_wrapper_tiny_int() -> CqlValueWrapper {
     let element = CqlValue::TinyInt(3);
+    CqlValueWrapper { inner: element }
+}
+
+#[napi]
+/// Test function returning sample CqlValueWrapper with Tuple type
+pub fn tests_get_cql_wrapper_tuple() -> CqlValueWrapper {
+    let element = CqlValue::Tuple(vec![
+        Some(CqlValue::Text("some text".to_owned())),
+        Some(CqlValue::Int(1)),
+        None,
+    ]);
     CqlValueWrapper { inner: element }
 }
 

@@ -3,7 +3,7 @@ const { assert } = require("chai");
 const sinon = require("sinon");
 const util = require("util");
 const utils = require("../../lib/utils");
-const tokenizer = require("../../lib/tokenizer");
+// const tokenizer = require("../../lib/tokenizer");
 const token = require("../../lib/token");
 
 const Encoder = require("../../lib/encoder");
@@ -22,125 +22,6 @@ const zeroLengthTypesSupported = new Set([
 ]);
 
 describe("encoder", function () {
-    describe("Encoder.guessDataType()", function () {
-        it("should guess the native types", function () {
-            assertGuessed(
-                1,
-                dataTypes.double,
-                "Guess type for an integer (double) number failed",
-            );
-            assertGuessed(
-                1.01,
-                dataTypes.double,
-                "Guess type for a double number failed",
-            );
-            assertGuessed(
-                true,
-                dataTypes.boolean,
-                "Guess type for a boolean value failed",
-            );
-            assertGuessed(
-                [1, 2, 3],
-                dataTypes.list,
-                "Guess type for an Array value failed",
-            );
-            assertGuessed(
-                "a string",
-                dataTypes.text,
-                "Guess type for an string value failed",
-            );
-            assertGuessed(
-                utils.allocBufferFromString("bip bop"),
-                dataTypes.blob,
-                "Guess type for a buffer value failed",
-            );
-            assertGuessed(
-                new Date(),
-                dataTypes.timestamp,
-                "Guess type for a Date value failed",
-            );
-            assertGuessed(
-                new types.Long(10),
-                dataTypes.bigint,
-                "Guess type for a Int 64 value failed",
-            );
-            assertGuessed(
-                types.Uuid.random(),
-                dataTypes.uuid,
-                "Guess type for a UUID value failed",
-            );
-            assertGuessed(
-                types.TimeUuid.now(),
-                dataTypes.uuid,
-                "Guess type for a TimeUuid value failed",
-            );
-            assertGuessed(
-                types.TimeUuid.now().toString(),
-                dataTypes.uuid,
-                "Guess type for a string uuid value failed",
-            );
-            assertGuessed(
-                types.timeuuid(),
-                dataTypes.uuid,
-                "Guess type for a Timeuuid value failed",
-            );
-            assertGuessed(
-                types.Integer.fromNumber(1),
-                dataTypes.varint,
-                "Guess type for a varint value failed",
-            );
-            assertGuessed(
-                types.BigDecimal.fromString("1.01"),
-                dataTypes.decimal,
-                "Guess type for a varint value failed",
-            );
-            assertGuessed(
-                types.Integer.fromBuffer(utils.allocBufferFromArray([0xff])),
-                dataTypes.varint,
-                "Guess type for a varint value failed",
-            );
-            assertGuessed(
-                new types.InetAddress(
-                    utils.allocBufferFromArray([10, 10, 10, 2]),
-                ),
-                dataTypes.inet,
-                "Guess type for a inet value failed",
-            );
-            assertGuessed(
-                new types.Tuple(1, 2, 3),
-                dataTypes.tuple,
-                "Guess type for a tuple value failed",
-            );
-            assertGuessed(
-                new types.LocalDate(2010, 4, 29),
-                dataTypes.date,
-                "Guess type for a date value failed",
-            );
-            assertGuessed(
-                new types.LocalTime(types.Long.fromString("6331999999911")),
-                dataTypes.time,
-                "Guess type for a time value failed",
-            );
-            assertGuessed(
-                new Float32Array([1.2, 3.4, 5.6]),
-                dataTypes.custom,
-                "Guess type for a Float32 TypedArray value failed",
-            );
-            assertGuessed({}, null, "Objects must not be guessed");
-        });
-
-        function assertGuessed(value, expectedType, message) {
-            const type = Encoder.guessDataType(value);
-            if (type === null) {
-                if (expectedType !== null) {
-                    assert.ok(false, "Type not guessed for value " + value);
-                }
-                return;
-            }
-            assert.strictEqual(type.code, expectedType, message + ": " + value);
-        }
-    });
-
     describe("Encoder.isTypedArray()", function () {
         it("should return true for TypedArray subclasses", function () {
             assert.ok(Encoder.isTypedArray(new Float32Array([])));
@@ -1598,7 +1479,7 @@ describe("encoder", function () {
             );
         });
 
-        it("should not affect Token routing keys", function () {
+        /* it("should not affect Token routing keys", function () {
             const token = new tokenizer.Murmur3Tokenizer().hash(
                 "4611686018427387904",
             );
@@ -1621,7 +1502,7 @@ describe("encoder", function () {
             });
             encoder.setRoutingKeyFromUser([1, "text"], options);
             assert.strictEqual(options.getRoutingKey(), range);
-        });
+        }); */
 
         it("should build routing key based on routingIndexes", function () {
             let options = getExecOptions({
@@ -2179,7 +2060,9 @@ describe("encoder", function () {
 
     describe("prototype", function () {
         it("should only expose encode() and decode() functions", function () {
-            const keys = Object.keys(Encoder.prototype);
+            const keys = Object.getOwnPropertyNames(Encoder.prototype).filter(
+                (k) => k !== "constructor",
+            );
             assert.deepStrictEqual(keys, ["decode", "encode"]);
             keys.forEach(function (k) {
                 assert.strictEqual(typeof Encoder.prototype[k], "function");

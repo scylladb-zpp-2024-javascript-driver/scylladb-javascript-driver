@@ -30,9 +30,8 @@ You should also visit the [Documentation][doc-index] and [FAQ][faq].
     method](concurrent-executions/execute-concurrent-array.js)
   - [Execute multiple queries in a loop with a defined concurrency level](concurrent-executions/execute-in-loop.js)
 
-Each example is generally structured in a way where the `Client` is connected at the beginning and shutdown at the end.
-While this is suitable for example single script purposes, you should reuse a single `Client` instance and
-only call `client.shutdown()` when exiting your application.
+Each example is generally structured in a way where the `Client` is connected at the beginning.
+While this is suitable for example single script purposes, you should reuse a single `Client` instance.
 
 If you have any questions regarding these examples, feel free to post your questions in the [mailing list][mailing-list].
 
