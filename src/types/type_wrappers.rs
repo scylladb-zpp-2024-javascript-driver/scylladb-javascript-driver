@@ -69,6 +69,47 @@ impl ComplexType {
         // Batch query to NAPI minimizes number of calls
         self.inner_types.clone()
     }
+
+    // Create a new copy of the ComplexType, with first support type set to the provided type
+    #[napi]
+    pub fn remap_list_support_type(&self, new_subtype: &ComplexType) -> ComplexType {
+        ComplexType::one_support(self.base_type, Some(new_subtype.clone()))
+    }
+
+    #[napi]
+    // Create a new copy of the ComplexType, with first and second support type set to the provided types
+    pub fn remap_map_support_type(
+        &self,
+        key_new_subtype: &ComplexType,
+        val_new_subtype: &ComplexType,
+    ) -> ComplexType {
+        ComplexType::two_support(
+            self.base_type,
+            Some(key_new_subtype.clone()),
+            Some(val_new_subtype.clone()),
+        )
+    }
+
+    /// Create a new ComplexType for tuple with provided inner types.
+    #[napi]
+    pub fn remap_tuple_support_type(new_subtypes: Vec<Option<&ComplexType>>) -> ComplexType {
+        ComplexType {
+            base_type: CqlType::Tuple,
+            support_type_1: None,
+            support_type_2: None,
+            inner_types: new_subtypes
+                .into_iter()
+                // There is a chance, user doesn't provide a type for some tuple value.
+                // If this vale is null or unset, we can still correctly handle that case.
+                // For this reason we set here Custom type, a type that will never be used in request.
+                // If we encounter Custom in parsing value, this means, that unsufficient type information was provided.
+                .map(|e| {
+                    e.unwrap_or(&ComplexType::simple_type(CqlType::Custom))
+                        .clone()
+                })
+                .collect(),
+        }
+    }
 }
 
 impl ComplexType {
