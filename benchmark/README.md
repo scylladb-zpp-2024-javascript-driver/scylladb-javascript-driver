@@ -75,3 +75,29 @@ Rust:
 ```
 CNT=<Number of queries> cargo run --bin select_benchmark -r
 ```
+
+- **concurrent deserialization**
+
+This benchmark uses `executeConcurrent` endpoint to insert `n` rows containing `uuid`, `int`, `timeuuid`, `inet`, `date`, `time` into the database.  Afterwards it uses `executeConcurrent` endpoint to select all (`n`) of the inserted rows from the database `n` times.
+
+JS: 
+```
+node concurrent_deser.js <driver> <Number of queries>
+```
+Rust:
+```
+CNT=<Number of queries> cargo run --bin concurrent_deser_benchmark -r
+```
+
+- **deserialization**
+
+This benchmark executes `n` `client.execute` queries, that insert a single row containing `uuid`, `int`, `timeuuid`, `inet`, `date`, `time` waiting for the result of the previous query before executing the next one. Afterwards it executes `n` `client.execute` queries, that select all (`n`) of the inserted rows, waiting for the result of the previous query before executing the next one.
+
+JS: 
+```
+node deser.js <driver> <Number of queries>
+```
+Rust:
+```
+CNT=<Number of queries> cargo run --bin deser_benchmark -r
+```
