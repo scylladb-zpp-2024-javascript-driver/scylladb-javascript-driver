@@ -71,7 +71,7 @@ step = 4
 
 # --------- libs and rust benchmark names ----------
 libs = ["scylladb-javascript-driver", "cassandra-driver"]
-benchmarks = ["concurrent_insert.js", "insert.js", "select.js",
+benchmarks = [ "insert.js", "concurrent_insert.js", "select.js",
               "concurrent_select.js", "deser.js",
               "concurrent_deser.js", "ser.js",
               "concurrent_ser.js", "batch.js"]
