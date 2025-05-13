@@ -1,4 +1,4 @@
-use crate::utils::{js_typed_error, ErrorType};
+use crate::errors::{js_typed_error, ErrorType};
 
 #[napi]
 /// Test function that throws specified error with a custom message.

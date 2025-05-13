@@ -2,11 +2,12 @@ use napi::bindgen_prelude::{BigInt, Buffer};
 use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
+    errors::js_error,
     types::{
         duration::DurationWrapper, inet::InetAddressWrapper, local_date::LocalDateWrapper,
         local_time::LocalTimeWrapper, uuid::UuidWrapper,
     },
-    utils::{bigint_to_i64, js_error},
+    utils::bigint_to_i64,
 };
 
 #[napi]
