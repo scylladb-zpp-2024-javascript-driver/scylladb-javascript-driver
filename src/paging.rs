@@ -1,7 +1,7 @@
 use napi::bindgen_prelude::{Buffer, ToNapiValue};
 use scylla::response::{PagingState, PagingStateResponse};
 
-use crate::{result::QueryResultWrapper, utils::js_error};
+use crate::{errors::js_error, result::QueryResultWrapper};
 
 #[napi]
 pub struct PagingStateWrapper {

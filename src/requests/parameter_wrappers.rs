@@ -5,6 +5,7 @@ use napi::{
 use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
+    errors::js_error,
     types::{
         duration::DurationWrapper,
         inet::InetAddressWrapper,
@@ -12,7 +13,7 @@ use crate::{
         local_time::LocalTimeWrapper,
         type_wrappers::{ComplexType, CqlType},
     },
-    utils::{bigint_to_i64, js_error},
+    utils::bigint_to_i64,
 };
 
 pub struct ParameterWrapper {

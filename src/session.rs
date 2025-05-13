@@ -7,14 +7,13 @@ use scylla::statement::prepared::PreparedStatement;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
 use scylla::value::{CqlValue, MaybeUnset};
 
+use crate::errors::{err_to_napi, js_error};
 use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
 use crate::requests::parameter_wrappers::ParameterWrapper;
 use crate::requests::request::QueryOptionsWrapper;
-use crate::utils::{bigint_to_i64, js_error};
-use crate::{
-    requests::request::PreparedStatementWrapper, result::QueryResultWrapper, utils::err_to_napi,
-};
+use crate::utils::bigint_to_i64;
+use crate::{requests::request::PreparedStatementWrapper, result::QueryResultWrapper};
 
 const DEFAULT_CACHE_SIZE: u32 = 512;
 

@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use crate::{
+    errors::err_to_napi,
     types::{
         local_date::LocalDateWrapper,
         time_uuid::TimeUuidWrapper,
         type_wrappers::{ComplexType, CqlType, CqlTypeClass},
         uuid::UuidWrapper,
     },
-    utils::err_to_napi,
 };
 use napi::bindgen_prelude::{BigInt, Buffer, ToNapiValue};
 use scylla::{
