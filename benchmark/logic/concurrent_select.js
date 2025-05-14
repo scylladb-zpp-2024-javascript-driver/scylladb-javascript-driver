@@ -27,18 +27,20 @@ async.series(
             next();
         },
         async function select(next) {
-
-            let allParameters = [];
-            for (let i = 0; i < iterCnt; i++) {
-                allParameters.push({
-                    query: 'SELECT * FROM benchmarks.basic',
-                });
+            let limited = async function (steps) {
+                let allParameters = [];
+                for (let i = 0; i < steps; i++) {
+                    allParameters.push({
+                        query: 'SELECT * FROM benchmarks.basic',
+                    });
+                }
+                try {
+                    const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true });
+                } catch (err) {
+                    return next(err);
+                }
             }
-            try {
-                const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true });
-            } catch (err) {
-                return next(err);
-            }
+            await utils.repeatCapped(limited, iterCnt);
             next();
         },
         function r() {
