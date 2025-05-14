@@ -3,6 +3,7 @@
 const { _Client } = require("../../main");
 
 const tableSchemaBasic = "CREATE TABLE benchmarks.basic (id uuid, val int, PRIMARY KEY(id))";
+const singleStepCount = 1000000;
 
 function getClientArgs() {
     return {
@@ -35,6 +36,23 @@ async function prepareDatabase(client, tableDefinition, next) {
     next();
 }
 
+/**
+ * Call callback, each with up to singleStepCount
+ * multiple times, so that sum of all called callback is equal to n
+ * 
+ * Introduced in order to limit memory usage of a single callback
+ * @param {*} callback 
+ * @param {*} n 
+ */
+async function repeatCapped(callback, n) {
+    for (let rep = 0; rep * singleStepCount < n; rep++) {
+        const finalStep = Math.min(n, (rep + 1) * singleStepCount);
+        await callback(finalStep - rep * singleStepCount);
+    }
+    
+}
+
 exports.tableSchemaBasic = tableSchemaBasic;
 exports.getClientArgs = getClientArgs;
 exports.prepareDatabase = prepareDatabase;
+exports.repeatCapped = repeatCapped;

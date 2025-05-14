@@ -15,18 +15,22 @@ async.series(
             utils.prepareDatabase(client, utils.tableSchemaBasic, next);
         },
         async function insert(next) {
-            let allParameters = [];
-            for (let i = 0; i < iterCnt; i++) {
-                allParameters.push({
-                    query: 'INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)',
-                    params: [cassandra.types.Uuid.random(), 10]
-                });
+            let limited = async function (steps) {
+                let allParameters = [];
+                for (let i = 0; i < steps; i++) {
+                    allParameters.push({
+                        query: 'INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)',
+                        params: [cassandra.types.Uuid.random(), 10]
+                    });
+                }
+                try {
+                    const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true });
+                } catch (err) {
+                    return next(err);
+                }
             }
-            try {
-                const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true });
-            } catch (err) {
-                return next(err);
-            }
+            await utils.repeatCapped(limited, iterCnt);
+
             next();
         },
         async function test(next) {
