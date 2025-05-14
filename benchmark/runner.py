@@ -3,46 +3,8 @@ from discord import SyncWebhook, File
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import re
+from utils import sha256_benchmark, run_rust, run_js
 import os
-
-
-# Function to parse the output from the time function.
-def parse_time(s):
-    log = s.stderr
-    elapsed_match = re.search(r"Elapsed .*?: ([0-9:]+\.?[0-9]*)", log)
-    if elapsed_match:
-        elapsed_time = elapsed_match.group(1)
-        parts = list(map(float, elapsed_time.split(':')))
-        if len(parts) == 3:  # Format h:mm:ss.xx
-            hours, minutes, seconds = parts
-            total_seconds = hours * 3600 + minutes * 60 + seconds
-        elif len(parts) == 2:  # Format m:ss.xx
-            minutes, seconds = parts
-            total_seconds = minutes * 60 + seconds
-        else:  # Unexpected format
-            total_seconds = parts[0]
-    else:
-        total_seconds = None
-
-    # Extract max resident set size
-    max_rss_match = re.search(r"Maximum resident set size \(kbytes\): (\d+)",
-                              log)
-    max_rss = int(max_rss_match.group(1)) if max_rss_match else None
-    return total_seconds, max_rss / 1024
-
-
-# Function to parse build time from cargo run output. Cargo run always prints
-# build time to output. We must subtract this from execution time.
-def extract_build_time(output):
-    match = re.search(
-        r'\[optimized\] target\(s\) in ([\d.]+)s',
-        output)
-    if match:
-        return float(match.group(1))
-    else:
-        raise ValueError("Build time not found in the provided output.",
-                         output)
 
 
 def run_process(command):
@@ -79,67 +41,28 @@ name_rust["concurrent_select.js"] = "concurrent_select_benchmark"
 df = {}
 df_mem = {}
 for ben in benchmarks:
+    df[ben] = {}
+    df_mem[ben] = {}
+
     steps[ben] = [n_min[ben] * (4 ** i) for i in range(step)]
 
-    df[ben] = pd.DataFrame(columns=['n', libs[0], libs[1], 'rust-driver'])
-    df_mem[ben] = pd.DataFrame(columns=['n', libs[0], libs[1], 'rust-driver'])
+    hash = sha256_benchmark(ben, 1, n_min[ben])
+    print(ben, "rust", hash, len(hash))
 
-    # Build Rust benchmark
-    data = run("cargo build --bin "+name_rust[ben]+" -r",
-               capture_output=True, shell=True, text=True,
-               executable='/bin/bash')
+    time_rust, mem_rust = run_rust(name_rust[ben], steps[ben], repeat)
 
-    if data.returncode != 0:
-        raise Exception("Build error: " + name_rust[ben])
+    df[ben]["rust-driver"] = pd.DataFrame.from_dict(time_rust, orient='index')
+    df_mem[ben]["rust-driver"] = pd.DataFrame.from_dict(mem_rust,
+                                                        orient='index')
 
-    print("Build rust " + name_rust[ben] + " successfully.")
+    hash = sha256_benchmark(ben, 0, n_min[ben])
+    print(ben, "js", hash, len(hash))
 
-    for n in steps[ben]:
-        dict_time = {}
-        dict_time['n'] = n
-        dict_mem = {}
-        dict_mem['n'] = n
+    for lib in libs:
+        time_js, mem_js = run_js(ben, steps[ben], repeat, lib)
+        df[ben][lib] = pd.DataFrame.from_dict(time_js, orient='index')
+        df_mem[ben][lib] = pd.DataFrame.from_dict(mem_js, orient='index')
 
-        results = []
-        results_mem = []
-        # ------ rust -------
-        for _ in range(repeat):
-            data = run_process("CNT=" + str(int(n)) +
-                               " /usr/bin/time -v cargo run --bin " +
-                               name_rust[ben] + " -r ")
-
-            if data.returncode != 0:
-                raise Exception("Run error: Rust, ", data.stderr,
-                                name_rust[ben])
-
-            s, mem = parse_time(data)
-            offset = extract_build_time(data.stderr)
-
-            results.append(s - offset)
-            results_mem.append(mem)
-
-        dict_time["rust-driver"] = results
-        dict_mem["rust-driver"] = results_mem
-        # ------ node -----
-        for lib in libs:
-            results = []
-            results_mem = []
-            for _ in range(repeat):
-                data = run_process("/usr/bin/time -v node benchmark/logic/" +
-                                   ben + " " + str(lib) + " " + str(int(n)))
-
-                if data.returncode != 0:
-                    raise Exception("Run error: ", str(lib), ben, data.stderr)
-
-                s, mem = parse_time(data)
-                results.append(s)
-                results_mem.append(mem)
-
-            dict_time[lib] = results
-            dict_mem[lib] = results_mem
-        print(ben, dict_time, dict_mem)
-        df[ben].loc[len(df[ben])] = dict_time
-        df_mem[ben].loc[len(df[ben])] = dict_mem
 
 # ---------- plots -------------
 
