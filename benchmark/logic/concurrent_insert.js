@@ -2,34 +2,17 @@
 const async = require("async");
 // Possible values of argv[2] (driver) are scylladb-javascript-driver and cassandra-driver.
 const cassandra = require(process.argv[2]);
-const { getClientArgs } = require("./utils");
+const utils = require("./utils");
 const { exit } = require("process");
 const assert = require("assert");
 
-const client = new cassandra.Client(getClientArgs());
-const iterCnt = parseInt(process.argv[3]); 
+const client = new cassandra.Client(utils.getClientArgs());
+const iterCnt = parseInt(process.argv[3]);
 
 async.series(
     [
-        function connect(next) {
-            client.connect(next);
-        },
-        function createKeyspace(next) {
-            // Keep replication one to reduce time spent in the database
-            const query =
-                "CREATE KEYSPACE IF NOT EXISTS benchmarks WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': '1' }";
-            client.execute(query, next);
-        },
-        // Drop table to ensure no overhead comes from having already some data in the database
-        function dropTable(next) {
-            const query =
-                "DROP TABLE IF EXISTS benchmarks.basic";
-            client.execute(query, next);
-        },
-        function createTable(next) {
-            const query =
-                "CREATE TABLE benchmarks.basic (id uuid, val int, PRIMARY KEY(id))";
-            client.execute(query, next);
+        function initialize(next) {
+            utils.prepareDatabase(client, utils.tableSchemaBasic, next);
         },
         async function insert(next) {
             let allParameters = [];
@@ -40,7 +23,7 @@ async.series(
                 });
             }
             try {
-                const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, {prepare: true});
+                const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true });
             } catch (err) {
                 return next(err);
             }
@@ -54,8 +37,6 @@ async.series(
             } catch (err) {
                 return next(err);
             }
-            
-            
             next();
         },
         function r() {
