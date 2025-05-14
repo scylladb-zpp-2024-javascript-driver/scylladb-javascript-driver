@@ -52,29 +52,38 @@ def run_process(command):
 
 # --------- parameters ------------
 
-repeat = 3
+repeat = 1
 n_min = {}
 
 n_min["concurrent_insert.js"] = 4_000_000 / 64
 n_min["concurrent_select.js"] = 400_000 / 64
 n_min["insert.js"] = 400_000 / 64
 n_min["select.js"] = 100_000 / 64
+n_min["deser.js"] = 0 / 64
+n_min["concurrent_deser.js"] = 0 / 64
+n_min["ser.js"] = 0 / 64
+n_min["concurrent_ser.js"] = 0 / 64
 
 steps = {}
 
-step = 4
+step = 5
 
 # --------- libs and rust benchmark names ----------
 libs = ["scylladb-javascript-driver", "cassandra-driver"]
-benchmarks = ["concurrent_insert.js", "insert.js", "select.js",
-              "concurrent_select.js"]
+benchmarks = ["insert.js", "concurrent_insert.js", "select.js",
+              "concurrent_select.js", "ser.js",
+              "concurrent_ser.js", "deser.js",
+              "concurrent_deser.js"]
 
 name_rust = {}
 name_rust["concurrent_insert.js"] = "concurrent_insert_benchmark"
 name_rust["insert.js"] = "insert_benchmark"
 name_rust["select.js"] = "select_benchmark"
 name_rust["concurrent_select.js"] = "concurrent_select_benchmark"
-
+name_rust["deser.js"] = "deser_benchmark"
+name_rust["concurrent_deser.js"] = "concurrent_deser_benchmark"
+name_rust["ser.js"] = "ser_benchmark"
+name_rust["concurrent_ser.js"] = "concurrent_ser_benchmark"
 
 df = {}
 df_mem = {}
@@ -145,12 +154,12 @@ for ben in benchmarks:
 
 libs.append("rust-driver")
 
-cols = 3
+cols = 4
 rows_time = (len(df) + cols - 1) // cols
 rows_mem = (len(df_mem) + cols - 1) // cols
 total_rows = rows_time + rows_mem
 
-fig, axes = plt.subplots(total_rows, cols, figsize=(15, 5 * total_rows),
+fig, axes = plt.subplots(total_rows, cols, figsize=(20, 5 * total_rows),
                          facecolor="white")
 axes = axes.flatten()
 
