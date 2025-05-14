@@ -2,47 +2,9 @@ from subprocess import run
 from discord import SyncWebhook, File
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
-import re
+from utils import sha256_benchmark, run_rust, run_js
 import os
-
-
-# Function to parse the output from the time function.
-def parse_time(s):
-    log = s.stderr
-    elapsed_match = re.search(r"Elapsed .*?: ([0-9:]+\.?[0-9]*)", log)
-    if elapsed_match:
-        elapsed_time = elapsed_match.group(1)
-        parts = list(map(float, elapsed_time.split(':')))
-        if len(parts) == 3:  # Format h:mm:ss.xx
-            hours, minutes, seconds = parts
-            total_seconds = hours * 3600 + minutes * 60 + seconds
-        elif len(parts) == 2:  # Format m:ss.xx
-            minutes, seconds = parts
-            total_seconds = minutes * 60 + seconds
-        else:  # Unexpected format
-            total_seconds = parts[0]
-    else:
-        total_seconds = None
-
-    # Extract max resident set size
-    max_rss_match = re.search(r"Maximum resident set size \(kbytes\): (\d+)",
-                              log)
-    max_rss = int(max_rss_match.group(1)) if max_rss_match else None
-    return total_seconds, max_rss / 1024
-
-
-# Function to parse build time from cargo run output. Cargo run always prints
-# build time to output. We must subtract this from execution time.
-def extract_build_time(output):
-    match = re.search(
-        r'\[optimized\] target\(s\) in ([\d.]+)s',
-        output)
-    if match:
-        return float(match.group(1))
-    else:
-        raise ValueError("Build time not found in the provided output.",
-                         output)
+import tarfile
 
 
 def run_process(command):
@@ -52,13 +14,16 @@ def run_process(command):
 
 # --------- parameters ------------
 
+path = "/home/git-runner/out/"
+os.makedirs(path, exist_ok=True)
+
 repeat = 3
 n_min = {}
 
-n_min["concurrent_insert.js"] = 4_000_000 / 64
-n_min["concurrent_select.js"] = 400_000 / 64
-n_min["insert.js"] = 400_000 / 64
-n_min["select.js"] = 100_000 / 64
+n_min["concurrent_insert.js"] = 4_000_000 / 64 / 1000
+n_min["concurrent_select.js"] = 400_000 / 64 / 1000
+n_min["insert.js"] = 400_000 / 64 / 1000
+n_min["select.js"] = 100_000 / 64 / 1000
 
 steps = {}
 
@@ -66,8 +31,8 @@ step = 4
 
 # --------- libs and rust benchmark names ----------
 libs = ["scylladb-javascript-driver", "cassandra-driver"]
-benchmarks = ["concurrent_insert.js", "insert.js", "select.js",
-              "concurrent_select.js"]
+benchmarks = ["concurrent_insert.js", "insert.js", "concurrent_select.js",
+              "select.js"]
 
 name_rust = {}
 name_rust["concurrent_insert.js"] = "concurrent_insert_benchmark"
@@ -75,71 +40,70 @@ name_rust["insert.js"] = "insert_benchmark"
 name_rust["select.js"] = "select_benchmark"
 name_rust["concurrent_select.js"] = "concurrent_select_benchmark"
 
-
 df = {}
 df_mem = {}
 for ben in benchmarks:
-    steps[ben] = [n_min[ben] * (4 ** i) for i in range(step)]
+    df[ben] = {}
+    df_mem[ben] = {}
 
-    df[ben] = pd.DataFrame(columns=['n', libs[0], libs[1], 'rust-driver'])
-    df_mem[ben] = pd.DataFrame(columns=['n', libs[0], libs[1], 'rust-driver'])
+    steps[ben] = [int(n_min[ben] * (4 ** i)) for i in range(step)]
 
-    # Build Rust benchmark
-    data = run("cargo build --bin "+name_rust[ben]+" -r",
-               capture_output=True, shell=True, text=True,
-               executable='/bin/bash')
+    # ---- RUST -----
 
-    if data.returncode != 0:
-        raise Exception("Build error: " + name_rust[ben])
+    hash = sha256_benchmark(ben, 1, n_min[ben], step, repeat)
+    print(ben, "rust", hash, len(hash))
 
-    print("Build rust " + name_rust[ben] + " successfully.")
+    time_file = f"{path}{hash}_time.csv"
+    memory_file = f"{path}{hash}_memory.csv"
 
-    for n in steps[ben]:
-        dict_time = {}
-        dict_time['n'] = n
-        dict_mem = {}
-        dict_mem['n'] = n
+    if os.path.exists(time_file) and os.path.exists(memory_file):
+        print("Read from file rust: " + ben)
+        df[ben]["rust-driver"] = pd.read_csv(time_file, index_col=0)
+        df_mem[ben]["rust-driver"] = pd.read_csv(memory_file, index_col=0)
+    else:
+        time_rust, mem_rust = run_rust(name_rust[ben], steps[ben], repeat)
 
-        results = []
-        results_mem = []
-        # ------ rust -------
-        for _ in range(repeat):
-            data = run_process("CNT=" + str(int(n)) +
-                               " /usr/bin/time -v cargo run --bin " +
-                               name_rust[ben] + " -r ")
+        df[ben]["rust-driver"] = pd.DataFrame.from_dict(time_rust,
+                                                        orient='index')
+        df_mem[ben]["rust-driver"] = pd.DataFrame.from_dict(mem_rust,
+                                                            orient='index')
 
-            if data.returncode != 0:
-                raise Exception("Run error: Rust, ", data.stderr,
-                                name_rust[ben])
+        df[ben]["rust-driver"].to_csv(time_file)
+        df_mem[ben]["rust-driver"].to_csv(memory_file)
 
-            s, mem = parse_time(data)
-            offset = extract_build_time(data.stderr)
+    # ----- JS -----
 
-            results.append(s - offset)
-            results_mem.append(mem)
+    hash = sha256_benchmark(ben, 0, n_min[ben], step, repeat)
 
-        dict_time["rust-driver"] = results
-        dict_mem["rust-driver"] = results_mem
-        # ------ node -----
-        for lib in libs:
-            results = []
-            results_mem = []
-            for _ in range(repeat):
-                data = run_process("/usr/bin/time -v node benchmark/logic/" +
-                                   ben + " " + str(lib) + " " + str(int(n)))
+    time_file = f"{path}{hash}_time.csv"
+    memory_file = f"{path}{hash}_memory.csv"
 
-                if data.returncode != 0:
-                    raise Exception("Run error: ", str(lib), ben, data.stderr)
+    lib = "cassandra-driver"
+    if os.path.exists(time_file) and os.path.exists(memory_file):
+        print("Read from file JS: " + ben)
+        df[ben][lib] = pd.read_csv(time_file, index_col=0)
+        df_mem[ben][lib] = pd.read_csv(memory_file, index_col=0)
+    else:
+        time_js, mem_js = run_js(ben, steps[ben], repeat, lib)
+        df[ben][lib] = pd.DataFrame.from_dict(time_js, orient='index')
+        df_mem[ben][lib] = pd.DataFrame.from_dict(mem_js, orient='index')
 
-                s, mem = parse_time(data)
-                results.append(s)
-                results_mem.append(mem)
+        df[ben][lib].to_csv(time_file)
+        df_mem[ben][lib].to_csv(memory_file)
 
-            dict_time[lib] = results
-            dict_mem[lib] = results_mem
-        print(ben, dict_time, dict_mem)
-        df[ben].loc[len(df[ben])] = dict_time
-        df_mem[ben].loc[len(df[ben])] = dict_mem
+    # ---- SCYLLA ---
+    lib = "scylladb-javascript-driver"
+
+    time_file = f"{path}{ben}_scylladb_javascript_driver_time.csv"
+    memory_file = f"{path}{ben}_scylladb_javascript_driver_memory.csv"
+
+    time_js, mem_js = run_js(ben, steps[ben], repeat, lib)
+    df[ben][lib] = pd.DataFrame.from_dict(time_js, orient='index')
+    df_mem[ben][lib] = pd.DataFrame.from_dict(mem_js, orient='index')
+
+    df[ben][lib].to_csv(time_file)
+    df_mem[ben][lib].to_csv(memory_file)
+
 
 # ---------- plots -------------
 
@@ -161,9 +125,11 @@ for i, (test_name, data) in enumerate(df.items()):
     ax.set_facecolor("white")
 
     for lib in libs:
-        data[f"{lib}_mean"] = data[lib].apply(np.mean)
-        data[f"{lib}_std"] = data[lib].apply(np.std)
-        ax.errorbar(data["n"], data[f"{lib}_mean"], yerr=data[f"{lib}_std"],
+        columns = list(data[lib].index)
+        data[lib][f"{lib}_mean"] = data[lib].mean(axis=1)
+        data[lib][f"{lib}_std"] = data[lib].std(axis=1)
+        ax.errorbar(columns, data[lib][f"{lib}_mean"],
+                    yerr=data[lib][f"{lib}_std"],
                     label=lib, linestyle="-", linewidth=2, capsize=5)
 
     ax.set_xlabel("Number of requests")
@@ -177,6 +143,7 @@ for i, (test_name, data) in enumerate(df.items()):
 for j in range(len(df), rows_time * cols):
     axes[j].axis("off")
 
+
 # --- memory ---
 start = rows_time * cols
 memory_y = 0.47
@@ -186,9 +153,11 @@ for i, (test_name, data) in enumerate(df_mem.items()):
     ax.set_facecolor("white")
 
     for lib in libs:
-        data[f"{lib}_mean"] = data[lib].apply(np.mean)
-        data[f"{lib}_std"] = data[lib].apply(np.std)
-        ax.errorbar(data["n"], data[f"{lib}_mean"], yerr=data[f"{lib}_std"],
+        columns = list(data[lib].index)
+        data[lib][f"{lib}_mean"] = data[lib].mean(axis=1)
+        data[lib][f"{lib}_std"] = data[lib].std(axis=1)
+        ax.errorbar(columns, data[lib][f"{lib}_mean"],
+                    yerr=data[lib][f"{lib}_std"],
                     label=lib, linestyle="-", linewidth=2, capsize=5)
 
     ax.set_xlabel("Number of requests")
