@@ -52,21 +52,21 @@ def run_process(command):
 
 # --------- parameters ------------
 
-repeat = 3
+repeat = 1
 n_min = {}
 
 n_min["concurrent_insert.js"] = 4_000_000 / 64
 n_min["concurrent_select.js"] = 400_000 / 64
 n_min["insert.js"] = 400_000 / 64
 n_min["select.js"] = 100_000 / 64
-n_min["deser.js"] = 2_000 / 64
-n_min["concurrent_deser.js"] = 2_000 / 64
-n_min["ser.js"] = 900 / 64
-n_min["concurrent_ser.js"] = 1_200 / 64
+n_min["deser.js"] = 0 / 64
+n_min["concurrent_deser.js"] = 0 / 64
+n_min["ser.js"] = 0 / 64
+n_min["concurrent_ser.js"] = 0 / 64
 
 steps = {}
 
-step = 4
+step = 5
 
 # --------- libs and rust benchmark names ----------
 libs = ["scylladb-javascript-driver", "cassandra-driver"]
