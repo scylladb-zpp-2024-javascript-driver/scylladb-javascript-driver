@@ -2,12 +2,12 @@
 const async = require("async");
 // Possible values of argv[2] (driver) are scylladb-javascript-driver and cassandra-driver.
 const cassandra = require(process.argv[2]);
-const { getClientArgs } = require("./utils");
+const { getClientArgs, repeatCapped } = require("./utils");
 const { exit } = require("process");
 const assert = require("assert");
 
 const client = new cassandra.Client(getClientArgs());
-const iterCnt = parseInt(process.argv[3]); 
+const iterCnt = parseInt(process.argv[3]);
 
 async.series(
     [
@@ -32,18 +32,23 @@ async.series(
             client.execute(query, next);
         },
         async function insert(next) {
-            let allParameters = [];
-            for (let i = 0; i < iterCnt; i++) {
-                allParameters.push({
-                    query: 'INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)',
-                    params: [cassandra.types.Uuid.random(), 10]
-                });
+            let limited = async function (steps) {
+                let allParameters = [];
+                console.log(steps);
+                for (let i = 0; i < steps; i++) {
+                    allParameters.push({
+                        query: 'INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)',
+                        params: [cassandra.types.Uuid.random(), 10]
+                    });
+                }
+                try {
+                    const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true });
+                } catch (err) {
+                    return next(err);
+                }
             }
-            try {
-                const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, {prepare: true});
-            } catch (err) {
-                return next(err);
-            }
+            await repeatCapped(limited, iterCnt);
+
             next();
         },
         async function test(next) {
@@ -54,8 +59,8 @@ async.series(
             } catch (err) {
                 return next(err);
             }
-            
-            
+
+
             next();
         },
         function r() {
