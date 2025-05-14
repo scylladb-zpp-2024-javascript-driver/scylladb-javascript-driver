@@ -2,11 +2,11 @@
 const async = require("async");
 // Possible values of argv[2] (driver) are scylladb-javascript-driver and cassandra-driver.
 const cassandra = require(process.argv[2]);
-const { getClientArgs } = require("./utils");
+const { getClientArgs, repeatCapped } = require("./utils");
 const { exit } = require("process");
 
 const client = new cassandra.Client(getClientArgs());
-const iterCnt = parseInt(process.argv[3]); 
+const iterCnt = parseInt(process.argv[3]);
 
 async.series(
     [
@@ -36,26 +36,29 @@ async.series(
             for (let i = 0; i < 10; i++) {
                 let id = cassandra.types.Uuid.random();
                 try {
-                    await client.execute(query, [id, 100], {prepare: true, collectResults: true});
-                } catch(err) {
+                    await client.execute(query, [id, 100], { prepare: true, collectResults: true });
+                } catch (err) {
                     return next(err);
                 }
             }
             next();
         },
         async function select(next) {
-            
-            let allParameters = [];
-            for (let i = 0; i < iterCnt; i++) {
-                allParameters.push({
-                    query: 'SELECT * FROM benchmarks.basic',
-                });
+            let limited = async function (steps) {
+                let allParameters = [];
+                console.log(steps);
+                for (let i = 0; i < steps; i++) {
+                    allParameters.push({
+                        query: 'SELECT * FROM benchmarks.basic',
+                    });
+                }
+                try {
+                    const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true });
+                } catch (err) {
+                    return next(err);
+                }
             }
-            try {
-                const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, {prepare: true});
-            } catch (err) {
-                return next(err);
-            }
+            await repeatCapped(limited, iterCnt);
             next();
         },
         function r() {
