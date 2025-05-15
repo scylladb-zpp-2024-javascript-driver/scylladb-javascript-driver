@@ -1,6 +1,6 @@
 use scylla::{
     cluster::metadata::{ColumnType, NativeType},
-    value::CqlTime,
+    value::{CqlDecimal, CqlTime},
 };
 use std::{
     net::{IpAddr, Ipv4Addr},
@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    requests::parameter_wrappers::QueryParameterWrapper,
+    requests::parameter_wrappers::ParameterWrapper,
     types::type_wrappers::{ComplexType, CqlType},
 };
 
@@ -23,6 +23,7 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
         "Boolean" => (CqlType::Boolean, None, None),
         "Blob" => (CqlType::Blob, None, None),
         "Counter" => (CqlType::Counter, None, None),
+        "Decimal" => (CqlType::Decimal, None, None),
         "Double" => (CqlType::Double, None, None),
         "Duration" => (CqlType::Duration, None, None),
         "Float" => (CqlType::Float, None, None),
@@ -38,7 +39,7 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
         "Time" => (CqlType::Time, None, None),
         "Timeuuid" => (CqlType::Timeuuid, None, None),
         "Tuple" => {
-            return ComplexType::from_tuple(&[
+            return ComplexType::tuple_from_column_type(&[
                 ColumnType::Native(NativeType::Text),
                 ColumnType::Tuple(vec![
                     ColumnType::Native(NativeType::Int),
@@ -58,13 +59,20 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
 }
 
 #[napi]
-pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
+pub fn tests_from_value(test: String, value: ParameterWrapper) {
     let v = match test.as_str() {
         "Ascii" => CqlValue::Ascii("Some arbitrary value".to_owned()),
         "BigInt" => CqlValue::BigInt(i64::MAX),
         "Boolean" => CqlValue::Boolean(false),
         "Blob" => CqlValue::Blob(vec![0, 1, 2, 3]),
         "Counter" => CqlValue::Counter(Counter(921)),
+        "Decimal" => CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(
+            &[
+                1, 53, 169, 169, 173, 175, 83, 216, 15, 110, 137, 47, 175, 202, 192, 196, 222, 179,
+                11, 93, 98, 127, 51, 6, 161, 141, 90, 11, 80, 251, 28,
+            ],
+            69,
+        )),
         "Double" => CqlValue::Double(21.37),
         "Duration" => CqlValue::Duration(CqlDuration {
             months: 21,
@@ -103,5 +111,34 @@ pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
         "Uuid" => CqlValue::Uuid(uuid!("ffffffff-eeee-ffff-ffff-ffffffffffff")),
         _ => CqlValue::Empty,
     };
-    assert_eq!(value.parameter, v);
+    assert_eq!(
+        match value.row {
+            Some(v) => {
+                match v {
+                    scylla::value::MaybeUnset::Unset => panic!("Expected set value"),
+                    scylla::value::MaybeUnset::Set(w) => w,
+                }
+            }
+            None => panic!("Expected some value"),
+        },
+        v
+    );
+}
+
+#[napi]
+pub fn tests_parameters_wrapper_unset(value: ParameterWrapper) {
+    match value.row {
+        Some(v) => match v {
+            scylla::value::MaybeUnset::Unset => (),
+            scylla::value::MaybeUnset::Set(_) => panic!("Expected unset value"),
+        },
+        None => panic!("Expected some value"),
+    }
+}
+
+#[napi]
+pub fn tests_parameters_wrapper_null(value: ParameterWrapper) {
+    if value.row.is_some() {
+        panic!("Expected none value")
+    }
 }

@@ -254,7 +254,20 @@ impl ToNapiValue for CqlValueWrapper {
                 BigInt::to_napi_value(env, val.0.into()),
                 CqlType::Counter,
             ),
-            CqlValue::Decimal(_) => todo!(),
+            CqlValue::Decimal(val) => {
+                // Returned buffer is in format XXXXYYYY...YYY
+                // where XXXX is the exponent of the decimal in big endian
+                // and YYYY...YYY is the value of the decimal in big endian
+                let (value, len) = val.as_signed_be_bytes_slice_and_exponent();
+                let mut buf = vec![0u8; 4 + value.len()];
+                buf[0..4].copy_from_slice(&len.to_be_bytes());
+                buf[4..].copy_from_slice(value);
+                add_type_to_napi_obj(
+                    env,
+                    Buffer::to_napi_value(env, Buffer::from(buf)),
+                    CqlType::Decimal,
+                )
+            }
             CqlValue::Date(val) => {
                 LocalDateWrapper::to_napi_value(env, LocalDateWrapper::from_cql_date(val))
             }
@@ -382,7 +395,7 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
         },
         ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
-        ColumnType::Tuple(t) => ComplexType::from_tuple(t.as_slice()),
+        ColumnType::Tuple(t) => ComplexType::tuple_from_column_type(t.as_slice()),
         ColumnType::Vector {
             typ: _,
             dimensions: _,
