@@ -332,7 +332,11 @@ impl ToNapiValue for CqlValueWrapper {
             ),
 
             CqlValue::Uuid(val) => UuidWrapper::to_napi_value(env, UuidWrapper::from_cql_uuid(val)),
-            CqlValue::Varint(_) => todo!(),
+            CqlValue::Varint(val) => add_type_to_napi_obj(
+                env,
+                Buffer::to_napi_value(env, Buffer::from(val.as_signed_bytes_be_slice())),
+                CqlType::Varint,
+            ),
             other => unimplemented!("Missing implementation for CQL value {:?}", other),
         }
     }

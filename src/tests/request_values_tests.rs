@@ -1,6 +1,6 @@
 use scylla::{
     cluster::metadata::{ColumnType, NativeType},
-    value::CqlTime,
+    value::{CqlTime, CqlVarint},
 };
 use std::{
     net::{IpAddr, Ipv4Addr},
@@ -48,6 +48,7 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
             ])
         }
         "Uuid" => (CqlType::Uuid, None, None),
+        "Varint" => (CqlType::Varint, None, None),
         _ => (CqlType::Empty, None, None),
     };
     ComplexType::two_support(
@@ -101,6 +102,10 @@ pub fn tests_from_value(test: String, value: ParameterWrapper) {
             None,
         ]),
         "Uuid" => CqlValue::Uuid(uuid!("ffffffff-eeee-ffff-ffff-ffffffffffff")),
+        "Varint" => CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[
+            10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+            10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+        ])),
         _ => CqlValue::Empty,
     };
     assert_eq!(

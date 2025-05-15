@@ -2,7 +2,7 @@ use napi::{
     bindgen_prelude::{Array, BigInt, Buffer, FromNapiValue, Undefined},
     Status,
 };
-use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
+use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, CqlVarint, MaybeUnset};
 
 use crate::{
     types::{
@@ -151,7 +151,9 @@ fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi:
         )),
         CqlType::Tuple => CqlValue::Tuple(cql_value_vec_from_tuple(typ, &get_element!(Array))?),
         CqlType::Uuid => CqlValue::Uuid(get_element!(&UuidWrapper).get_cql_uuid()),
-        CqlType::Varint => todo!(),
+        CqlType::Varint => CqlValue::Varint(CqlVarint::from_signed_bytes_be(
+            get_element!(Buffer).to_vec(),
+        )),
         CqlType::Unprovided => return Err(js_error("Expected type information for the value")),
         CqlType::Empty => unreachable!("Should not receive Empty type here."),
         CqlType::Custom => unreachable!("Should not receive Custom type here."),

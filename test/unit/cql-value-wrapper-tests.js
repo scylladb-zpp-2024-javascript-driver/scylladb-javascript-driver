@@ -245,4 +245,20 @@ describe("Cql value wrapper", function () {
         let expectedInet = InetAddress.fromString("127.0.0.1");
         assert.strictEqual(value.equals(expectedInet), true);
     });
+
+    it("should get varint type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperVarint();
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[
+            10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+            10, 10, 10, 10, 10, 10, 10, 10, 10,
+        ])) */
+        assert.strictEqual(
+            BigInt(
+                "4540866244600635114649842549360310111892940575123159374096375843447573711370",
+            ),
+            value,
+        );
+    });
 });
