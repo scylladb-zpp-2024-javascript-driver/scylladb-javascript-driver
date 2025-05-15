@@ -1,4 +1,5 @@
-use crate::utils::{js_error, CharCounter};
+use crate::errors::js_error;
+use crate::utils::CharCounter;
 use regex::Regex;
 use scylla::value::CqlDate;
 use std::sync::LazyLock;
