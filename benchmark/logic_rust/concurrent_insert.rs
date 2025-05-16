@@ -3,12 +3,14 @@ use scylla::client::session::Session;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::statement::prepared::PreparedStatement;
 use std::env;
+use std::sync::atomic::AtomicI32;
 use std::sync::Arc;
 use tokio::sync::Barrier;
 use uuid::Uuid;
 
-const CONCURRENCY: usize = 2000;
+const CONCURRENCY: usize = 500;
 const STEP: usize = 200000;
+static  COUNTER: AtomicI32 = AtomicI32::new(0);
 
 async fn insert_data(
     session: Arc<Session>,
@@ -23,6 +25,8 @@ async fn insert_data(
         let id = Uuid::new_v4();
         session.execute_unpaged(insert_query, (id, 100)).await?;
         if index / STEP != (index + CONCURRENCY) / STEP {
+            let w = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Acquire);
+            println!("Waiting: {w}");
             barrier.wait().await;
         }
         index += CONCURRENCY;
