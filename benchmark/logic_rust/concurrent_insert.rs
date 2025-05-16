@@ -3,25 +3,34 @@ use scylla::client::session::Session;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::statement::prepared::PreparedStatement;
 use std::env;
+use std::sync::atomic::AtomicI32;
 use std::sync::Arc;
+use tokio::sync::Barrier;
 use uuid::Uuid;
 
-const CONCURRENCY: usize = 2000;
+const CONCURRENCY: usize = 500;
+const STEP: usize = 200000;
+static  COUNTER: AtomicI32 = AtomicI32::new(0);
 
 async fn insert_data(
     session: Arc<Session>,
     start_index: usize,
     n: i32,
     insert_query: &PreparedStatement,
+    barrier: Arc<Barrier>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut index = start_index;
 
     while index < n as usize {
         let id = Uuid::new_v4();
         session.execute_unpaged(insert_query, (id, 100)).await?;
+        if index / STEP != (index + CONCURRENCY) / STEP {
+            let w = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Acquire);
+            println!("Waiting: {w}");
+            barrier.wait().await;
+        }
         index += CONCURRENCY;
     }
-
     Ok(())
 }
 
@@ -60,12 +69,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut handles = vec![];
     let session = Arc::new(session);
+    let barrier = Arc::new(Barrier::new(CONCURRENCY));
 
     for i in 0..CONCURRENCY {
         let session_clone = Arc::clone(&session);
         let insert_query_clone = insert_query.clone();
+        let barrier_clone = barrier.clone();
         handles.push(tokio::spawn(async move {
-            insert_data(session_clone, i, n, &insert_query_clone)
+            insert_data(session_clone, i, n, &insert_query_clone, barrier_clone)
                 .await
                 .unwrap();
         }));
