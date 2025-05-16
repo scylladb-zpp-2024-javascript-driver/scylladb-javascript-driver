@@ -2,11 +2,13 @@ use futures::future::join_all;
 use scylla::client::session::Session;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::statement::prepared::PreparedStatement;
+use std::cmp::min;
 use std::env;
 use std::sync::Arc;
 use uuid::Uuid;
 
 const CONCURRENCY: usize = 2000;
+const STEP: i32 = 2000000;
 
 async fn insert_data(
     session: Arc<Session>,
@@ -58,20 +60,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .prepare("INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)")
         .await?;
 
-    let mut handles = vec![];
     let session = Arc::new(session);
-
-    for i in 0..CONCURRENCY {
-        let session_clone = Arc::clone(&session);
-        let insert_query_clone = insert_query.clone();
-        handles.push(tokio::spawn(async move {
-            insert_data(session_clone, i, n, &insert_query_clone)
+    
+    for q in 0..((n + STEP - 1) / STEP) {
+        let mut handles = vec![];
+        for i in 0..CONCURRENCY {
+            let session_clone = Arc::clone(&session);
+            let insert_query_clone = insert_query.clone();
+            handles.push(tokio::spawn(async move {
+                insert_data(
+                    session_clone,
+                    i,
+                    min(n, (q + 1) * STEP),
+                    &insert_query_clone,
+                )
                 .await
                 .unwrap();
-        }));
-    }
+            }));
+        }
 
-    join_all(handles).await;
+        join_all(handles).await;
+    }
 
     let select_query = "SELECT COUNT(1) FROM benchmarks.basic USING TIMEOUT 120s;";
 
