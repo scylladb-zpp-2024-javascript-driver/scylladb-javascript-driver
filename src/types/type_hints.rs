@@ -12,6 +12,7 @@ use super::type_wrappers::{ComplexType, CqlType};
 pub struct TypeHint {
     pub code: i32,
     pub info: Option<Option<Vec<TypeHint>>>,
+    pub name: Option<Option<Vec<String>>>,
 }
 
 /// Convert the number representing CQL type to the internal type, representing CQL type
@@ -109,21 +110,35 @@ pub fn convert_hint(hint: Option<TypeHint>) -> napi::Result<Option<ComplexType>>
                 CqlType::Tuple => {
                     if support_types.is_empty() {
                         return Err(js_error(
-                            "Invalid number of support types. Got 0, expected at least one".to_owned(),
+                            "Invalid number of support types. Got 0, expected at least one"
+                                .to_owned(),
                         ));
                     }
-                    ComplexType::from_tuple(support_types
-                        .iter()
-                        .map(|e| e.as_ref().cloned().unwrap()) // All types in Tuple should be annotated
-                        .collect::<Vec<ComplexType>>(),
+                    ComplexType::from_tuple(
+                        support_types
+                            .iter()
+                            .map(|e| e.as_ref().cloned().unwrap()) // All types in Tuple should be annotated
+                            .collect::<Vec<ComplexType>>(),
+                    )
+                }
+                CqlType::UserDefinedType => {
+                    if support_types.is_empty() {
+                        return Err(js_error(
+                            "Invalid number of support types. Got 0, expected at least one",
+                        ));
+                    }
+                    ComplexType::from_udt(
+                        support_types
+                            .iter()
+                            .map(|e| e.as_ref().cloned().unwrap()) // All types in UDT should be annotated
+                            .collect::<Vec<ComplexType>>(),
+                        hint.name.flatten().unwrap_or_default(),
+                        String::from(""),
+                        String::from(""),
                     )
                 }
                 _ => unreachable!(),
             }
-        }
-        CqlType::UserDefinedType => {
-            // TODO: update it with UDT implementation
-            todo!()
         }
         _ => ComplexType::simple_type(base_type),
     }))
