@@ -1,4 +1,5 @@
-use crate::utils::{bigint_to_i64, js_error, CharCounter};
+use crate::errors::js_error;
+use crate::utils::{bigint_to_i64, CharCounter};
 use napi::bindgen_prelude::BigInt;
 use scylla::value::CqlTime;
 use std::fmt::{self, Write};

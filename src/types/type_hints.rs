@@ -1,4 +1,4 @@
-use crate::utils::js_error;
+use crate::errors::js_error;
 
 use super::type_wrappers::{ComplexType, CqlType};
 
