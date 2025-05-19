@@ -1,0 +1,27 @@
+# FILE 2 of 2. 
+# Wait for the first file to boot up
+# Docker compose for two machine setup. 
+
+# This docker compose is taken from scylladb/scylla-rust-driver repository
+services:
+  cassandra1:
+    image: cassandra
+    ports:
+      - 7000:7000
+      - 7001:7001
+      - 9042:9042
+    container_name: cassandra-node-2-of-2
+    healthcheck:
+        test: ["CMD", "cqlsh", "-e", "describe keyspaces" ]
+        interval: 5s
+        timeout: 5s
+        retries: 60
+    environment:
+      # REMEMBER TO CHANGE THE IP ADDRESS FOR EXTERNAL IP ADDRESS
+      - CASSANDRA_BROADCAST_ADDRESS=0.0.0.0
+      # REMEMBER TO CHANGE THE IP ADDRESS FOR OTHER MACHINE IP ADDRESS
+      - CASSANDRA_SEEDS=0.0.0.0
+      # REMEMBER TO CHANGE THOSE VALUES FOR ALL INSTANCES
+      - MAX_HEAP_SIZE=2048M # Recommended 1/4 of total RAM
+      - HEAP_NEWSIZE=512M  # This is recommended to be 1/4 of MAX_HEAP_SIZE
+      - JVM_OPTS=-Dcassandra.skip_wait_for_gossip_to_settle=0 -Dcassandra.ring_delay_ms=5000
