@@ -103,8 +103,20 @@ pub fn convert_hint(hint: Option<TypeHint>) -> napi::Result<Option<ComplexType>>
                         second_support.flatten(),
                     )
                 }
-                // TODO: update it with tuple implementations
-                CqlType::Tuple => todo!(),
+                CqlType::Tuple => {
+                    if support_types.is_empty() {
+                        return Err(js_error(
+                            "Invalid number of support types. Got 0, expected at least one"
+                                .to_owned(),
+                        ));
+                    }
+                    ComplexType::from_tuple(
+                        support_types
+                            .iter()
+                            .map(|e| e.as_ref().cloned().unwrap()) // All types in Tuple should be annotated
+                            .collect::<Vec<ComplexType>>(),
+                    )
+                }
                 _ => unreachable!(),
             }
         }
