@@ -40,6 +40,8 @@ name_rust["insert.js"] = "insert_benchmark"
 name_rust["select.js"] = "select_benchmark"
 name_rust["concurrent_select.js"] = "concurrent_select_benchmark"
 
+files_list = []
+
 df = {}
 df_mem = {}
 for ben in benchmarks:
@@ -55,6 +57,8 @@ for ben in benchmarks:
 
     time_file = f"{path}{hash}_time.csv"
     memory_file = f"{path}{hash}_memory.csv"
+    files_list.append(time_file)
+    files_list.append(memory_file)
 
     if os.path.exists(time_file) and os.path.exists(memory_file):
         print("Read from file rust: " + ben)
@@ -78,6 +82,9 @@ for ben in benchmarks:
     time_file = f"{path}{hash}_time.csv"
     memory_file = f"{path}{hash}_memory.csv"
 
+    files_list.append(time_file)
+    files_list.append(memory_file)
+
     lib = "cassandra-driver"
     if os.path.exists(time_file) and os.path.exists(memory_file):
         print("Read from file JS: " + ben)
@@ -96,6 +103,9 @@ for ben in benchmarks:
 
     time_file = f"{path}{ben}_scylladb_javascript_driver_time.csv"
     memory_file = f"{path}{ben}_scylladb_javascript_driver_memory.csv"
+
+    files_list.append(time_file)
+    files_list.append(memory_file)
 
     time_js, mem_js = run_js(ben, steps[ben], repeat, lib)
     df[ben][lib] = pd.DataFrame.from_dict(time_js, orient='index')
@@ -192,3 +202,9 @@ wh.send(content="Branch: " + branch +
         " commit: https://github.com/scylladb-zpp-2024-javascript-driver/" +
         "scylladb-javascript-driver/commit/"
         + commit, file=File("graph.png"))
+
+with tarfile.open('results.tar.gz', 'w:gz') as tar:
+    for path in files_list:
+        tar.add(path, arcname=path.split('/')[-1])
+
+wh.send(content="Results:", file=File("results.tar.gz"))
