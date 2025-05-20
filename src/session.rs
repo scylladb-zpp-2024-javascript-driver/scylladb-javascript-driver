@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::client::SelfIdentity;
@@ -6,6 +8,7 @@ use scylla::statement::batch::Batch;
 use scylla::statement::prepared::PreparedStatement;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
 use scylla::value::{CqlValue, MaybeUnset};
+use tokio::task::JoinSet;
 
 use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
@@ -36,7 +39,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    inner: CachingSession,
+    inner: Arc<CachingSession>,
 }
 
 #[napi]
@@ -67,7 +70,9 @@ impl SessionWrapper {
             session,
             options.cache_size.unwrap_or(DEFAULT_CACHE_SIZE) as usize,
         );
-        Ok(SessionWrapper { inner: session })
+        Ok(SessionWrapper {
+            inner: session.into(),
+        })
     }
 
     /// Returns the name of the current keyspace
@@ -119,6 +124,51 @@ impl SessionWrapper {
                 .await
                 .map_err(err_to_napi)?,
         })
+    }
+
+    #[napi]
+    pub async fn prepare_multiple(
+        &self,
+        statements: Vec<String>,
+    ) -> napi::Result<Vec<PreparedStatementWrapper>> {
+        let mut set: JoinSet<(
+            Result<PreparedStatement, scylla::errors::PrepareError>,
+            usize,
+        )> = JoinSet::new();
+        let mut i = 0;
+        let mut in_flight = 0;
+        let mut res: Vec<Option<PreparedStatementWrapper>> = Vec::new();
+        res.resize(statements.len(), None);
+
+        macro_rules! parse_result {
+            ($task_result: ident) => {
+                let (prepared, index) = $task_result.unwrap();
+                let prepared = prepared.map_err(err_to_napi)?;
+                res[index] = Some(PreparedStatementWrapper { prepared });
+            };
+        }
+
+        for e in statements {
+            if in_flight > 5000 {
+                let res = set.join_next().await.expect("Expected some result");
+                parse_result!(res);
+                in_flight -= 1;
+            }
+            let x = e.into();
+            let w = self.inner.clone();
+            set.spawn(async move { (w.add_prepared_statement(&x).await, i) });
+            in_flight += 1;
+            i += 1;
+        }
+
+        while let Some(task_result) = set.join_next().await {
+            parse_result!(task_result);
+        }
+        let res: Vec<PreparedStatementWrapper> = res.into_iter().flatten().collect();
+        if res.len() != i {
+            return Err(js_error("Some queries were not prepared"));
+        }
+        Ok(res)
     }
 
     /// Execute a given prepared statement against the database with provided parameters.
@@ -236,6 +286,62 @@ impl SessionWrapper {
             result: QueryResultWrapper::from_query(result)?,
             paging_state: paging_state.into(),
         })
+    }
+
+    #[napi]
+    pub async fn execute_multiple(
+        &self,
+        queries: Vec<&PreparedStatementWrapper>,
+        params: Vec<Vec<Option<&MaybeUnsetQueryParameterWrapper>>>,
+        options: &QueryOptionsWrapper,
+    ) -> napi::Result<Vec<QueryResultWrapper>> {
+        let params_vec: Vec<Vec<Option<MaybeUnset<CqlValue>>>> = params
+            .into_iter()
+            .map(MaybeUnsetQueryParameterWrapper::extract_parameters)
+            .collect();
+        let mut set: JoinSet<(
+            Result<scylla::response::query_result::QueryResult, scylla::errors::ExecutionError>,
+            usize,
+        )> = JoinSet::new();
+        let mut i = 0;
+        let mut in_flight = 0;
+
+        let mut res: Vec<Option<QueryResultWrapper>> = Vec::new();
+        while res.len() < queries.len() {
+            res.push(None);
+        }
+
+        macro_rules! parse_result {
+            ($task_result: ident) => {
+                let (result, index) = $task_result.unwrap();
+                let result = result.map_err(err_to_napi)?;
+                res[index] = Some(QueryResultWrapper::from_query(result)?);
+            };
+        }
+
+        for f in params_vec {
+            if in_flight > 5000 {
+                let res = set.join_next().await.expect("Expected some result");
+                parse_result!(res);
+                in_flight -= 1;
+            }
+
+            let e = queries.get(i).expect("msg");
+            let query = apply_prepared_options(e.prepared.clone(), options)?;
+            let w = self.inner.clone();
+            set.spawn(async move { (w.get_session().execute_unpaged(&query, f).await, i) });
+            i += 1;
+            in_flight += 1;
+        }
+
+        while let Some(task_result) = set.join_next().await {
+            parse_result!(task_result);
+        }
+        let res: Vec<QueryResultWrapper> = res.into_iter().flatten().collect();
+        if res.len() != i {
+            return Err(js_error("Some queries were not executed correctly"));
+        }
+        Ok(res)
     }
 }
 
