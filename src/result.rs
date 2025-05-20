@@ -9,7 +9,10 @@ use crate::{
     },
     utils::err_to_napi,
 };
-use napi::bindgen_prelude::{BigInt, Buffer, ToNapiValue};
+use napi::{
+    bindgen_prelude::{BigInt, Buffer, ToNapiValue},
+    Env, NapiRaw,
+};
 use scylla::{
     cluster::metadata::{CollectionType, NativeType},
     errors::IntoRowsResultError,
@@ -304,7 +307,26 @@ impl ToNapiValue for CqlValueWrapper {
                     .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
                     .collect(),
             ),
-            CqlValue::UserDefinedType { .. } => todo!(),
+            CqlValue::UserDefinedType {
+                keyspace: _,
+                name: _,
+                fields,
+            } => {
+                let mut obj = Env::from_raw(env).create_object()?;
+                fields.iter().for_each(|(k, v)| {
+                    obj.set(
+                        k,
+                        v.as_ref().map(|e| {
+                            CqlValueWrapper::to_napi_value(
+                                env,
+                                CqlValueWrapper { inner: e.clone() },
+                            )
+                        }),
+                    )
+                    .unwrap()
+                });
+                Ok(obj.raw())
+            }
             CqlValue::SmallInt(val) => i16::to_napi_value(env, val),
             CqlValue::TinyInt(val) => i8::to_napi_value(env, val),
             CqlValue::Time(val) => {
@@ -381,8 +403,15 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             ),
             other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
         },
-        ColumnType::UserDefinedType { .. } => ComplexType::simple_type(CqlType::UserDefinedType),
-        ColumnType::Tuple(t) => ComplexType::from_tuple(t.as_slice()),
+        ColumnType::UserDefinedType {
+            frozen: _,
+            definition,
+        } => ComplexType::from_udt_column_type(
+            definition.field_types.as_slice(),
+            definition.name.to_string(),
+            definition.keyspace.to_string(),
+        ),
+        ColumnType::Tuple(t) => ComplexType::tuple_from_column_type(t.as_slice()),
         ColumnType::Vector {
             typ: _,
             dimensions: _,

@@ -12,7 +12,7 @@ client
     .then(function () {
         const query =
             "CREATE KEYSPACE IF NOT EXISTS examples WITH replication =" +
-            "{'class': 'SimpleStrategy', 'replication_factor': '1' }";
+            "{'class': 'NetworkTopologyStrategy', 'replication_factor': '1' }";
         return client.execute(query);
     })
     .then(function () {
@@ -49,8 +49,8 @@ client
     })
     .then(function (result) {
         const row = result.first();
-        console.log("Retrieved row: %j", row);
+        console.log(`Retrieved row: ${row}`);
     })
     .catch(function (err) {
-        console.error("There was an error", err);
+        console.error(`There was an error ${err}`);
     });

@@ -3,12 +3,13 @@ use scylla::{
     value::CqlTime,
 };
 use std::{
+    borrow::Cow,
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
 };
 
 use crate::{
-    requests::parameter_wrappers::QueryParameterWrapper,
+    requests::parameter_wrappers::ParameterWrapper,
     types::type_wrappers::{ComplexType, CqlType},
 };
 
@@ -33,12 +34,28 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
         "List" => (CqlType::List, Some(CqlType::Text), None),
         "Map" => (CqlType::Map, Some(CqlType::Ascii), Some(CqlType::Double)),
         "Set" => (CqlType::Set, Some(CqlType::Int), None),
+        "UserDefinedType" => {
+            return ComplexType::from_udt_column_type(
+                &[
+                    (
+                        Cow::Owned("field1".to_owned()),
+                        ColumnType::Native(NativeType::Text),
+                    ),
+                    (
+                        Cow::Owned("field2".to_owned()),
+                        ColumnType::Native(NativeType::Int),
+                    ),
+                ],
+                "name".to_owned(),
+                "keyspace".to_owned(),
+            )
+        }
         "SmallInt" => (CqlType::SmallInt, None, None),
         "TinyInt" => (CqlType::TinyInt, None, None),
         "Time" => (CqlType::Time, None, None),
         "Timeuuid" => (CqlType::Timeuuid, None, None),
         "Tuple" => {
-            return ComplexType::from_tuple(&[
+            return ComplexType::tuple_from_column_type(&[
                 ColumnType::Native(NativeType::Text),
                 ColumnType::Tuple(vec![
                     ColumnType::Native(NativeType::Int),
@@ -58,7 +75,7 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
 }
 
 #[napi]
-pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
+pub fn tests_from_value(test: String, value: ParameterWrapper) {
     let v = match test.as_str() {
         "Ascii" => CqlValue::Ascii("Some arbitrary value".to_owned()),
         "BigInt" => CqlValue::BigInt(i64::MAX),
@@ -86,6 +103,14 @@ pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
             (CqlValue::Ascii("Text2".to_owned()), CqlValue::Double(0.2)),
         ]),
         "Set" => CqlValue::Set(vec![CqlValue::Int(4), CqlValue::Int(7), CqlValue::Int(15)]),
+        "UserDefinedType" => CqlValue::UserDefinedType {
+            keyspace: "keyspace".to_owned(),
+            name: "name".to_owned(),
+            fields: vec![
+                ("field1".to_owned(), Some(CqlValue::Text("Test".to_owned()))),
+                ("field2".to_owned(), Some(CqlValue::Int(1))),
+            ],
+        },
         "SmallInt" => CqlValue::SmallInt(1_i16),
         "TinyInt" => CqlValue::TinyInt(-1_i8),
         "Time" => CqlValue::Time(CqlTime(4312)),
@@ -103,5 +128,34 @@ pub fn tests_from_value(test: String, value: &QueryParameterWrapper) {
         "Uuid" => CqlValue::Uuid(uuid!("ffffffff-eeee-ffff-ffff-ffffffffffff")),
         _ => CqlValue::Empty,
     };
-    assert_eq!(value.parameter, v);
+    assert_eq!(
+        match value.row {
+            Some(v) => {
+                match v {
+                    scylla::value::MaybeUnset::Unset => panic!("Expected set value"),
+                    scylla::value::MaybeUnset::Set(w) => w,
+                }
+            }
+            None => panic!("Expected some value"),
+        },
+        v
+    );
+}
+
+#[napi]
+pub fn tests_parameters_wrapper_unset(value: ParameterWrapper) {
+    match value.row {
+        Some(v) => match v {
+            scylla::value::MaybeUnset::Unset => (),
+            scylla::value::MaybeUnset::Set(_) => panic!("Expected unset value"),
+        },
+        None => panic!("Expected some value"),
+    }
+}
+
+#[napi]
+pub fn tests_parameters_wrapper_null(value: ParameterWrapper) {
+    if value.row.is_some() {
+        panic!("Expected none value")
+    }
 }
