@@ -7,7 +7,7 @@ const Uuid = cassandra.types.Uuid;
 const client = new cassandra.Client(getClientArgs());
 
 /**
- * Inserts multiple rows in a table from an Array using the built in method <code>executeConcurrent()</code>,
+ * Inserts multiple rows in a table from an Array using the built in method `executeConcurrent()`,
  * limiting the amount of parallel requests.
  */
 async function example() {
@@ -29,16 +29,12 @@ async function example() {
         x.toString(),
     ]);
 
-    try {
-        const query = "INSERT INTO tbl_sample_kv (id, value) VALUES (?, ?)";
-        await executeConcurrent(client, query, values);
+    const query = "INSERT INTO tbl_sample_kv (id, value) VALUES (?, ?)";
+    await executeConcurrent(client, query, values);
 
-        console.log(
-            `Finished executing ${values.length} queries with a concurrency level of ${concurrencyLevel}.`,
-        );
-    } finally {
-        await client.shutdown();
-    }
+    console.log(
+        `Finished executing ${values.length} queries with a concurrency level of ${concurrencyLevel}.`,
+    );
 }
 
 example();

@@ -1,8 +1,9 @@
 # The goal of this workflow is to check if unit test run correctly
 # This includes both datastax unit tests and tests specific for this driver
-name: Unit tests
+name: Run unit tests
 env:
   DEBUG: napi:*
+  PEDANTIC: true
 "on":
   push:
     branches:

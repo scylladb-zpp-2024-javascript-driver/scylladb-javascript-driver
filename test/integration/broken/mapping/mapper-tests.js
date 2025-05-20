@@ -291,13 +291,11 @@ describe("Mapper", function () {
 
                     const methodName = item[0];
 
-                    return userMapper[methodName](item[1])
-                        .then((result) => {
-                            helper.assertInstanceOf(result, Result);
-                            assert.strictEqual(typeof result.length, "number");
-                            assert.strictEqual(result.wasApplied(), true);
-                        })
-                        .then(() => client.shutdown());
+                    return userMapper[methodName](item[1]).then((result) => {
+                        helper.assertInstanceOf(result, Result);
+                        assert.strictEqual(typeof result.length, "number");
+                        assert.strictEqual(result.wasApplied(), true);
+                    });
                 }),
             );
         });

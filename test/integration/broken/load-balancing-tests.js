@@ -123,7 +123,7 @@ context("with a reusable 3 node cluster", function () {
                 },
                 function (err) {
                     assert.ifError(err);
-                    client.shutdown(done);
+                    done();
                 },
             );
         });
@@ -345,7 +345,7 @@ context("with a reusable 3 node cluster", function () {
                 { routingKey: "this is not valid" },
                 (err) => {
                     helper.assertInstanceOf(err, TypeError);
-                    client.shutdown(done);
+                    done();
                 },
             );
         });
