@@ -88,3 +88,19 @@ Rust:
 ```bash
 CNT=<Number of queries> cargo run --bin select_benchmark -r
 ```
+
+- **batch**
+
+This benchmark uses `client.batch` endpoint to insert `n` rows containing `uuid` and `int` into the database. Afterwards, it checks that the number of rows inserted is correct.
+
+JS:
+
+```bash
+node batch.js <driver> <Number of queries>
+```
+
+Rust:
+
+```bash
+CNT=<Number of queries> cargo run --bin TODO -r
+```
