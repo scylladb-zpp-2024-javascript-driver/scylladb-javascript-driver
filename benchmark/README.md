@@ -102,5 +102,5 @@ node batch.js <driver> <Number of queries>
 Rust:
 
 ```bash
-CNT=<Number of queries> cargo run --bin TODO -r
+CNT=<Number of queries> cargo run --bin batch_benchmark -r
 ```
