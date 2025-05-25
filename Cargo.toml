@@ -30,7 +30,7 @@ napi-build = "2.1.5"
 
 [profile.release]
 lto = true
-strip = "symbols"
+# strip = "symbols"
 
 [profile.dev]
 panic = "abort"
