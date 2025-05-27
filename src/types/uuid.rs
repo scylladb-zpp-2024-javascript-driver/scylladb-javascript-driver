@@ -30,3 +30,8 @@ impl UuidWrapper {
         self.uuid
     }
 }
+
+#[napi]
+pub fn get_random_uuid_v4() -> Buffer {
+    Buffer::from(Uuid::new_v4().as_bytes().as_slice())
+}
