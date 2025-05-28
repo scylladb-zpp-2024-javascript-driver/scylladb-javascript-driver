@@ -17,7 +17,7 @@ use crate::{
 };
 
 pub struct ParameterWrapper {
-    pub(crate) row: Option<MaybeUnset<CqlValue>>,
+    pub(crate) val: Option<MaybeUnset<CqlValue>>,
 }
 
 /// Converts an array of values into Vec of CqlValue based on the provided type.
@@ -214,6 +214,6 @@ impl FromNapiValue for ParameterWrapper {
             }
         };
 
-        Ok(ParameterWrapper { row: val })
+        Ok(ParameterWrapper { val })
     }
 }

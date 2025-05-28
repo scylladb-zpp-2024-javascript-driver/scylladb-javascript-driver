@@ -120,7 +120,7 @@ pub fn tests_from_value(test: String, value: ParameterWrapper) {
         _ => CqlValue::Empty,
     };
     assert_eq!(
-        match value.row {
+        match value.val {
             Some(v) => {
                 match v {
                     scylla::value::MaybeUnset::Unset => panic!("Expected set value"),
@@ -135,7 +135,7 @@ pub fn tests_from_value(test: String, value: ParameterWrapper) {
 
 #[napi]
 pub fn tests_parameters_wrapper_unset(value: ParameterWrapper) {
-    match value.row {
+    match value.val {
         Some(v) => match v {
             scylla::value::MaybeUnset::Unset => (),
             scylla::value::MaybeUnset::Set(_) => panic!("Expected unset value"),
@@ -146,7 +146,7 @@ pub fn tests_parameters_wrapper_unset(value: ParameterWrapper) {
 
 #[napi]
 pub fn tests_parameters_wrapper_null(value: ParameterWrapper) {
-    if value.row.is_some() {
+    if value.val.is_some() {
         panic!("Expected none value")
     }
 }

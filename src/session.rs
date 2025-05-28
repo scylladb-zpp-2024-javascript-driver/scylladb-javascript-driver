@@ -95,7 +95,7 @@ impl SessionWrapper {
     ) -> napi::Result<QueryResultWrapper> {
         let statement: Statement = apply_statement_options(query.into(), options)?;
         let params_vec: Vec<Option<MaybeUnset<CqlValue>>> =
-            params.into_iter().map(|e| e.row).collect();
+            params.into_iter().map(|e| e.val).collect();
         let query_result = self
             .inner
             .get_session()
@@ -140,7 +140,7 @@ impl SessionWrapper {
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let params_vec: Vec<Option<MaybeUnset<CqlValue>>> =
-            params.into_iter().map(|e| e.row).collect();
+            params.into_iter().map(|e| e.val).collect();
         let query = apply_prepared_options(query.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
             self.inner
@@ -162,7 +162,7 @@ impl SessionWrapper {
     ) -> napi::Result<QueryResultWrapper> {
         let params_vec: Vec<Vec<Option<MaybeUnset<CqlValue>>>> = params
             .into_iter()
-            .map(|e| e.into_iter().map(|f| f.row).collect())
+            .map(|e| e.into_iter().map(|f| f.val).collect())
             .collect();
         QueryResultWrapper::from_query(
             self.inner
@@ -191,7 +191,7 @@ impl SessionWrapper {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let values: Vec<Option<MaybeUnset<CqlValue>>> = params.into_iter().map(|e| e.row).collect();
+        let values: Vec<Option<MaybeUnset<CqlValue>>> = params.into_iter().map(|e| e.val).collect();
 
         let (result, paging_state_response) = self
             .inner
@@ -224,7 +224,7 @@ impl SessionWrapper {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let values: Vec<Option<MaybeUnset<CqlValue>>> = params.into_iter().map(|e| e.row).collect();
+        let values: Vec<Option<MaybeUnset<CqlValue>>> = params.into_iter().map(|e| e.val).collect();
         let prepared = apply_prepared_options(query.prepared.clone(), options)?;
 
         let (result, paging_state) = self
