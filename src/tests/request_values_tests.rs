@@ -1,6 +1,6 @@
 use scylla::{
     cluster::metadata::{ColumnType, NativeType},
-    value::CqlTime,
+    value::{CqlTime, MaybeUnset},
 };
 use std::{
     net::{IpAddr, Ipv4Addr},
@@ -10,6 +10,7 @@ use std::{
 use crate::{
     requests::parameter_wrappers::ParameterWrapper,
     types::type_wrappers::{ComplexType, CqlType},
+    utils::js_error,
 };
 
 use scylla::value::{Counter, CqlDuration, CqlTimestamp, CqlTimeuuid, CqlValue};
@@ -132,5 +133,22 @@ pub fn tests_parameters_wrapper_unset(value: ParameterWrapper) {
 pub fn tests_parameters_wrapper_null(value: ParameterWrapper) {
     if value.row.is_some() {
         panic!("Expected none value")
+    }
+}
+
+#[napi]
+pub fn tests_uuid_generate_random(
+    value1: ParameterWrapper,
+    value2: ParameterWrapper,
+) -> napi::Result<()> {
+    match (value1.row, value2.row) {
+        (Some(MaybeUnset::Set(v1)), Some(MaybeUnset::Set(v2))) => {
+            if v1 == v2 {
+                Err(js_error("Expected UUID to differ"))
+            } else {
+                Ok(())
+            }
+        }
+        _ => Err(js_error("Expected values to be UUID")),
     }
 }

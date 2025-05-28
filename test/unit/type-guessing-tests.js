@@ -53,6 +53,11 @@ describe("Encoder.guessDataType()", function () {
             "Guess type for a UUID value failed",
         );
         assertGuessed(
+            types.Uuid.generateRandom,
+            rust.CqlType.Uuid,
+            "Guess type for a UUID generateRandom",
+        );
+        assertGuessed(
             types.TimeUuid.now(),
             rust.CqlType.Uuid,
             "Guess type for a TimeUuid value failed",

@@ -5,6 +5,8 @@ const helper = require("../test-helper");
 const utils = require("../../lib/utils");
 const Uuid = require("../../lib/types").Uuid;
 const TimeUuid = require("../../lib/types").TimeUuid;
+const rust = require("../../index");
+const { getWrapped } = require("../../lib/types/cql-utils");
 
 describe("Uuid", function () {
     describe("constructor", function () {
@@ -232,6 +234,22 @@ describe("Uuid", function () {
                     done();
                 },
             );
+        });
+    });
+
+    describe("generateRandom", function () {
+        it("should generate random UUIDs", function () {
+            let uuid1 = getWrapped(
+                rust.testsFromValueGetType("Uuid"),
+                Uuid.generateRandom,
+            );
+            let uuid2 = getWrapped(
+                rust.testsFromValueGetType("Uuid"),
+                Uuid.generateRandom,
+            );
+            // Assertion on the rust side
+            rust.testsUuidGenerateRandom(uuid1, uuid2);
+            rust.testsUuidGenerateRandom(uuid1, uuid1);
         });
     });
 
