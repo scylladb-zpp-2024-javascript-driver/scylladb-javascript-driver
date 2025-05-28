@@ -8,6 +8,7 @@ const assert = require("assert");
 
 const client = new cassandra.Client(utils.getClientArgs());
 const iterCnt = parseInt(process.argv[3]);
+const uuidGenerator = utils.getRandomUUID(process.argv[2], cassandra.types.Uuid);
 
 async.series(
     [
@@ -20,7 +21,7 @@ async.series(
                 for (let i = 0; i < steps; i++) {
                     allParameters.push({
                         query: 'INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)',
-                        params: [cassandra.types.Uuid.random(), 10]
+                        params: [uuidGenerator(), 10]
                     });
                 }
                 try {

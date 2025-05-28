@@ -49,10 +49,27 @@ async function repeatCapped(callback, n) {
         const finalStep = Math.min(n, (rep + 1) * singleStepCount);
         await callback(finalStep - rep * singleStepCount);
     }
-    
+
+}
+
+/**
+ * Create a function generating random UUID, based on the driver used.
+ * 
+ * For the new driver use generateRandom, and for other use random()
+ * @param {string} driver 
+ * @param {Uuid} UUID 
+ * @returns {Function}
+ */
+function getRandomUUID(driver, UUID) {
+    if (driver == "scylladb-javascript-driver") {
+        return () => UUID.generateRandom;
+    }
+    return () => UUID.random();
+
 }
 
 exports.tableSchemaBasic = tableSchemaBasic;
 exports.getClientArgs = getClientArgs;
 exports.prepareDatabase = prepareDatabase;
 exports.repeatCapped = repeatCapped;
+exports.getRandomUUID = getRandomUUID;

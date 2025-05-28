@@ -53,7 +53,8 @@ async function executeOneAtATime(info) {
     const options = { prepare: true, isIdempotent: true };
 
     while (info.counter++ < info.totalLength) {
-        const params = [Uuid.random(), `Value for ${info.counter}`];
+        // We can use generateRandom, as we are not reading the values of the generated UUID
+        const params = [Uuid.generateRandom, `Value for ${info.counter}`];
         await client.execute(query, params, options);
     }
 }

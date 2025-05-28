@@ -7,6 +7,7 @@ const { exit } = require("process");
 
 const client = new cassandra.Client(utils.getClientArgs());
 const iterCnt = parseInt(process.argv[3]);
+const uuidGenerator = utils.getRandomUUID(process.argv[2], cassandra.types.Uuid);
 
 async.series(
     [
@@ -15,7 +16,7 @@ async.series(
         },
         async function insert(next) {
             for (let i = 0; i < iterCnt; i++) {
-                const id = cassandra.types.Uuid.random();
+                const id = uuidGenerator();
                 const query =
                     "INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)";
                 try {

@@ -25,7 +25,8 @@ async function example() {
 
     // Use an Array with 10000 different values
     const values = Array.from(new Array(10000).keys()).map((x) => [
-        Uuid.random(),
+        // We can use generateRandom, as we are not reading the values of the generated UUID
+        Uuid.generateRandom,
         x.toString(),
     ]);
 
