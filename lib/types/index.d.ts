@@ -407,6 +407,8 @@ export namespace types {
 
     static fromString(value: string): Uuid;
 
+    static generateRandom: object;
+
     static random(callback: ValueCallback<Uuid>): void;
 
     static random(): Uuid;

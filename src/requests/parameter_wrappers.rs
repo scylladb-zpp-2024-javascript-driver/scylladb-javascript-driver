@@ -3,6 +3,7 @@ use napi::{
     Status,
 };
 use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
+use uuid::Uuid;
 
 use crate::{
     types::{
@@ -153,12 +154,17 @@ fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi:
                 .map_err(|_| js_error("Value must be Buffer with 16 elements to be TimeUuid"))?,
         )),
         CqlType::Tuple => CqlValue::Tuple(cql_value_vec_from_tuple(typ, &get_element!(Array))?),
-        CqlType::Uuid => CqlValue::Uuid(
-            get_element!(Buffer)
-                .to_vec()
-                .try_into()
-                .map_err(|_| js_error("Value must be Buffer with 16 elements to be Uuid"))?,
-        ),
+        CqlType::Uuid => {
+            let val = get_element!(Buffer).to_vec();
+            CqlValue::Uuid(match val.len() {
+                // 0 length buffers represents `Uuid.generateRandom`.
+                // This means, we need to generate a new UUID here.
+                0 => Uuid::new_v4(),
+                _ => val
+                    .try_into()
+                    .map_err(|_| js_error("Value must be Buffer with 16 elements to be Uuid"))?,
+            })
+        }
         CqlType::Varint => todo!(),
         CqlType::Unprovided => return Err(js_error("Expected type information for the value")),
         CqlType::Empty => unreachable!("Should not receive Empty type here."),
