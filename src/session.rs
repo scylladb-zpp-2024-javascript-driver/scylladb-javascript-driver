@@ -9,7 +9,7 @@ use scylla::value::{CqlValue, MaybeUnset};
 
 use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
-use crate::requests::parameter_wrappers::ParameterWrapper;
+use crate::requests::parameter_wrappers::{ArgumentsWrapper, ParameterWrapper};
 use crate::requests::request::QueryOptionsWrapper;
 use crate::utils::{bigint_to_i64, js_error};
 use crate::{
@@ -96,7 +96,7 @@ impl SessionWrapper {
     ) -> napi::Result<QueryResultWrapper> {
         let statement: Statement = apply_statement_options(query.into(), options)?;
         let params_vec: Vec<Option<MaybeUnset<CqlValue>>> =
-            params.into_iter().map(|e| e.row).collect();
+            params.into_iter().map(|e| e.value).collect();
         let query_result = self
             .inner
             .get_session()
@@ -136,13 +136,12 @@ impl SessionWrapper {
     #[napi]
     pub async fn execute_prepared_unpaged(
         &self,
-        query: &PreparedStatementWrapper,
-        params: Vec<ParameterWrapper>,
+        params: ArgumentsWrapper<'_>,
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let params_vec: Vec<Option<MaybeUnset<CqlValue>>> =
-            params.into_iter().map(|e| e.row).collect();
-        let query = apply_prepared_options(query.prepared.clone(), options)?;
+            params.row.into_iter().map(|e| e.value).collect();
+        let query = apply_prepared_options(params.statement.prepared.clone(), options)?;
         QueryResultWrapper::from_query(
             self.inner
                 .get_session()
@@ -163,7 +162,7 @@ impl SessionWrapper {
     ) -> napi::Result<QueryResultWrapper> {
         let params_vec: Vec<Vec<Option<MaybeUnset<CqlValue>>>> = params
             .into_iter()
-            .map(|e| e.into_iter().map(|f| f.row).collect())
+            .map(|e| e.into_iter().map(|f| f.value).collect())
             .collect();
         QueryResultWrapper::from_query(
             self.inner
@@ -192,7 +191,8 @@ impl SessionWrapper {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let values: Vec<Option<MaybeUnset<CqlValue>>> = params.into_iter().map(|e| e.row).collect();
+        let values: Vec<Option<MaybeUnset<CqlValue>>> =
+            params.into_iter().map(|e| e.value).collect();
 
         let (result, paging_state_response) = self
             .inner
@@ -217,16 +217,16 @@ impl SessionWrapper {
     #[napi]
     pub async fn execute_single_page(
         &self,
-        query: &PreparedStatementWrapper,
-        params: Vec<ParameterWrapper>,
+        params: ArgumentsWrapper<'_>,
         options: &QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
     ) -> napi::Result<PagingResult> {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let values: Vec<Option<MaybeUnset<CqlValue>>> = params.into_iter().map(|e| e.row).collect();
-        let prepared = apply_prepared_options(query.prepared.clone(), options)?;
+        let values: Vec<Option<MaybeUnset<CqlValue>>> =
+            params.row.into_iter().map(|e| e.value).collect();
+        let prepared = apply_prepared_options(params.statement.prepared.clone(), options)?;
 
         let (result, paging_state) = self
             .inner

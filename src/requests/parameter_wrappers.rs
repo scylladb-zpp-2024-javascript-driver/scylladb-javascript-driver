@@ -5,6 +5,7 @@ use napi::{
 use scylla::value::{Counter, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 
 use crate::{
+    requests::request::PreparedStatementWrapper,
     types::{
         duration::DurationWrapper,
         inet::InetAddressWrapper,
@@ -16,7 +17,12 @@ use crate::{
 };
 
 pub struct ParameterWrapper {
-    pub(crate) row: Option<MaybeUnset<CqlValue>>,
+    pub(crate) value: Option<MaybeUnset<CqlValue>>,
+}
+
+pub struct ArgumentsWrapper<'a> {
+    pub(crate) row: Vec<ParameterWrapper>,
+    pub(crate) statement: &'a PreparedStatementWrapper,
 }
 
 /// Converts an array of values into Vec of CqlValue based on the provided type.
@@ -178,7 +184,7 @@ impl FromNapiValue for ParameterWrapper {
         let parsing_error = || {
             napi::Error::new(
                 Status::InvalidArg,
-                "Unexpected data when parsing parameters row".to_owned(),
+                "Unexpected data when parsing parameters value".to_owned(),
             )
         };
 
@@ -200,6 +206,54 @@ impl FromNapiValue for ParameterWrapper {
             }
         };
 
-        Ok(ParameterWrapper { row: val })
+        Ok(ParameterWrapper { value: val })
+    }
+}
+
+impl FromNapiValue for ArgumentsWrapper<'_> {
+    unsafe fn from_napi_value(
+        env: napi::sys::napi_env,
+        napi_val: napi::sys::napi_value,
+    ) -> napi::Result<Self> {
+        let parsing_error = || {
+            napi::Error::new(
+                Status::InvalidArg,
+                "Unexpected data when parsing parameters row".to_owned(),
+            )
+        };
+
+        let elem = unsafe { Array::from_napi_value(env, napi_val)? };
+        // println!("Light parameters parsing");
+
+        if elem.len() != 2 {
+            return Err(parsing_error());
+        }
+        let statement = elem
+            .get::<&PreparedStatementWrapper>(0)?
+            .ok_or_else(parsing_error)?;
+
+        let arguments = elem.get::<Array>(1)?.ok_or_else(parsing_error)?;
+        let expected_types = statement.get_expected_types();
+
+        // expected types is limited by max number of columns
+        if arguments.len() != expected_types.len().try_into().unwrap() {
+            return Err(parsing_error());
+        }
+        let mut values = vec![];
+
+        for (i, typ) in expected_types.into_iter().enumerate() {
+            values.push(ParameterWrapper {
+                value: Some(MaybeUnset::Set(cql_value_from_napi_value(
+                    &typ,
+                    &arguments,
+                    i.try_into().unwrap(),
+                )?)),
+            });
+        }
+
+        Ok(ArgumentsWrapper {
+            row: values,
+            statement,
+        })
     }
 }
