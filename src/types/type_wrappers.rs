@@ -33,14 +33,6 @@ pub enum CqlType {
     Unprovided,
 }
 
-/// The goal of this class is to have an enum, that can be type checked.
-/// By default, it's not possible to check in JS if value is of given enum type.
-/// For this reason we create a class containing just an enum.
-#[napi]
-pub struct CqlTypeClass {
-    pub typ: CqlType,
-}
-
 /// Keeps whole CQL type, including support types.
 /// It has similar information to [scylla::frame::response::result::ColumnType],
 /// but can be passes to NAPI-RS

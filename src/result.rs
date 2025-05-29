@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     types::{
         local_date::LocalDateWrapper,
-        type_wrappers::{ComplexType, CqlType, CqlTypeClass},
+        type_wrappers::{ComplexType, CqlType},
         uuid::UuidWrapper,
     },
     utils::err_to_napi,
@@ -227,16 +227,7 @@ unsafe fn add_type_to_napi_obj(
     typ: CqlType,
 ) -> napi::Result<napi::sys::napi_value> {
     // Caller of this function ensures a valid pointer to napi env is provided
-    unsafe {
-        // We need to use CqlTypeClass for JS to recognize the value if of enum type
-        Vec::to_napi_value(
-            env,
-            vec![
-                CqlTypeClass::to_napi_value(env, CqlTypeClass { typ }),
-                value,
-            ],
-        )
-    }
+    unsafe { Vec::to_napi_value(env, vec![CqlType::to_napi_value(env, typ), value]) }
 }
 
 impl ToNapiValue for CqlValueWrapper {
@@ -276,11 +267,15 @@ impl ToNapiValue for CqlValueWrapper {
             CqlValue::Inet(val) => {
                 InetAddressWrapper::to_napi_value(env, InetAddressWrapper::from_ip_addr(val))
             }
-            CqlValue::List(val) => Vec::to_napi_value(
+            CqlValue::List(val) => add_type_to_napi_obj(
                 env,
-                val.into_iter()
-                    .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
-                    .collect(),
+                Vec::to_napi_value(
+                    env,
+                    val.into_iter()
+                        .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
+                        .collect(),
+                ),
+                CqlType::List,
             ),
             CqlValue::Map(val) => add_type_to_napi_obj(
                 env,
@@ -297,11 +292,15 @@ impl ToNapiValue for CqlValueWrapper {
                 ),
                 CqlType::Map,
             ),
-            CqlValue::Set(val) => Vec::to_napi_value(
+            CqlValue::Set(val) => add_type_to_napi_obj(
                 env,
-                val.into_iter()
-                    .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
-                    .collect(),
+                Vec::to_napi_value(
+                    env,
+                    val.into_iter()
+                        .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
+                        .collect(),
+                ),
+                CqlType::Set,
             ),
             CqlValue::UserDefinedType { .. } => todo!(),
             CqlValue::SmallInt(val) => i16::to_napi_value(env, val),
