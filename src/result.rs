@@ -3,7 +3,6 @@ use std::sync::Arc;
 use crate::{
     types::{
         local_date::LocalDateWrapper,
-        time_uuid::TimeUuidWrapper,
         type_wrappers::{ComplexType, CqlType, CqlTypeClass},
         uuid::UuidWrapper,
     },
@@ -310,9 +309,11 @@ impl ToNapiValue for CqlValueWrapper {
             CqlValue::Time(val) => {
                 LocalTimeWrapper::to_napi_value(env, LocalTimeWrapper::from_cql_time(val))
             }
-            CqlValue::Timeuuid(val) => {
-                TimeUuidWrapper::to_napi_value(env, TimeUuidWrapper::from_cql_time_uuid(val))
-            }
+            CqlValue::Timeuuid(val) => add_type_to_napi_obj(
+                env,
+                Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
+                CqlType::Timeuuid,
+            ),
             CqlValue::Tuple(val) => add_type_to_napi_obj(
                 env,
                 Vec::to_napi_value(
@@ -331,7 +332,11 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlType::Tuple,
             ),
 
-            CqlValue::Uuid(val) => UuidWrapper::to_napi_value(env, UuidWrapper::from_cql_uuid(val)),
+            CqlValue::Uuid(val) => add_type_to_napi_obj(
+                env,
+                Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
+                CqlType::Uuid,
+            ),
             CqlValue::Varint(_) => todo!(),
             other => unimplemented!("Missing implementation for CQL value {:?}", other),
         }
