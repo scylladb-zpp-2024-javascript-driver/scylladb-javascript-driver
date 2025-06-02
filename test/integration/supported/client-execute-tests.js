@@ -38,27 +38,29 @@ describe("Client @SERVER_API", function () {
             });
         });
 
-        // Would require correct error throwing
+        // Would require error throwing refactor
         // TODO: Fix this test
-        /* it("should callback with syntax error", function (done) {
+        it("should callback with syntax error", function (done) {
             const client = setupInfo.client;
             client.connect(function (err) {
                 assert.ifError(err);
                 const query = "SELECT WILL FAIL";
                 client.execute(query, function (err, result) {
                     assert.ok(err);
-                    assert.strictEqual(
-                        err.code,
-                        types.responseErrorCodes.syntaxError,
-                    );
-                    assert.strictEqual(err.query, query);
+                    assert.ok(err instanceof Error);
+                    assert.ok(err.message.includes("syntax error"));
+                    // assert.strictEqual(
+                    //     err.code,
+                    //     types.responseErrorCodes.syntaxError,
+                    // );
+                    // assert.strictEqual(err.query, query);
                     assert.equal(result, null);
                     done();
                 });
             });
-        }); */
+        });
 
-        // Would require correct error conversion
+        // Would require error throwing refactor
         // TODO: Fix this test
         context("with incorrect query parameters", () => {
             const client = setupInfo.client;
@@ -73,8 +75,12 @@ describe("Client @SERVER_API", function () {
                     ],
                     (params, next) =>
                         client.execute(query, params, (err) => {
-                            // TODO: Ensure correct error is thrown
                             helper.assertInstanceOf(err, Error);
+                            assert.ok(
+                                err.message.includes(
+                                    "Failed to serialize query parameters",
+                                ),
+                            );
                             /* helper.assertInstanceOf(err, errors.ResponseError);
                             assert.strictEqual(
                                 err.code,
@@ -86,7 +92,7 @@ describe("Client @SERVER_API", function () {
                 );
             });
 
-            // Would require correct error throwing
+            // Would require error throwing refactor
             // TODO: Fix this test
             it("should callback with error when the parameter types do not match", (done) => {
                 utils.eachSeries(
@@ -96,8 +102,12 @@ describe("Client @SERVER_API", function () {
                     ],
                     (params, next) =>
                         client.execute(query, params, (err) => {
-                            // TODO: Ensure correct error is thrown
                             helper.assertInstanceOf(err, Error);
+                            assert.ok(
+                                err.message.includes(
+                                    "Failed to serialize query parameters",
+                                ),
+                            );
                             /* helper.assertInstanceOf(err, errors.ResponseError);
                             assert.strictEqual(
                                 err.code,
@@ -117,9 +127,7 @@ describe("Client @SERVER_API", function () {
                     ],
                     (params, next) =>
                         client.execute(query, params, (err) => {
-                            // TODO: Ensure correct error is thrown
-                            helper.assertInstanceOf(err, Error);
-                            /* helper.assertInstanceOf(err, TypeError); */
+                            helper.assertInstanceOf(err, TypeError);
                             next();
                         }),
                     done,
@@ -508,12 +516,17 @@ describe("Client @SERVER_API", function () {
                                 { hints: [[]] },
                                 function (err) {
                                     helper.assertInstanceOf(err, Error);
-                                    // Would require correct error throwing
+                                    // Would require error throwing refactor
                                     // TODO: Fix this test
                                     /* helper.assertNotInstanceOf(
                                         err,
                                         errors.NoHostAvailableError,
                                     ); */
+                                    assert.ok(
+                                        err.message.includes(
+                                            "Type information not valid",
+                                        ),
+                                    );
                                     next();
                                 },
                             );
@@ -525,12 +538,17 @@ describe("Client @SERVER_API", function () {
                                 { hints: ["zzz", "mmmm"] },
                                 function (err) {
                                     helper.assertInstanceOf(err, Error);
-                                    // Would require correct error throwing
+                                    // Would require error throwing refactor
                                     // TODO: Fix this test
                                     /* helper.assertNotInstanceOf(
                                         err,
                                         errors.NoHostAvailableError,
                                     ); */
+                                    assert.ok(
+                                        err.message.includes(
+                                            "Data type with name zzz not valid",
+                                        ),
+                                    );
                                     next();
                                 },
                             );
@@ -2073,8 +2091,8 @@ describe("Client @SERVER_API", function () {
                         });
                 },
             );
-            // Would require correct error throwing
-            /* it("should reject the promise when there is a syntax error", function () {
+            // Would require error throwing refactor
+            it("should reject the promise when there is a syntax error", function () {
                 const client = setupInfo.client;
                 return client
                     .connect()
@@ -2085,9 +2103,14 @@ describe("Client @SERVER_API", function () {
                         throw new Error("should have been rejected");
                     })
                     .catch(function (err) {
-                        helper.assertInstanceOf(err, errors.ResponseError);
+                        assert.ok(
+                            err.message.includes(
+                                "The submitted query has a syntax error",
+                            ),
+                        );
+                        // helper.assertInstanceOf(err, errors.ResponseError);
                     });
-            }); */
+            });
         });
         vdescribe("2.0", "with lightweight transactions", function () {
             const client = setupInfo.client;

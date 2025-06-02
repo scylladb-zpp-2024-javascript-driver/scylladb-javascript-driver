@@ -68,7 +68,7 @@ describe("Client @SERVER_API", function () {
             const query = "SELECT WILL FAIL";
             client.execute(query, ["system"], { prepare: 1 }, function (err) {
                 assert.ok(err);
-                // Would require correct Error throwing
+                // Would require error throwing refactor
                 // TODO: fix this test
                 helper.assertInstanceOf(err, Error);
                 /* assert.strictEqual(
@@ -76,6 +76,12 @@ describe("Client @SERVER_API", function () {
                     types.responseErrorCodes.syntaxError,
                 );
                 assert.strictEqual(err.query, query); */
+                assert.ok(
+                    err.message.includes(
+                        "Preparation failed on every connection from the selected pool.",
+                    ),
+                );
+                assert.ok(err.message.includes("syntax error"));
                 done();
             });
         });
@@ -123,10 +129,7 @@ describe("Client @SERVER_API", function () {
                             params,
                             { prepare: true },
                             (err) => {
-                                // Would require correct error throwing
-                                // TODO: fix this test
-                                helper.assertInstanceOf(err, Error);
-                                // helper.assertInstanceOf(err, TypeError);
+                                helper.assertInstanceOf(err, TypeError);
                                 next();
                             },
                         ),
@@ -146,10 +149,7 @@ describe("Client @SERVER_API", function () {
                             params,
                             { prepare: true },
                             (err) => {
-                                // Would require correct error throwing
-                                // TODO: fix this test
-                                helper.assertInstanceOf(err, Error);
-                                // helper.assertInstanceOf(err, TypeError);
+                                helper.assertInstanceOf(err, TypeError);
                                 next();
                             },
                         ),
@@ -249,7 +249,7 @@ describe("Client @SERVER_API", function () {
                                     { prepare: 1 },
                                     function (err) {
                                         helper.assertInstanceOf(err, Error);
-                                        // Would require correct Error throwing
+                                        // Would require error throwing refactor
                                         // TODO: fix this test
                                         /* helper.assertInstanceOf(
                                             err,
@@ -259,6 +259,16 @@ describe("Client @SERVER_API", function () {
                                             err.code,
                                             types.responseErrorCodes.invalid,
                                         ); */
+                                        assert.ok(
+                                            err.message.includes(
+                                                "Preparation failed on every connection from the selected pool.",
+                                            ),
+                                        );
+                                        assert.ok(
+                                            err.message.includes(
+                                                "The query is syntactically correct but invalid",
+                                            ),
+                                        );
                                         next();
                                     },
                                 );
@@ -276,7 +286,7 @@ describe("Client @SERVER_API", function () {
                                     { prepare: 1 },
                                     function (err) {
                                         helper.assertInstanceOf(err, Error);
-                                        // Would require correct Error throwing
+                                        // Would require error throwing refactor
                                         // TODO: fix this test
                                         /* helper.assertInstanceOf(
                                             err,
@@ -286,6 +296,16 @@ describe("Client @SERVER_API", function () {
                                             err.code,
                                             types.responseErrorCodes.invalid,
                                         ); */
+                                        assert.ok(
+                                            err.message.includes(
+                                                "Preparation failed on every connection from the selected pool.",
+                                            ),
+                                        );
+                                        assert.ok(
+                                            err.message.includes(
+                                                "The query is syntactically correct but invalid",
+                                            ),
+                                        );
                                         next();
                                     },
                                 );
@@ -1328,9 +1348,15 @@ describe("Client @SERVER_API", function () {
 
             function validateResponseError(callback) {
                 return (err) => {
-                    // Would require full error throwing
+                    // Would require error throwing refactor
                     // TODO: fix this test
                     helper.assertInstanceOf(err, Error);
+                    assert.ok(
+                        err instanceof errors.ResponseError ||
+                            err.message.includes(
+                                "The query is syntactically correct but invalid",
+                            ),
+                    );
                     /* helper.assertInstanceOf(err, errors.ResponseError);
                     assert.strictEqual(
                         err.code,

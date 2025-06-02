@@ -85,8 +85,13 @@ describe("Client", function () {
                 .on("error", function (err) {
                     assert.ok(err, "It should yield an error");
                     // TODO: Fix this test
-                    // Would require correct error throwing
+                    // Would require error throwing refactor
                     /* helper.assertInstanceOf(err, errors.ResponseError); */
+                    assert.ok(
+                        err.message.includes(
+                            "The submitted query has a syntax error",
+                        ),
+                    );
                     errorCalled = true;
                 });
         });
@@ -331,11 +336,16 @@ describe("Client", function () {
                 .on("error", function (err) {
                     assert.ok(err);
                     // TODO: Fix this test
-                    // Would require correct error throwing
+                    // Would require error throwing refactor
                     /* assert.ok(
                         err instanceof TypeError,
                         "Error should be an instance of TypeError",
                     ); */
+                    assert.ok(
+                        err.message.includes(
+                            "Failed to convert JavaScript value `Object {}` into rust type `String`",
+                        ),
+                    );
                     errCalled = true;
                 })
                 .on("readable", function () {
