@@ -4,8 +4,7 @@ use crate::{
     errors::err_to_napi,
     types::{
         local_date::LocalDateWrapper,
-        time_uuid::TimeUuidWrapper,
-        type_wrappers::{ComplexType, CqlType, CqlTypeClass},
+        type_wrappers::{ComplexType, CqlType},
         uuid::UuidWrapper,
     },
 };
@@ -228,16 +227,7 @@ unsafe fn add_type_to_napi_obj(
     typ: CqlType,
 ) -> napi::Result<napi::sys::napi_value> {
     // Caller of this function ensures a valid pointer to napi env is provided
-    unsafe {
-        // We need to use CqlTypeClass for JS to recognize the value if of enum type
-        Vec::to_napi_value(
-            env,
-            vec![
-                CqlTypeClass::to_napi_value(env, CqlTypeClass { typ }),
-                value,
-            ],
-        )
-    }
+    unsafe { Vec::to_napi_value(env, vec![CqlType::to_napi_value(env, typ), value]) }
 }
 
 impl ToNapiValue for CqlValueWrapper {
@@ -277,11 +267,15 @@ impl ToNapiValue for CqlValueWrapper {
             CqlValue::Inet(val) => {
                 InetAddressWrapper::to_napi_value(env, InetAddressWrapper::from_ip_addr(val))
             }
-            CqlValue::List(val) => Vec::to_napi_value(
+            CqlValue::List(val) => add_type_to_napi_obj(
                 env,
-                val.into_iter()
-                    .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
-                    .collect(),
+                Vec::to_napi_value(
+                    env,
+                    val.into_iter()
+                        .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
+                        .collect(),
+                ),
+                CqlType::List,
             ),
             CqlValue::Map(val) => add_type_to_napi_obj(
                 env,
@@ -298,11 +292,15 @@ impl ToNapiValue for CqlValueWrapper {
                 ),
                 CqlType::Map,
             ),
-            CqlValue::Set(val) => Vec::to_napi_value(
+            CqlValue::Set(val) => add_type_to_napi_obj(
                 env,
-                val.into_iter()
-                    .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
-                    .collect(),
+                Vec::to_napi_value(
+                    env,
+                    val.into_iter()
+                        .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
+                        .collect(),
+                ),
+                CqlType::Set,
             ),
             CqlValue::UserDefinedType { .. } => todo!(),
             CqlValue::SmallInt(val) => i16::to_napi_value(env, val),
@@ -310,9 +308,11 @@ impl ToNapiValue for CqlValueWrapper {
             CqlValue::Time(val) => {
                 LocalTimeWrapper::to_napi_value(env, LocalTimeWrapper::from_cql_time(val))
             }
-            CqlValue::Timeuuid(val) => {
-                TimeUuidWrapper::to_napi_value(env, TimeUuidWrapper::from_cql_time_uuid(val))
-            }
+            CqlValue::Timeuuid(val) => add_type_to_napi_obj(
+                env,
+                Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
+                CqlType::Timeuuid,
+            ),
             CqlValue::Tuple(val) => add_type_to_napi_obj(
                 env,
                 Vec::to_napi_value(
@@ -331,7 +331,11 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlType::Tuple,
             ),
 
-            CqlValue::Uuid(val) => UuidWrapper::to_napi_value(env, UuidWrapper::from_cql_uuid(val)),
+            CqlValue::Uuid(val) => add_type_to_napi_obj(
+                env,
+                Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
+                CqlType::Uuid,
+            ),
             CqlValue::Varint(_) => todo!(),
             other => unimplemented!("Missing implementation for CQL value {:?}", other),
         }
