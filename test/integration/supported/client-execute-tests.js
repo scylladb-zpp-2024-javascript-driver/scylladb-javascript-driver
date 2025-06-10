@@ -1352,7 +1352,7 @@ describe("Client @SERVER_API", function () {
                     },
                 );
             });
-            // TODO: Add type guessing for UDT and Tuple
+            // TODO: Add type guessing for UDT
             /* vit(
                 "2.1",
                 "should allow udt parameter hints and retrieve metadata",
@@ -1448,7 +1448,7 @@ describe("Client @SERVER_API", function () {
                         done,
                     );
                 },
-            );
+            );*/
             vit("2.1", "should allow tuple parameter hints", function (done) {
                 const client = setupInfo.client;
                 const id = types.Uuid.random();
@@ -1503,7 +1503,7 @@ describe("Client @SERVER_API", function () {
                     ],
                     done,
                 );
-            }); */
+            });
             vit("2.2", "should allow insertions as json", function (done) {
                 const client = setupInfo.client;
                 const o = {
