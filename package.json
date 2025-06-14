@@ -29,7 +29,6 @@
     "@types/long": "~5.0.0",
     "@types/node": ">=8",
     "adm-zip": "~0.5.10",
-    "async-mutex": "^0.5.0",
     "jsdoc": "^4.0.4",
     "long": "~5.2.3"
   },

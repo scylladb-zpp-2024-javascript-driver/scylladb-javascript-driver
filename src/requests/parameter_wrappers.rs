@@ -89,7 +89,7 @@ fn cql_value_vec_from_tuple(
 
 /// Convert element at pos position in elem Array into CqlValue, based on the provided type
 fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi::Result<CqlValue> {
-    /// Try to covert value at `pos` position in `elem` array into value of `statement_type` type.
+    /// Try to convert value at `pos` position in `elem` array into value of `statement_type` type.
     macro_rules! get_element {
         ($statement_type: ty) => {
             elem.get::<$statement_type>(pos)?.ok_or(napi::Error::new(
