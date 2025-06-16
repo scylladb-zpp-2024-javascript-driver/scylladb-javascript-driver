@@ -433,29 +433,31 @@ const helper = {
 
     /**
      * Gets the Apache Cassandra version.
-     * When the server is DSE, gets the Apache Cassandra equivalent.
+     * When the server is Scylla, gets the Apache Cassandra equivalent.
      */
     getCassandraVersion: function () {
         const serverInfo = this.getServerInfo();
 
-        if (!serverInfo.isDse) {
+        if (!serverInfo.isScylla) {
             return serverInfo.version;
         }
-
-        const dseVersion = serverInfo.version.split(".").slice(0, 2).join(".");
-        return (
-            cassandraVersionByDse[dseVersion] || cassandraVersionByDse["6.7"]
-        );
+        // TODO:
+        // Here we return some arbitrary version, but this does not appear to be used
+        // in any meaningful way. Either fully remove it or implement properly.
+        return "3.11.4";
     },
 
     /**
      * Gets the server version and type.
-     * @return {{version, isDse}}
+     * @return {{version:string, isScylla:boolean}}
      */
     getServerInfo: function () {
+        const isScylla = process.env["CCM_IS_SCYLLA"] === "true";
         return {
-            version: process.env["CCM_VERSION"] || "3.11.4",
-            isDse: process.env["CCM_IS_DSE"] === "true",
+            isScylla: isScylla,
+            version:
+                process.env["CCM_VERSION"] ||
+                (isScylla ? "release:2025.3" : "3.11.4"),
         };
     },
 
@@ -1138,7 +1140,7 @@ helper.ccm.startAll = function (nodeLength, options, callback) {
     const serverInfo = helper.getServerInfo();
 
     helper.trace(
-        `Starting ${serverInfo.isDse ? "DSE" : "Cassandra"} cluster v${serverInfo.version} with ${nodeLength} node(s)`,
+        `Starting ${serverInfo.isScylla ? "Scylla" : "Cassandra"} cluster v${serverInfo.version} with ${nodeLength} node(s)`,
     );
 
     utils.series(
@@ -1154,8 +1156,8 @@ helper.ccm.startAll = function (nodeLength, options, callback) {
                 const clusterName = helper.getRandomName("test");
                 let create = ["create", clusterName];
 
-                if (serverInfo.isDse) {
-                    create.push("--dse");
+                if (serverInfo.isScylla) {
+                    create.push("--scylla");
                 }
 
                 create.push("-v", serverInfo.version);
@@ -1263,8 +1265,8 @@ helper.ccm.bootstrapNode = function (options, callback) {
         "-b",
     ];
 
-    if (helper.getServerInfo().isDse) {
-        ccmArgs.push("--dse");
+    if (helper.getServerInfo().isScylla) {
+        ccmArgs.push("--scylla");
     }
 
     if (options.dc) {
@@ -1689,24 +1691,14 @@ FallthroughRetryPolicy.prototype.onRequestError =
  * @param {Array} args the arguments to apply to the function.
  */
 function executeIfVersion(testVersion, func, args) {
-    const serverInfo = helper.getServerInfo();
-    let invokeFunction = false;
-
     if (testVersion.startsWith("dse-")) {
-        if (serverInfo.isDse) {
-            // Compare only if the server instance is DSE
-            invokeFunction = helper.versionCompare(
-                serverInfo.version,
-                testVersion.substr(4),
-            );
-        }
-    } else {
-        // Use the C* version (of DSE or the actual C* version)
-        invokeFunction = helper.versionCompare(
-            helper.getCassandraVersion(),
-            testVersion,
-        );
+        throw new Error("No support for DSE");
     }
+
+    let invokeFunction = helper.versionCompare(
+        helper.getCassandraVersion(),
+        testVersion,
+    );
 
     if (invokeFunction) {
         func.apply(this, args);
