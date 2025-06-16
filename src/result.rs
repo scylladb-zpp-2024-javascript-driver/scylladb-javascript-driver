@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     errors::err_to_napi,
     types::{
@@ -38,15 +36,6 @@ pub struct QueryResultWrapper {
 /// it's automatically converted to the inner vector
 pub struct RowWrapper {
     inner: Vec<Option<CqlValue>>,
-}
-
-/// Represents a single row of result from paged query
-#[napi]
-pub struct PagedRowWrapper {
-    // Values of the row
-    inner: Vec<Option<CqlValue>>,
-    // Column names. Kept as an Arc to avoid some cloning
-    names: Arc<Vec<String>>,
 }
 
 /// Wrapper for a single CQL value
@@ -189,25 +178,6 @@ impl From<Row> for RowWrapper {
         RowWrapper {
             inner: value.columns,
         }
-    }
-}
-
-#[napi]
-impl PagedRowWrapper {
-    #[napi]
-    pub fn get_columns_names(&self) -> Vec<String> {
-        (*self.names).clone()
-    }
-
-    /// Get the CQL value wrappers for each column in the given row
-    #[napi]
-    pub fn get_columns(&self) -> napi::Result<Vec<Option<CqlValueWrapper>>> {
-        let s: Vec<Option<CqlValueWrapper>> = self
-            .inner
-            .iter()
-            .map(|f| f.clone().map(|f| CqlValueWrapper { inner: f }))
-            .collect();
-        Ok(s)
     }
 }
 
