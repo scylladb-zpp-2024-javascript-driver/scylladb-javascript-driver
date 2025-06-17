@@ -316,15 +316,7 @@ macro_rules! make_apply_options {
             if let Some(o) = options.is_idempotent {
                 statement.set_is_idempotent(o);
             }
-            // TODO: Update it and check all edge-cases:
-            // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/pull/92#discussion_r1864461799
-            // Currently there is no support for paging, so there is no need for this option
-            /* if let Some(o) = options.fetch_size {
-                if o.is_negative() {
-                    return Err(js_error("fetch size cannot be negative"));
-                }
-                query.set_page_size(o);
-            } */
+
             if let Some(o) = &options.timestamp {
                 statement.set_timestamp(Some(bigint_to_i64(
                     o.clone(),
@@ -354,6 +346,9 @@ macro_rules! make_non_batch_apply_options {
             // those that are common with batch queries
             let mut statement_with_part_of_options_applied = $partial_name(statement, options)?;
             if let Some(o) = options.fetch_size {
+                if !o.is_positive() {
+                    return Err(js_error("fetch size must be a positive value"));
+                }
                 statement_with_part_of_options_applied.set_page_size(o);
             }
             Ok(statement_with_part_of_options_applied)
