@@ -401,9 +401,8 @@ describe("Client", function () {
                     }, 2000);
                 });
         });
-        // No support for consistency
-        // TODO: Fix test
-        /* vit("2.0", "should not buffer more than fetchSize", function (done) {
+
+        vit("2.0", "should not buffer more than fetchSize", function (done) {
             const client = newInstance();
             const id = types.Uuid.random();
             const consistency = types.consistencies.quorum;
@@ -478,7 +477,7 @@ describe("Client", function () {
                 ],
                 done,
             );
-        }); */
+        });
     });
 });
 
