@@ -220,8 +220,8 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // No support for custom Row (#117)
-        // TODO: Fix this test
+        // Type guessing doesn't allow to distinguish between UUID and TimeUUID
+        // TODO: Fix this test, and then remove reduced version below
         /* vit("2.0", "should guess known types", function (done) {
             const client = setupInfo.client;
             const columns =
@@ -239,6 +239,23 @@ describe("Client @SERVER_API", function () {
             // no hint
             insertSelectTest(client, table, columns, values, null, done);
         }); */
+
+        vit("2.0", "should guess known types -- reduced", function (done) {
+            const client = setupInfo.client;
+            const columns =
+                "id, text_sample, double_sample, timestamp_sample, blob_sample, list_sample";
+            // a precision a float32 can represent
+            const values = [
+                types.Uuid.random(),
+                "text sample 1",
+                133,
+                new Date(121212211),
+                utils.allocBufferUnsafe(100),
+                ["one", "two"],
+            ];
+            // no hint
+            insertSelectTest(client, table, columns, values, null, done);
+        });
 
         vit(
             "2.0",
