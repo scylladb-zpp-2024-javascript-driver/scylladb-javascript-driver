@@ -720,7 +720,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // No support for used types
+        // Returns invalid column types (#238)
         // TODO: Fix this test
         /* it("should return the column definitions", function (done) {
             const client = setupInfo.client;
@@ -797,7 +797,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // No support for used types
+        // No support for used types (decimal)
         // TODO: Fix this test
         /* it("should return rows that are serializable to json", function (done) {
             const client = setupInfo.client;
