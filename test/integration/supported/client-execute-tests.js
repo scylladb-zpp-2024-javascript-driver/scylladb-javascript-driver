@@ -650,10 +650,7 @@ describe("Client @SERVER_API", function () {
                 [
                     client.connect.bind(client),
                     function insert(next) {
-                        const query = util.format(
-                            "INSERT INTO %s (id, text_sample, double_sample) VALUES (?, ?, ?)",
-                            table,
-                        );
+                        const query = `INSERT INTO ${table} (id, text_sample, double_sample) VALUES (?, ?, ?)`;
                         client.execute(
                             query,
                             [id, "sample unset", types.unset],
@@ -661,10 +658,7 @@ describe("Client @SERVER_API", function () {
                         );
                     },
                     function select(next) {
-                        const query = util.format(
-                            "SELECT id, text_sample, double_sample FROM %s WHERE id = ?",
-                            table,
-                        );
+                        const query = `SELECT id, text_sample, double_sample FROM ${table} WHERE id = ?`;
                         client.execute(query, [id], function (err, result) {
                             assert.ifError(err);
                             assert.strictEqual(result.rowLength, 1);
@@ -674,6 +668,45 @@ describe("Client @SERVER_API", function () {
                                 "sample unset",
                             );
                             assert.strictEqual(row["double_sample"], null);
+                            next();
+                        });
+                    },
+                ],
+                done,
+            );
+        });
+
+        vit("2.2", "unset should not override the value", function (done) {
+            const client = setupInfo.client;
+            const id = types.Uuid.random();
+            utils.series(
+                [
+                    client.connect.bind(client),
+                    function insert(next) {
+                        const query = `INSERT INTO ${table} (id, text_sample, double_sample) VALUES (?, ?, ?)`;
+                        client.execute(
+                            query,
+                            [id, "sample unset", types.unset],
+                            next,
+                        );
+                    },
+                    // TODO: Test also undefined values, when support for encodingOptions.useUndefinedAsUnset option is implemented.
+                    function update(next) {
+                        const query = `UPDATE ${table} SET "text_sample" = ?, double_sample = ? WHERE id = ?`;
+                        client.execute(query, [types.unset, 2.0, id], next);
+                    },
+                    function select(next) {
+                        const query = `SELECT id, text_sample, double_sample FROM ${table} WHERE id = ?`;
+
+                        client.execute(query, [id], function (err, result) {
+                            assert.ifError(err);
+                            assert.strictEqual(result.rowLength, 1);
+                            const row = result.first();
+                            assert.strictEqual(
+                                row["text_sample"],
+                                "sample unset",
+                            );
+                            assert.strictEqual(row["double_sample"], 2.0);
                             next();
                         });
                     },
