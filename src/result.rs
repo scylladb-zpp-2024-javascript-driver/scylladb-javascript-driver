@@ -6,7 +6,10 @@ use crate::{
         uuid::UuidWrapper,
     },
 };
-use napi::bindgen_prelude::{BigInt, Buffer, ToNapiValue};
+use napi::{
+    bindgen_prelude::{BigInt, Buffer, ToNapiValue},
+    Result,
+};
 use scylla::{
     cluster::metadata::{CollectionType, NativeType},
     errors::IntoRowsResultError,
@@ -89,12 +92,13 @@ impl QueryResultWrapper {
 
         let rows = result.rows::<Row>()
             .expect("Type check against the Row type has failed; this is a bug in the underlying Rust driver");
+
         Ok(Some(
-            rows.map(|f| RowWrapper {
-                // TODO: Correctly handle such errors
-                inner: f.expect("Unhandled row Deserialization Error ").columns,
+            rows.map(|f| {
+                f.map(|v| RowWrapper { inner: v.columns })
+                    .map_err(err_to_napi)
             })
-            .collect(),
+            .collect::<Result<Vec<_>, _>>()?,
         ))
     }
 
