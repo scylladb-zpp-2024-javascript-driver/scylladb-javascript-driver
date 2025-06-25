@@ -1,7 +1,7 @@
 {
     "name": "scylladb-javascript-driver-benchmarks",
     "description": "Benchmarks for the driver",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "license": "Apache-2.0",
     "private": true,
     "dependencies": {
