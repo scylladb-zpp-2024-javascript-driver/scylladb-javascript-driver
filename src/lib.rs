@@ -3,8 +3,10 @@ extern crate napi_derive;
 
 // Link other files
 pub mod auth;
+pub mod errors;
 pub mod options;
-pub mod request;
+pub mod paging;
+pub mod requests;
 pub mod result;
 pub mod session;
 pub mod tests;

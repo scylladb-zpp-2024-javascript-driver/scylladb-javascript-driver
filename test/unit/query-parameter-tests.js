@@ -6,8 +6,10 @@ const Duration = require("../../lib/types/duration");
 const InetAddress = require("../../lib/types/inet-address");
 const LocalTime = require("../../lib/types/local-time");
 const TimeUuid = require("../../lib/types/time-uuid");
+const Tuple = require("../../lib/types/tuple");
 const Uuid = require("../../lib/types/uuid");
 const Long = require("long");
+const { types } = require("../../main");
 
 const maxI64 = BigInt("9223372036854775807");
 
@@ -34,17 +36,48 @@ const testCases = [
     ["TinyInt", -1],
     ["Time", new LocalTime(Long.fromInt(4312))],
     ["Timeuuid", TimeUuid.fromString("8e14e760-7fa8-11eb-bc66-000000000001")],
+    ["Tuple", new Tuple("First", new Tuple(1, 2), null)],
     ["Uuid", Uuid.fromString("ffffffff-eeee-ffff-ffff-ffffffffffff")],
 ];
 
-describe("Should correctly convert values into QueryParameterWrapper", function () {
-    testCases.forEach((test) => {
-        it(test[0], function () {
-            let value = test[1];
-            let expectedType = rust.testsFromValueGetType(test[0]);
-            let converted = getWrapped(expectedType, value);
+describe("Should correctly convert ", function () {
+    describe("some set values into Parameter wrapper", function () {
+        testCases.forEach((test) => {
+            it(test[0], function () {
+                let value = test[1];
+                let expectedType = rust.testsFromValueGetType(test[0]);
+                let converted = getWrapped(expectedType, value);
+                // Assertion appears in rust code
+                rust.testsFromValue(test[0], converted);
+            });
+        });
+    });
+
+    describe("some unset value", function () {
+        it("with type", function () {
+            let someType = rust.testsFromValueGetType(testCases[0][0]);
+            let wrapped = getWrapped(someType, types.unset);
             // Assertion appears in rust code
-            rust.testsFromValue(test[0], converted);
+            rust.testsParametersWrapperUnset(wrapped);
+        });
+        it("without type", function () {
+            let wrapped = getWrapped(null, types.unset);
+            // Assertion appears in rust code
+            rust.testsParametersWrapperUnset(wrapped);
+        });
+    });
+
+    describe("none value", function () {
+        it("with type", function () {
+            let someType = rust.testsFromValueGetType(testCases[0][0]);
+            let wrapped = getWrapped(someType, null);
+            // Assertion appears in rust code
+            rust.testsParametersWrapperNull(wrapped);
+        });
+        it("without type", function () {
+            let wrapped = getWrapped(null, null);
+            // Assertion appears in rust code
+            rust.testsParametersWrapperNull(wrapped);
         });
     });
 });

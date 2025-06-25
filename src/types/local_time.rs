@@ -1,6 +1,7 @@
-use crate::utils::{bigint_to_i64, js_error};
+use crate::errors::js_error;
+use crate::utils::{bigint_to_i64, CharCounter};
 use napi::bindgen_prelude::BigInt;
-use scylla::frame::value::CqlTime;
+use scylla::value::CqlTime;
 use std::fmt::{self, Write};
 use std::num::ParseIntError;
 
@@ -121,27 +122,6 @@ impl fmt::Display for LocalTimeWrapper {
             write!(f, "{}", nanos)?;
         }
 
-        Ok(())
-    }
-}
-
-struct CharCounter {
-    count: usize,
-}
-
-impl CharCounter {
-    fn new() -> Self {
-        CharCounter { count: 0 }
-    }
-
-    fn count(self) -> usize {
-        self.count
-    }
-}
-
-impl fmt::Write for CharCounter {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.count = s.len();
         Ok(())
     }
 }

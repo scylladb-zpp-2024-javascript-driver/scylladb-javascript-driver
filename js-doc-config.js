@@ -3,6 +3,6 @@
 module.exports = {
     plugins: ['plugins/markdown'],
     opts: {
-        destination: "./docs/",
+        destination: "./public/docs",
     }
 }

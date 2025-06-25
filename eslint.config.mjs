@@ -28,10 +28,6 @@ export default [
       //Check if there is a space at the beginning of a comment
       "spaced-comment": "error",
 
-      // This will be deleted after everything is switched from prototypes to classes
-      // TODO: FIX
-      "no-prototype-builtins": "off",
-
       // Check if variable names are in camelCase
       // Disabled in some of the tests because they are inserting values into the database
       "camelcase": "error",

@@ -1,5 +1,12 @@
 # Examples
 
-Currently there is no examples showing usage of the driver. For examples from the DataStax driver, see ``./DataStax`` directory.
+## Paging examples
 
-The ``basic.js`` example is a proof of concept connection to the database. It call the Rust layer directly, which will not be possible in the final package, as the rust layer will not be exposed in the API.
+Those examples show how queries can be paged. This included the following code samples:
+
+1. ``each-row.js`` - Show usage of ``client.eachRow()``, without auto paging.
+1. ``each-row-auto paged.js`` - Show usage of ``client.eachRow()``, with auto paging.
+
+## Other examples
+
+For examples from the DataStax driver, see ``./DataStax`` directory.

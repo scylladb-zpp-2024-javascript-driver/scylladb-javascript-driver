@@ -1,0 +1,24 @@
+# CHANGES REQUIRED BEFORE RUNNING:
+# - Change HEAP_NEWSIZE and MAX_HEAP_SIZE according to instruction
+
+networks:
+  public:
+    name: cassandra_single_node_public
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.43.0.0/16
+
+services:
+  cassandra:
+    image: cassandra:latest
+    networks:
+      public:
+        ipv4_address: 172.43.0.2
+    container_name: cassandra-single-node
+    environment: 
+      - MAX_HEAP_SIZE=2048M # Recommended 1/4 of total RAM
+      - HEAP_NEWSIZE=512M  # This is recommended to be 1/4 of MAX_HEAP_SIZE
+      - JVM_OPTS=-Dcassandra.skip_wait_for_gossip_to_settle=0 -Dcassandra.ring_delay_ms=5000
+
