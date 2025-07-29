@@ -59,5 +59,5 @@ pub(crate) fn js_error<T: Display>(e: T) -> napi::Error {
 
 /// Create napi::Error from a message and error type
 pub(crate) fn js_typed_error<T: Display>(e: T, error_type: ErrorType) -> napi::Error {
-    napi::Error::new(Status::GenericFailure, format!("{}#{}", error_type, e))
+    napi::Error::new(Status::GenericFailure, format!("{error_type}#{e}"))
 }

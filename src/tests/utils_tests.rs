@@ -29,7 +29,7 @@ pub fn tests_bigint_to_i64(value: BigInt, case_id: Option<i32>) -> napi::Result<
             if v == expected {
                 Ok(())
             } else {
-                Err(js_error(format!("Got {}, expected{}", v, expected)))
+                Err(js_error(format!("Got {v}, expected{expected}")))
             }
         }
         Err(e) => Err(e),
