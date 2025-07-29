@@ -119,7 +119,7 @@ impl fmt::Display for LocalTimeWrapper {
             for _ in 0..(9 - zeros.count()) {
                 write!(f, "0")?;
             }
-            write!(f, "{}", nanos)?;
+            write!(f, "{nanos}")?;
         }
 
         Ok(())

@@ -46,8 +46,7 @@ fn type_code_to_cql_type(value: i32) -> Result<CqlType, napi::Error> {
         0x0031 => CqlType::Tuple,
         _ => {
             return Err(js_error(format!(
-                "Number {} does not represent a known CQL type",
-                value
+                "Number {value} does not represent a known CQL type",
             )))
         }
     })
@@ -83,9 +82,7 @@ pub fn convert_hint(hint: Option<TypeHint>) -> napi::Result<Option<ComplexType>>
                 .into_iter()
                 .map(|e| convert_hint(Some(e)))
                 .collect::<Result<Vec<Option<ComplexType>>, napi::Error>>()
-                .map_err(|err| {
-                    js_error(format!("Failed to convert one of the subtypes: {}", err))
-                })?;
+                .map_err(|err| js_error(format!("Failed to convert one of the subtypes: {err}")))?;
 
             match base_type {
                 CqlType::Map => {
