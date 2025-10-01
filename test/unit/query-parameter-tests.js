@@ -9,7 +9,9 @@ const TimeUuid = require("../../lib/types/time-uuid");
 const Tuple = require("../../lib/types/tuple");
 const Uuid = require("../../lib/types/uuid");
 const Long = require("long");
+const BigDecimal = require("../../lib/types/big-decimal");
 const { types } = require("../../main");
+const assert = require("assert");
 
 const maxI64 = BigInt("9223372036854775807");
 
@@ -19,7 +21,14 @@ const testCases = [
     ["Boolean", false],
     ["Blob", utils.allocBufferFromArray([0, 1, 2, 3])],
     ["Counter", 921],
-    ["Double", 21.37],
+    [
+        "Decimal",
+        BigDecimal.fromString(
+            "2137.213721372137213721372137213721372137213721372137213721372137213721372",
+        ),
+    ],
+    ["Decimal - negative", BigDecimal.fromString("-10")],
+    ["Decimal - negative exponent", new BigDecimal(69, -10)],
     ["Duration", new Duration(21, 3, 7)],
     ["Float", 111.222],
     ["Int", -1234],
