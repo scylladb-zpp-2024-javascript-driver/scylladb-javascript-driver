@@ -60,6 +60,10 @@ jobs:
       - name: Build
         run: ${{ matrix.settings.build }}
         shell: bash
-      - name: Run integration tests
+      - name: Run integration tests on scylla
+        env: 
+          CCM_IS_SCYLLA: "true"
+        run: npm run integration
+      - name: Run integration tests on cassandra
         run: npm run integration
           
