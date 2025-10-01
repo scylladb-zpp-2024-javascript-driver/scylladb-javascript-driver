@@ -48,17 +48,23 @@ pub struct PagingResult {
 }
 
 impl ToNapiValue for PagingResult {
+    /// # Safety
+    ///
+    /// Valid pointer to napi env must be provided
     unsafe fn to_napi_value(
         env: napi::sys::napi_env,
         val: Self,
     ) -> napi::Result<napi::sys::napi_value> {
-        Vec::to_napi_value(
-            env,
-            vec![
-                PagingStateResponseWrapper::to_napi_value(env, val.paging_state),
-                QueryResultWrapper::to_napi_value(env, val.result),
-            ],
-        )
+        // Caller of this function ensures a valid pointer to napi env is provided
+        unsafe {
+            Vec::to_napi_value(
+                env,
+                vec![
+                    PagingStateResponseWrapper::to_napi_value(env, val.paging_state),
+                    QueryResultWrapper::to_napi_value(env, val.result),
+                ],
+            )
+        }
     }
 }
 

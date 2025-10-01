@@ -1,4 +1,4 @@
-use crate::errors::{js_typed_error, ErrorType};
+use crate::errors::{ErrorType, js_typed_error};
 use napi::bindgen_prelude::{Buffer, BufferSlice};
 use std::net::IpAddr;
 
