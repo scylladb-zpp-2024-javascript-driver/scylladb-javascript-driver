@@ -10,12 +10,13 @@ crate-type = ["cdylib"]
 
 napi = { version = "2.16.16", default-features = false, features = ["napi4", "napi6", "async"] }
 napi-derive = "2.16.6"
-scylla = { git = "https://github.com/scylladb/scylla-rust-driver.git", rev = "v1.2.0" }
+scylla = { git = "https://github.com/scylladb/scylla-rust-driver.git", rev = "v1.2.0" ,  features = ["chrono-04"]}
 tokio = { version = "1.34", features = ["full"] }
 futures = "0.3"
 uuid = "1"
 regex = "1.11.1"
 thiserror = "2.0.12"
+chrono = "0.4"
 
 
 [build-dependencies]
@@ -47,3 +48,19 @@ path = "benchmark/logic_rust/concurrent_select.rs"
 [[bin]]
 name = "batch_benchmark"
 path = "benchmark/logic_rust/batch.rs"
+
+[[bin]]
+name = "deser_benchmark"
+path = "benchmark/logic_rust/deser.rs"
+
+[[bin]]
+name = "concurrent_deser_benchmark"
+path = "benchmark/logic_rust/concurrent_deser.rs"
+
+[[bin]]
+name = "ser_benchmark"
+path = "benchmark/logic_rust/ser.rs"
+
+[[bin]]
+name = "concurrent_ser_benchmark"
+path = "benchmark/logic_rust/concurrent_ser.rs"
