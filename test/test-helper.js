@@ -1337,6 +1337,12 @@ helper.ccm.exec = function (params, callback) {
     helper.ccm.spawn("ccm", params, callback);
 };
 
+/**
+ *
+ * @param {string} processName
+ * @param {Array<string>} params
+ * @param {function} callback
+ */
 helper.ccm.spawn = function (processName, params, callback) {
     if (!callback) {
         callback = function () {};
@@ -1353,6 +1359,10 @@ helper.ccm.spawn = function (processName, params, callback) {
     let closing = 0;
     p.stdout.setEncoding("utf8");
     p.stderr.setEncoding("utf8");
+
+    // This is a temporary logging for catching timeouts
+    console.log(`Running ${processName} ${params.join(" ")}`);
+
     p.stdout.on("data", function (data) {
         stdoutArray.push(data);
     });
@@ -1366,6 +1376,9 @@ helper.ccm.spawn = function (processName, params, callback) {
             // avoid calling multiple times
             return;
         }
+        // This is a temporary logging for catching timeouts
+        console.log(`Closing ${processName} ${params.join(" ")}`);
+
         const info = { code: code, stdout: stdoutArray, stderr: stderrArray };
         let err = null;
         if (code !== 0) {

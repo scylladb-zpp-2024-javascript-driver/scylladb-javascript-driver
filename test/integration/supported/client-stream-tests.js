@@ -12,7 +12,13 @@ const errors = require("../../../lib/errors.js");
 describe("Client", function () {
     this.timeout(120000);
     describe("#stream(query, params, {prepare: 0})", function () {
-        before(helper.ccmHelper.start(1));
+        before(function () {
+            // This is a temporary logging for catching timeouts
+            console.log(`Running before test`);
+            helper.ccmHelper.start(1);
+            // This is a temporary logging for catching timeouts
+            console.log(`Finishing before test`);
+        });
         after(helper.ccmHelper.remove);
         it("should emit end when no rows", function (done) {
             const client = newInstance();
@@ -135,6 +141,8 @@ describe("Client", function () {
         const commonKs = helper.getRandomName("ks");
         const commonTable = commonKs + "." + helper.getRandomName("table");
         before(function (done) {
+            // This is a temporary logging for catching timeouts
+            console.log(`Running before test`);
             const client = newInstance();
             utils.series(
                 [
@@ -154,6 +162,8 @@ describe("Client", function () {
                 ],
                 done,
             );
+            // This is a temporary logging for catching timeouts
+            console.log(`Finishing before test`);
         });
         after(helper.ccmHelper.remove);
         it("should prepare and emit end when no rows", function (done) {

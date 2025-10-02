@@ -17,6 +17,9 @@ describe("Client @SERVER_API", function () {
         const table1 = `${keyspace}.${helper.getRandomName("tblA")}`;
         const table2 = `${keyspace}.${helper.getRandomName("tblB")}`;
         before(function (done) {
+            // This is a temporary logging for catching timeouts
+            console.log(`Running before test`);
+
             const client = newInstance();
             utils.series(
                 [
@@ -39,6 +42,9 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
+
+            // This is a temporary logging for catching timeouts
+            console.log(`Finishing before test`);
         });
         after(helper.ccmHelper.remove);
         vit(
@@ -566,6 +572,9 @@ describe("Client @SERVER_API", function () {
         const table1 = keyspace + "." + table1Short;
         const table2 = keyspace + "." + helper.getRandomName("tblB");
         before(function (done) {
+            // This is a temporary logging for catching timeouts
+            console.log(`Running before test`);
+
             const client = newInstance();
             const createTableCql =
                 "CREATE TABLE %s (" +
@@ -601,6 +610,9 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
+
+            // This is a temporary logging for catching timeouts
+            console.log(`Finishing before test`);
         });
         after(helper.ccmHelper.remove);
         // No support for varint
