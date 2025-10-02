@@ -59,3 +59,8 @@ jobs:
           pip install --user https://github.com/scylladb/scylla-ccm/archive/master.zip
       - name: Run ccm test
         run: bash .github/test.sh
+      - name: Build
+        run: ${{ matrix.settings.build }}
+        shell: bash
+      - name: Run integration tests
+        run: npm run integration

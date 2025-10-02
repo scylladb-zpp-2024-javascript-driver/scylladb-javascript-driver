@@ -1361,7 +1361,7 @@ helper.ccm.spawn = function (processName, params, callback) {
     p.stderr.setEncoding("utf8");
 
     // This is a temporary logging for catching timeouts
-    console.log(`Running ${processName} ${params.join(" ")}`);
+    console.log(`Running ${processName} ${params.join(" ")} at ${Date.now()}`);
 
     p.stdout.on("data", function (data) {
         stdoutArray.push(data);
@@ -1377,7 +1377,7 @@ helper.ccm.spawn = function (processName, params, callback) {
             return;
         }
         // This is a temporary logging for catching timeouts
-        console.log(`Closing ${processName} ${params.join(" ")}`);
+        console.log(`Closing ${processName} ${params.join(" ")} at ${Date.now()}`);
 
         const info = { code: code, stdout: stdoutArray, stderr: stderrArray };
         let err = null;
