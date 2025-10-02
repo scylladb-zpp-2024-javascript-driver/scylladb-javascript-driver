@@ -57,11 +57,16 @@ jobs:
           wget https://github.com/datastax/simulacron/releases/download/0.12.0/simulacron-standalone-0.12.0.jar -O ~/simulacron.jar
           pip install --user --upgrade psutil
           pip install --user https://github.com/scylladb/scylla-ccm/archive/master.zip
-      # - name: Run ccm test
-      #   run: bash .github/test.sh
-      - name: Breakpoint if tests failed
-        # if: failure()
-        uses: namespacelabs/breakpoint-action@v0
-        with:
-          duration: 90m
-          authorized-users: adespawn
+      - name: Run ccm test
+        run: bash .github/test.sh
+      - name: Build
+        run: ${{ matrix.settings.build }}
+        shell: bash
+      - name: Run integration tests
+        run: npm run integration
+      # - name: Breakpoint if tests failed
+      #   # if: failure()
+      #   uses: namespacelabs/breakpoint-action@v0
+      #   with:
+      #     duration: 90m
+      #     authorized-users: adespawn
