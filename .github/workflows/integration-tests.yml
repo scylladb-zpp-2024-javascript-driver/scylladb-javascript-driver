@@ -52,9 +52,8 @@ jobs:
           key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
       - name: Install dependencies
         run: npm i
-      - name: Install ccm and get simulacron
+      - name: Install ccm
         run: |
-          wget https://github.com/datastax/simulacron/releases/download/0.12.0/simulacron-standalone-0.12.0.jar -O ~/simulacron.jar
           pip install --user --upgrade psutil
           pip install --user https://github.com/scylladb/scylla-ccm/archive/master.zip
       - name: Build

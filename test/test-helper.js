@@ -16,15 +16,6 @@ const promiseUtils = require("../lib/promise-utils");
 
 util.inherits(RetryMultipleTimes, policies.retry.RetryPolicy);
 
-const cassandraVersionByDse = {
-    4.8: "2.1",
-    "5.0": "3.0",
-    5.1: "3.11",
-    "6.0": "3.11",
-    6.7: "3.11",
-    6.8: "3.11",
-};
-
 const afterNextHandlers = [];
 let testUnhandledError = null;
 
@@ -459,18 +450,6 @@ const helper = {
                 process.env["CCM_VERSION"] ||
                 (isScylla ? "release:2025.3" : "3.11.4"),
         };
-    },
-
-    getSimulatedCassandraVersion: function () {
-        let version = this.getCassandraVersion();
-        // simulacron does not support protocol V2 and V1, so cap at 2.1.
-        if (version < "2.1") {
-            version = "2.1.19";
-        } else if (version >= "4.0") {
-            // simulacron does not support protocol V5, so cap at 3.11
-            version = "3.11.2";
-        }
-        return version;
     },
 
     /**
@@ -1712,16 +1691,11 @@ class OrderedLoadBalancingPolicy extends policies.loadBalancing
     .RoundRobinPolicy {
     /**
      * Creates a new instance.
-     * @param {Array<String>|SimulacronCluster} [addresses] When specified, it uses the order from the provided host
+     * @param {Array<String>} [addresses] When specified, it uses the order from the provided host
      * addresses.
      */
     constructor(addresses) {
         super();
-
-        if (addresses && typeof addresses.dc === "function") {
-            // With Simulacron, use the nodes from the first DC in that order
-            addresses = addresses.dc(0).nodes.map((n) => n.address);
-        }
 
         this.addresses = addresses;
     }
