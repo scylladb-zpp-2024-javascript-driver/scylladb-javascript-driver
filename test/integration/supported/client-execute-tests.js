@@ -2142,9 +2142,7 @@ describe("Client @SERVER_API", function () {
             });
         });
 
-        // No support for varint
-        // TODO: Fix this test
-        // numericTests(keyspace, false);
+        numericTests(keyspace, false);
         pagingTests(keyspace, false);
 
         // No support for keyspace

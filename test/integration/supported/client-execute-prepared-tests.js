@@ -422,9 +422,7 @@ describe("Client @SERVER_API", function () {
                 },
             );
         });
-        // Requires better support for encoding: see #142
-        // TODO: fix this test
-        /* it("should encode and decode varint values", function (done) {
+        it("should encode and decode varint values", function (done) {
             const client = setupInfo.client;
             const table = commonKs + "." + helper.getRandomName("table");
             const expectedRows = {};
@@ -448,15 +446,13 @@ describe("Client @SERVER_API", function () {
                             100,
                             function (n, next) {
                                 const id = types.uuid();
-                                let value = types.Integer.fromNumber(n * 999);
-                                value = value.multiply(
-                                    types.Integer.fromString("9999901443"),
-                                );
+                                let value = BigInt(n * 999);
+                                value = value * BigInt("9999901443");
+                                expectedRows[id] = value;
                                 if (n % 2 === 0) {
                                     // as a string also
                                     value = value.toString();
                                 }
-                                expectedRows[id] = value.toString();
                                 client.execute(
                                     query,
                                     [id, value],
@@ -478,16 +474,12 @@ describe("Client @SERVER_API", function () {
                             function (err, result) {
                                 assert.ifError(err);
                                 result.rows.forEach(function (row) {
-                                    helper.assertInstanceOf(
-                                        row["val"],
-                                        types.Integer,
-                                    );
                                     const expectedValue =
                                         expectedRows[row["id"]];
-                                    assert.ok(expectedValue);
+                                    assert.ok(expectedValue !== undefined);
                                     assert.strictEqual(
-                                        row["val"].toString(),
-                                        expectedValue.toString(),
+                                        row["val"],
+                                        expectedValue,
                                     );
                                 });
                                 seriesNext();
@@ -498,6 +490,7 @@ describe("Client @SERVER_API", function () {
                 done,
             );
         });
+        /*
         it("should encode and decode decimal values", function (done) {
             const client = setupInfo.client;
             const table = commonKs + "." + helper.getRandomName("table");
@@ -2396,9 +2389,7 @@ describe("Client @SERVER_API", function () {
             }); */
         });
 
-        // No support for varint
-        // TODO: fix this test
-        /* numericTests(commonKs, true);*/
+        numericTests(commonKs, true);
         pagingTests(commonKs, true);
 
         // No support for query keyspace options
