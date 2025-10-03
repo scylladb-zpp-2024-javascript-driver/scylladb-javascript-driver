@@ -272,7 +272,6 @@ describe("Cql value wrapper", function () {
             None,
         ]); */
         assert.strictEqual(value.length, 3);
-        console.log(value.get(0));
         assert.strictEqual(value.get(0), "some text");
         assert.strictEqual(value.get(1), 1);
         assert.strictEqual(value.get(2), undefined);
@@ -309,5 +308,27 @@ describe("Cql value wrapper", function () {
         let element = CqlValue::Inet(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))); */
         let expectedInet = InetAddress.fromString("127.0.0.1");
         assert.strictEqual(value.equals(expectedInet), true);
+    });
+
+    it("should get varint type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperVarint();
+        /**
+         * @type BigInt
+         */
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])) */
+        assert.strictEqual(value, BigInt("79850778293499848189627010061"));
+    });
+
+    it("should get negative varint type correctly from napi", function () {
+        let element = rust.testsGetCqlWrapperNegativeVarint();
+        /**
+         * @type BigInt
+         */
+        let value = getCqlObject(element);
+        /* Corresponding value: 
+        let element = CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])) */
+        assert.strictEqual(value, BigInt("-10140582186046599701377542583283"));
     });
 });
