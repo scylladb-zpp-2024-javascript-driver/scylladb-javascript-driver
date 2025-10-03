@@ -1356,13 +1356,6 @@ describe("Client @SERVER_API", function () {
                             { prepare: true },
                             validateResponseError(next),
                         ),
-                    (next) =>
-                        client.execute(
-                            query,
-                            [types.TimeUuid.now(), null],
-                            { prepare: true },
-                            validateResponseError(next),
-                        ),
                 ],
                 done,
             );

@@ -16,15 +16,6 @@ const promiseUtils = require("../lib/promise-utils");
 
 util.inherits(RetryMultipleTimes, policies.retry.RetryPolicy);
 
-const cassandraVersionByDse = {
-    4.8: "2.1",
-    "5.0": "3.0",
-    5.1: "3.11",
-    "6.0": "3.11",
-    6.7: "3.11",
-    6.8: "3.11",
-};
-
 const afterNextHandlers = [];
 let testUnhandledError = null;
 
@@ -433,42 +424,32 @@ const helper = {
 
     /**
      * Gets the Apache Cassandra version.
-     * When the server is DSE, gets the Apache Cassandra equivalent.
+     * When the server is Scylla, gets the Apache Cassandra equivalent.
      */
     getCassandraVersion: function () {
         const serverInfo = this.getServerInfo();
 
-        if (!serverInfo.isDse) {
+        if (!serverInfo.isScylla) {
             return serverInfo.version;
         }
-
-        const dseVersion = serverInfo.version.split(".").slice(0, 2).join(".");
-        return (
-            cassandraVersionByDse[dseVersion] || cassandraVersionByDse["6.7"]
-        );
+        // TODO:
+        // Here we return some arbitrary version, but this does not appear to be used
+        // in any meaningful way. Either fully remove it or implement properly.
+        return "3.11.4";
     },
 
     /**
      * Gets the server version and type.
-     * @return {{version, isDse}}
+     * @return {{version:string, isScylla:boolean}}
      */
     getServerInfo: function () {
+        const isScylla = process.env["CCM_IS_SCYLLA"] === "true";
         return {
-            version: process.env["CCM_VERSION"] || "3.11.4",
-            isDse: process.env["CCM_IS_DSE"] === "true",
+            isScylla: isScylla,
+            version:
+                process.env["CCM_VERSION"] ||
+                (isScylla ? "release:2025.3" : "3.11.4"),
         };
-    },
-
-    getSimulatedCassandraVersion: function () {
-        let version = this.getCassandraVersion();
-        // simulacron does not support protocol V2 and V1, so cap at 2.1.
-        if (version < "2.1") {
-            version = "2.1.19";
-        } else if (version >= "4.0") {
-            // simulacron does not support protocol V5, so cap at 3.11
-            version = "3.11.2";
-        }
-        return version;
     },
 
     /**
@@ -1138,7 +1119,7 @@ helper.ccm.startAll = function (nodeLength, options, callback) {
     const serverInfo = helper.getServerInfo();
 
     helper.trace(
-        `Starting ${serverInfo.isDse ? "DSE" : "Cassandra"} cluster v${serverInfo.version} with ${nodeLength} node(s)`,
+        `Starting ${serverInfo.isScylla ? "Scylla" : "Cassandra"} cluster v${serverInfo.version} with ${nodeLength} node(s)`,
     );
 
     utils.series(
@@ -1154,8 +1135,8 @@ helper.ccm.startAll = function (nodeLength, options, callback) {
                 const clusterName = helper.getRandomName("test");
                 let create = ["create", clusterName];
 
-                if (serverInfo.isDse) {
-                    create.push("--dse");
+                if (serverInfo.isScylla) {
+                    create.push("--scylla");
                 }
 
                 create.push("-v", serverInfo.version);
@@ -1263,8 +1244,8 @@ helper.ccm.bootstrapNode = function (options, callback) {
         "-b",
     ];
 
-    if (helper.getServerInfo().isDse) {
-        ccmArgs.push("--dse");
+    if (helper.getServerInfo().isScylla) {
+        ccmArgs.push("--scylla");
     }
 
     if (options.dc) {
@@ -1689,24 +1670,14 @@ FallthroughRetryPolicy.prototype.onRequestError =
  * @param {Array} args the arguments to apply to the function.
  */
 function executeIfVersion(testVersion, func, args) {
-    const serverInfo = helper.getServerInfo();
-    let invokeFunction = false;
-
     if (testVersion.startsWith("dse-")) {
-        if (serverInfo.isDse) {
-            // Compare only if the server instance is DSE
-            invokeFunction = helper.versionCompare(
-                serverInfo.version,
-                testVersion.substr(4),
-            );
-        }
-    } else {
-        // Use the C* version (of DSE or the actual C* version)
-        invokeFunction = helper.versionCompare(
-            helper.getCassandraVersion(),
-            testVersion,
-        );
+        throw new Error("No support for DSE");
     }
+
+    let invokeFunction = helper.versionCompare(
+        helper.getCassandraVersion(),
+        testVersion,
+    );
 
     if (invokeFunction) {
         func.apply(this, args);
@@ -1720,16 +1691,11 @@ class OrderedLoadBalancingPolicy extends policies.loadBalancing
     .RoundRobinPolicy {
     /**
      * Creates a new instance.
-     * @param {Array<String>|SimulacronCluster} [addresses] When specified, it uses the order from the provided host
+     * @param {Array<String>} [addresses] When specified, it uses the order from the provided host
      * addresses.
      */
     constructor(addresses) {
         super();
-
-        if (addresses && typeof addresses.dc === "function") {
-            // With Simulacron, use the nodes from the first DC in that order
-            addresses = addresses.dc(0).nodes.map((n) => n.address);
-        }
 
         this.addresses = addresses;
     }

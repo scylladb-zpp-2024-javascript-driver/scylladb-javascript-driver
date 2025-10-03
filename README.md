@@ -49,8 +49,6 @@ For the integration tests you need to do the following steps before running test
 1. Install [scylla-ccm](https://github.com/scylladb/scylla-ccm) package.
 You may also use [ccm](https://github.com/riptano/ccm) but not all tests are guaranteed to pass while using it.
 2. Have ``java-8`` installed and available in path ``/usr/lib/jvm/java-8`` (scylla-ccm uses this hardcoded path)
-3. Have ``simulacron.jar`` downloaded in ``SIMULACRON_PATH`` path (if you don't provide this env variable, home directory is assumed)
-You can download the latest version from the [repository](https://github.com/datastax/simulacron)
 
 ## Running examples
 
