@@ -48,6 +48,8 @@ const testCases = [
     ["Timeuuid", TimeUuid.fromString("8e14e760-7fa8-11eb-bc66-000000000001")],
     ["Tuple", new Tuple("First", new Tuple(1, 2), null)],
     ["Uuid", Uuid.fromString("ffffffff-eeee-ffff-ffff-ffffffffffff")],
+    ["Varint", BigInt("79850778293499848189627010061")],
+    ["Negative Varint", BigInt("-10140582186046599701377542583283")],
 ];
 
 describe("Should correctly convert ", function () {
