@@ -1,6 +1,6 @@
 use napi::{
-    bindgen_prelude::{Array, BigInt, Buffer, FromNapiValue, Undefined},
     Status,
+    bindgen_prelude::{Array, BigInt, Buffer, FromNapiValue, Undefined},
 };
 use scylla::value::{Counter, CqlDecimal, CqlTimestamp, CqlTimeuuid, CqlValue, MaybeUnset};
 

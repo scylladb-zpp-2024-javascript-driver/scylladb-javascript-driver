@@ -47,7 +47,7 @@ fn type_code_to_cql_type(value: i32) -> Result<CqlType, napi::Error> {
         _ => {
             return Err(js_error(format!(
                 "Number {value} does not represent a known CQL type",
-            )))
+            )));
         }
     })
 }

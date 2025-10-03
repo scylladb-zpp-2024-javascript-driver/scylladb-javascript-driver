@@ -1,4 +1,4 @@
-use napi::{bindgen_prelude::Buffer, bindgen_prelude::BufferSlice, Error, Status};
+use napi::{Error, Status, bindgen_prelude::Buffer, bindgen_prelude::BufferSlice};
 use uuid::Uuid;
 
 #[napi]

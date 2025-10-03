@@ -7,8 +7,8 @@ use crate::{
     },
 };
 use napi::{
-    bindgen_prelude::{BigInt, Buffer, ToNapiValue},
     Result,
+    bindgen_prelude::{BigInt, Buffer, ToNapiValue},
 };
 use scylla::{
     cluster::metadata::{CollectionType, NativeType},
@@ -205,128 +205,140 @@ unsafe fn add_type_to_napi_value(
 }
 
 impl ToNapiValue for CqlValueWrapper {
+    /// # Safety
+    ///
+    /// Valid pointer to napi env must be provided
     unsafe fn to_napi_value(
         env: napi::sys::napi_env,
         value: Self,
     ) -> napi::Result<napi::sys::napi_value> {
-        match value.inner {
-            CqlValue::Ascii(val) => String::to_napi_value(env, val),
-            CqlValue::Boolean(val) => bool::to_napi_value(env, val),
-            CqlValue::Blob(val) => Buffer::to_napi_value(env, val.into()),
-            CqlValue::Counter(val) => add_type_to_napi_value(
-                env,
-                BigInt::to_napi_value(env, val.0.into()),
-                CqlType::Counter,
-            ),
-            CqlValue::Decimal(val) => {
-                const EXP_SIZE: usize = 4;
-                // JS driver expects decimal to be in the format of Decimal from CQL protocol.
-                // Returned buffer is in format XXXXYYYY...YYY
-                // where XXXX (4 bytes) is the exponent of the decimal in big endian
-                // and YYYY...YYY is the value of the decimal in big endian.
-                let (value, len) = val.as_signed_be_bytes_slice_and_exponent();
-                let mut buf = vec![0u8; EXP_SIZE + value.len()];
-                buf[0..EXP_SIZE].copy_from_slice(&len.to_be_bytes());
-                buf[EXP_SIZE..].copy_from_slice(value);
-                add_type_to_napi_value(
+        // Caller of this function ensures a valid pointer to napi env is provided
+        unsafe {
+            match value.inner {
+                CqlValue::Ascii(val) => String::to_napi_value(env, val),
+                CqlValue::Boolean(val) => bool::to_napi_value(env, val),
+                CqlValue::Blob(val) => Buffer::to_napi_value(env, val.into()),
+                CqlValue::Counter(val) => add_type_to_napi_value(
                     env,
-                    Buffer::to_napi_value(env, Buffer::from(buf)),
-                    CqlType::Decimal,
-                )
-            }
-            CqlValue::Date(val) => {
-                LocalDateWrapper::to_napi_value(env, LocalDateWrapper::from_cql_date(val))
-            }
-            CqlValue::Double(val) => f64::to_napi_value(env, val),
-            CqlValue::Duration(val) => {
-                DurationWrapper::to_napi_value(env, DurationWrapper::from_cql_duration(val))
-            }
-            CqlValue::Empty => todo!(),
-            CqlValue::Float(val) => f32::to_napi_value(env, val),
-            CqlValue::Int(val) => i32::to_napi_value(env, val),
-            CqlValue::BigInt(val) => {
-                add_type_to_napi_value(env, BigInt::to_napi_value(env, val.into()), CqlType::BigInt)
-            }
-            CqlValue::Text(val) => String::to_napi_value(env, val),
-            CqlValue::Timestamp(val) => add_type_to_napi_value(
-                env,
-                BigInt::to_napi_value(env, val.0.into()),
-                CqlType::Timestamp,
-            ),
-            CqlValue::Inet(val) => {
-                InetAddressWrapper::to_napi_value(env, InetAddressWrapper::from_ip_addr(val))
-            }
-            CqlValue::List(val) => add_type_to_napi_value(
-                env,
-                Vec::to_napi_value(
-                    env,
-                    val.into_iter()
-                        .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
-                        .collect(),
+                    BigInt::to_napi_value(env, val.0.into()),
+                    CqlType::Counter,
                 ),
-                CqlType::List,
-            ),
-            CqlValue::Map(val) => add_type_to_napi_value(
-                env,
-                Vec::to_napi_value(
+                CqlValue::Decimal(val) => {
+                    const EXP_SIZE: usize = 4;
+                    // JS driver expects decimal to be in the format of Decimal from CQL protocol.
+                    // Returned buffer is in format XXXXYYYY...YYY
+                    // where XXXX (4 bytes) is the exponent of the decimal in big endian
+                    // and YYYY...YYY is the value of the decimal in big endian.
+                    let (value, len) = val.as_signed_be_bytes_slice_and_exponent();
+                    let mut buf = vec![0u8; EXP_SIZE + value.len()];
+                    buf[0..EXP_SIZE].copy_from_slice(&len.to_be_bytes());
+                    buf[EXP_SIZE..].copy_from_slice(value);
+                    add_type_to_napi_value(
+                        env,
+                        Buffer::to_napi_value(env, Buffer::from(buf)),
+                        CqlType::Decimal,
+                    )
+                }
+                CqlValue::Date(val) => {
+                    LocalDateWrapper::to_napi_value(env, LocalDateWrapper::from_cql_date(val))
+                }
+                CqlValue::Double(val) => f64::to_napi_value(env, val),
+                CqlValue::Duration(val) => {
+                    DurationWrapper::to_napi_value(env, DurationWrapper::from_cql_duration(val))
+                }
+                CqlValue::Empty => todo!(),
+                CqlValue::Float(val) => f32::to_napi_value(env, val),
+                CqlValue::Int(val) => i32::to_napi_value(env, val),
+                CqlValue::BigInt(val) => add_type_to_napi_value(
                     env,
-                    val.into_iter()
-                        .map(|e: (CqlValue, CqlValue)| {
-                            vec![
-                                CqlValueWrapper { inner: e.0 },
-                                CqlValueWrapper { inner: e.1 },
-                            ]
-                        })
-                        .collect(),
+                    BigInt::to_napi_value(env, val.into()),
+                    CqlType::BigInt,
                 ),
-                CqlType::Map,
-            ),
-            CqlValue::Set(val) => add_type_to_napi_value(
-                env,
-                Vec::to_napi_value(
+                CqlValue::Text(val) => String::to_napi_value(env, val),
+                CqlValue::Timestamp(val) => add_type_to_napi_value(
                     env,
-                    val.into_iter()
-                        .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
-                        .collect(),
+                    BigInt::to_napi_value(env, val.0.into()),
+                    CqlType::Timestamp,
                 ),
-                CqlType::Set,
-            ),
-            CqlValue::UserDefinedType { .. } => todo!(),
-            CqlValue::SmallInt(val) => i16::to_napi_value(env, val),
-            CqlValue::TinyInt(val) => i8::to_napi_value(env, val),
-            CqlValue::Time(val) => {
-                LocalTimeWrapper::to_napi_value(env, LocalTimeWrapper::from_cql_time(val))
-            }
-            CqlValue::Timeuuid(val) => add_type_to_napi_value(
-                env,
-                Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
-                CqlType::Timeuuid,
-            ),
-            CqlValue::Tuple(val) => add_type_to_napi_value(
-                env,
-                Vec::to_napi_value(
+                CqlValue::Inet(val) => {
+                    InetAddressWrapper::to_napi_value(env, InetAddressWrapper::from_ip_addr(val))
+                }
+                CqlValue::List(val) => add_type_to_napi_value(
                     env,
-                    val.into_iter()
-                        .map(|v| {
-                            v.map(|e| {
-                                CqlValueWrapper::to_napi_value(
-                                    env,
-                                    CqlValueWrapper { inner: e.clone() },
-                                )
+                    Vec::to_napi_value(
+                        env,
+                        val.into_iter()
+                            .map(|e| {
+                                CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e })
                             })
-                        })
-                        .collect(),
+                            .collect(),
+                    ),
+                    CqlType::List,
                 ),
-                CqlType::Tuple,
-            ),
+                CqlValue::Map(val) => add_type_to_napi_value(
+                    env,
+                    Vec::to_napi_value(
+                        env,
+                        val.into_iter()
+                            .map(|e: (CqlValue, CqlValue)| {
+                                vec![
+                                    CqlValueWrapper { inner: e.0 },
+                                    CqlValueWrapper { inner: e.1 },
+                                ]
+                            })
+                            .collect(),
+                    ),
+                    CqlType::Map,
+                ),
+                CqlValue::Set(val) => add_type_to_napi_value(
+                    env,
+                    Vec::to_napi_value(
+                        env,
+                        val.into_iter()
+                            .map(|e| {
+                                CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e })
+                            })
+                            .collect(),
+                    ),
+                    CqlType::Set,
+                ),
+                CqlValue::UserDefinedType { .. } => todo!(),
+                CqlValue::SmallInt(val) => i16::to_napi_value(env, val),
+                CqlValue::TinyInt(val) => i8::to_napi_value(env, val),
+                CqlValue::Time(val) => {
+                    LocalTimeWrapper::to_napi_value(env, LocalTimeWrapper::from_cql_time(val))
+                }
+                CqlValue::Timeuuid(val) => add_type_to_napi_value(
+                    env,
+                    Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
+                    CqlType::Timeuuid,
+                ),
+                CqlValue::Tuple(val) => add_type_to_napi_value(
+                    env,
+                    Vec::to_napi_value(
+                        env,
+                        val.into_iter()
+                            .map(|v| {
+                                v.map(|e| {
+                                    CqlValueWrapper::to_napi_value(
+                                        env,
+                                        CqlValueWrapper { inner: e.clone() },
+                                    )
+                                })
+                            })
+                            .collect(),
+                    ),
+                    CqlType::Tuple,
+                ),
 
-            CqlValue::Uuid(val) => add_type_to_napi_value(
-                env,
-                Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
-                CqlType::Uuid,
-            ),
-            CqlValue::Varint(_) => todo!(),
-            other => unimplemented!("Missing implementation for CQL value {:?}", other),
+                CqlValue::Uuid(val) => add_type_to_napi_value(
+                    env,
+                    Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
+                    CqlType::Uuid,
+                ),
+                CqlValue::Varint(_) => todo!(),
+                other => unimplemented!("Missing implementation for CQL value {:?}", other),
+            }
         }
     }
 }

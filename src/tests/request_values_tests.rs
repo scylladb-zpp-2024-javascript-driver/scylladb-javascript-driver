@@ -48,7 +48,7 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
                     ColumnType::Native(NativeType::Int),
                 ]),
                 ColumnType::Native(NativeType::Int),
-            ])
+            ]);
         }
         "Uuid" => (CqlType::Uuid, None, None),
         _ => (CqlType::Empty, None, None),

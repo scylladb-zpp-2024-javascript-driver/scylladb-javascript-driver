@@ -1,6 +1,6 @@
+use scylla::client::SelfIdentity;
 use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
-use scylla::client::SelfIdentity;
 use scylla::response::PagingState;
 use scylla::statement::batch::Batch;
 use scylla::statement::prepared::PreparedStatement;
@@ -271,7 +271,9 @@ fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
         }
         (None, None) => (),
         (Some(_), None) | (None, Some(_)) => {
-            unreachable!("There is a check in JS Client constructor that should have prevented only one credential passed")
+            unreachable!(
+                "There is a check in JS Client constructor that should have prevented only one credential passed"
+            )
         }
     }
     builder
