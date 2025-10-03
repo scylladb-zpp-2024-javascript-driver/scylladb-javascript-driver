@@ -63,6 +63,3 @@ jobs:
         env: 
           CCM_IS_SCYLLA: "true"
         run: npm run integration
-      - name: Run integration tests on cassandra
-        run: npm run integration
-          
