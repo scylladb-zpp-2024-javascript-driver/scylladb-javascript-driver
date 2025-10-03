@@ -364,7 +364,23 @@ impl ToNapiValue for CqlValueWrapper {
                     Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
                     CqlType::Uuid,
                 ),
-                CqlValue::Varint(_) => todo!(),
+                CqlValue::Varint(val) => {
+                    let (sign, words) =
+                        num_bigint::BigInt::from_signed_bytes_be(val.as_signed_bytes_be_slice())
+                            .to_u64_digits();
+
+                    add_type_to_napi_value(
+                        env,
+                        BigInt::to_napi_value(
+                            env,
+                            BigInt {
+                                sign_bit: sign == num_bigint::Sign::Minus,
+                                words,
+                            },
+                        ),
+                        CqlType::Varint,
+                    )
+                }
                 other => unimplemented!("Missing implementation for CQL value {:?}", other),
             }
         }
