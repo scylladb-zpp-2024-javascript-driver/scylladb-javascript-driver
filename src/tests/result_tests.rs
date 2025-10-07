@@ -154,6 +154,24 @@ pub fn tests_get_cql_wrapper_set() -> CqlValueWrapper {
     CqlValueWrapper { inner: element }
 }
 
+/// Test function returning sample CqlValueWrapper with UserDefinedType type.
+#[napi]
+pub fn tests_get_cql_wrapper_udt() -> CqlValueWrapper {
+    let element = CqlValue::UserDefinedType {
+        keyspace: String::from("keyspace"),
+        name: String::from("name"),
+        fields: vec![
+            (
+                String::from("field1"),
+                Some(CqlValue::Text("some text".to_owned())),
+            ),
+            (String::from("field2"), Some(CqlValue::Int(1))),
+            (String::from("field3"), None),
+        ],
+    };
+    CqlValueWrapper { inner: element }
+}
+
 #[napi]
 /// Test function returning sample CqlValueWrapper with Map type
 pub fn tests_get_cql_wrapper_map() -> CqlValueWrapper {

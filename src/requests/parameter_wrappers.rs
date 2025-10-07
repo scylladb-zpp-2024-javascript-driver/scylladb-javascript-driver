@@ -87,6 +87,52 @@ fn cql_value_vec_from_tuple(
     Ok(res)
 }
 
+/// It requires that each element of the `arr` array is in [String, CqlValue] format.
+/// This will be guaranteed by the JS part of the code.
+fn cql_value_vec_from_udt(
+    typ: &ComplexType,
+    arr: &Array,
+) -> napi::Result<Vec<(String, Option<CqlValue>)>> {
+    let mut res = vec![];
+    let support_types = typ.get_inner_types();
+    let parsing_error = || {
+        napi::Error::new(
+            Status::InvalidArg,
+            "Unexpected data when parsing User Defined Type".to_owned(),
+        )
+    };
+
+    // JS arrays can hold up to 2^32 - 2 values.
+    // Here we assume usize is at least 4 bytes.
+    if support_types.len() != arr.len().try_into().unwrap() {
+        return Err(napi::Error::new(
+            Status::InvalidArg,
+            "UDT has different amount of types and values".to_owned(),
+        ));
+    }
+
+    for (i, typ) in support_types.into_iter().enumerate() {
+        let pair = arr
+            .get::<Array>(i.try_into().unwrap())? // Similar to above unwrapping, we assume i is capped at JS array size.
+            .ok_or_else(parsing_error)?;
+
+        // This is guaranteed by the JS part of the code
+        if pair.len() != 2 {
+            return Err(parsing_error());
+        }
+        let name = pair.get::<String>(0)?.ok_or_else(parsing_error)?;
+
+        match pair.get::<Undefined>(1) {
+            Ok(Some(_)) | Ok(None) => res.push((name, None)),
+            _ => {
+                let value = cql_value_from_napi_value(&typ, &pair, 1)?;
+                res.push((name, Some(value)));
+            }
+        }
+    }
+    Ok(res)
+}
+
 /// Convert element at pos position in elem Array into CqlValue, based on the provided type
 fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi::Result<CqlValue> {
     /// Try to convert value at `pos` position in `elem` array into value of `statement_type` type.
@@ -148,7 +194,14 @@ fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi:
                 .expect("Expected support type for list"),
             &get_element!(Array),
         )?),
-        CqlType::UserDefinedType => todo!(),
+        CqlType::UserDefinedType => CqlValue::UserDefinedType {
+            keyspace: typ
+                .get_udt_keyspace()
+                .expect("Expected keyspace for UDT")
+                .clone(),
+            name: typ.get_udt_name().expect("Expected name for UDT").clone(),
+            fields: cql_value_vec_from_udt(typ, &get_element!(Array))?,
+        },
         CqlType::SmallInt => CqlValue::SmallInt(
             get_element!(i32)
                 .try_into()

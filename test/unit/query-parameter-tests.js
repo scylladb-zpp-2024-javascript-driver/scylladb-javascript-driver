@@ -41,6 +41,7 @@ const testCases = [
     ["List", ["Test value", "Some other funny value"]],
     ["Map", { Text: 0.1, Text2: 0.2 }],
     ["Set", [4, 7, 15]],
+    ["UserDefinedType", { field1: "Test", field2: 1, field3: null }],
     ["SmallInt", 1],
     ["TinyInt", -1],
     ["Time", new LocalTime(Long.fromInt(4312))],
