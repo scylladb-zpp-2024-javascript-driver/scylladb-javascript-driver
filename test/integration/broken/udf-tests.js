@@ -26,15 +26,6 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
             "CREATE AGGREGATE ks_udf.sum(int) SFUNC plus STYPE int INITCOND 1",
             "CREATE AGGREGATE ks_udf.sum(bigint) SFUNC plus STYPE bigint INITCOND 2",
         ];
-        if (helper.isDseGreaterThan("6")) {
-            queries.push(
-                "CREATE FUNCTION ks_udf.deterministic(dividend int, divisor int) CALLED ON NULL INPUT RETURNS int DETERMINISTIC LANGUAGE java AS 'return dividend / divisor;'",
-                "CREATE FUNCTION ks_udf.monotonic(dividend int, divisor int) CALLED ON NULL INPUT RETURNS int MONOTONIC LANGUAGE java AS 'return dividend / divisor;'",
-                "CREATE FUNCTION ks_udf.md(dividend int, divisor int) CALLED ON NULL INPUT RETURNS int DETERMINISTIC MONOTONIC LANGUAGE java AS 'return dividend / divisor;'",
-                "CREATE FUNCTION ks_udf.monotonic_on(dividend int, divisor int) CALLED ON NULL INPUT RETURNS int MONOTONIC ON dividend LANGUAGE java AS 'return dividend / divisor;'",
-                "CREATE AGGREGATE ks_udf.deta(int) SFUNC plus STYPE int INITCOND 0 DETERMINISTIC;",
-            );
-        }
         utils.eachSeries(
             queries,
             client.execute.bind(client),

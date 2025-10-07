@@ -2173,9 +2173,6 @@ describe("Client @SERVER_API", function () {
         // No support for keyspace
         // TODO: Fix this test
         /* it("should not use keyspace if set on options for lower protocol versions", function () {
-            if (helper.isDseGreaterThan("6.0")) {
-                return this.skip();
-            }
             const client = setupInfo.client;
             return client
                 .execute("select * from local", null, { keyspace: "system" })

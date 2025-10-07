@@ -1073,9 +1073,6 @@ describe("Client @SERVER_API", function () {
         // Would require error throwing refactor
         // TODO: Fix this test
         it("should not use keyspace if set on options for lower protocol versions", function () {
-            if (helper.isDseGreaterThan("6.0")) {
-                return this.skip();
-            }
             const client = newInstance({});
             const insertQuery =
                 "INSERT INTO %s (id, time, double_sample) VALUES (?, ?, ?)";
