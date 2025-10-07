@@ -769,9 +769,7 @@ describe("Client @SERVER_API", function () {
             },
         );
 
-        // No support for decimal type
-        // TODO: Fix this test
-        /* vit(
+        vit(
             "2.0",
             "should handle multiple prepares in parallel",
             function (done) {
@@ -780,7 +778,7 @@ describe("Client @SERVER_API", function () {
                 const id1Tbl2 = types.Uuid.random();
                 const id2Tbl1 = types.Uuid.random();
                 const id2Tbl2 = types.Uuid.random();
-                //Avoid using the same queries from test to test, include hardcoded values
+                // Avoid using the same queries from test to test, include hardcoded values
                 const query1Table1 = util.format(
                     "INSERT INTO %s (id, time, decimal_sample, int_sample) VALUES (?, ?, ?, 201)",
                     table1,
@@ -879,7 +877,7 @@ describe("Client @SERVER_API", function () {
                         if (err) {
                             return done(err);
                         }
-                        //verify results in both tables
+                        // verify results in both tables
                         const q = "SELECT * FROM %s where id IN (%s, %s)";
                         utils.series(
                             [
@@ -933,7 +931,7 @@ describe("Client @SERVER_API", function () {
                     },
                 );
             },
-        ); */
+        );
         // No support for named parameters
         // TODO: Fix this test
         /* vit("2.0", "should allow named parameters", function (done) {

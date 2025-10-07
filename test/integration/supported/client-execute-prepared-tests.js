@@ -2422,9 +2422,7 @@ describe("Client @SERVER_API", function () {
                     helper.assertInstanceOf(err, errors.ResponseError);
                 });
         }); */
-        // No support for used client and query options
-        // TODO: fix this test
-        /* describe("With schema changes made while querying", () => {
+        describe("With schema changes made while querying", () => {
             // Note: Since the driver does not make use of result metadata on prepared statement
             // it should inheritently be resilient to schema changes since it uses the metadata
             // in the rows responses.  However, if NODEJS-433 is implemented the driver will
@@ -2616,7 +2614,7 @@ describe("Client @SERVER_API", function () {
                     done,
                 );
             });
-        }); */
+        });
     });
 });
 
