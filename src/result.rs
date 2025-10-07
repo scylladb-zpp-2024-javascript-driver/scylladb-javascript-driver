@@ -195,7 +195,7 @@ impl From<Row> for RowWrapper {
 /// # Safety
 ///
 /// Valid pointer to napi env must be provided
-unsafe fn add_type_to_napi_value(
+unsafe fn make_napi_value_and_type_pair(
     env: napi::sys::napi_env,
     value: napi::Result<napi::sys::napi_value>,
     typ: CqlType,
@@ -218,7 +218,7 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlValue::Ascii(val) => String::to_napi_value(env, val),
                 CqlValue::Boolean(val) => bool::to_napi_value(env, val),
                 CqlValue::Blob(val) => Buffer::to_napi_value(env, val.into()),
-                CqlValue::Counter(val) => add_type_to_napi_value(
+                CqlValue::Counter(val) => make_napi_value_and_type_pair(
                     env,
                     BigInt::to_napi_value(env, val.0.into()),
                     CqlType::Counter,
@@ -233,7 +233,7 @@ impl ToNapiValue for CqlValueWrapper {
                     let mut buf = vec![0u8; EXP_SIZE + value.len()];
                     buf[0..EXP_SIZE].copy_from_slice(&len.to_be_bytes());
                     buf[EXP_SIZE..].copy_from_slice(value);
-                    add_type_to_napi_value(
+                    make_napi_value_and_type_pair(
                         env,
                         Buffer::to_napi_value(env, Buffer::from(buf)),
                         CqlType::Decimal,
@@ -249,13 +249,13 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlValue::Empty => todo!(),
                 CqlValue::Float(val) => f32::to_napi_value(env, val),
                 CqlValue::Int(val) => i32::to_napi_value(env, val),
-                CqlValue::BigInt(val) => add_type_to_napi_value(
+                CqlValue::BigInt(val) => make_napi_value_and_type_pair(
                     env,
                     BigInt::to_napi_value(env, val.into()),
                     CqlType::BigInt,
                 ),
                 CqlValue::Text(val) => String::to_napi_value(env, val),
-                CqlValue::Timestamp(val) => add_type_to_napi_value(
+                CqlValue::Timestamp(val) => make_napi_value_and_type_pair(
                     env,
                     BigInt::to_napi_value(env, val.0.into()),
                     CqlType::Timestamp,
@@ -263,7 +263,7 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlValue::Inet(val) => {
                     InetAddressWrapper::to_napi_value(env, InetAddressWrapper::from_ip_addr(val))
                 }
-                CqlValue::List(val) => add_type_to_napi_value(
+                CqlValue::List(val) => make_napi_value_and_type_pair(
                     env,
                     Vec::to_napi_value(
                         env,
@@ -275,7 +275,7 @@ impl ToNapiValue for CqlValueWrapper {
                     ),
                     CqlType::List,
                 ),
-                CqlValue::Map(val) => add_type_to_napi_value(
+                CqlValue::Map(val) => make_napi_value_and_type_pair(
                     env,
                     Vec::to_napi_value(
                         env,
@@ -290,7 +290,7 @@ impl ToNapiValue for CqlValueWrapper {
                     ),
                     CqlType::Map,
                 ),
-                CqlValue::Set(val) => add_type_to_napi_value(
+                CqlValue::Set(val) => make_napi_value_and_type_pair(
                     env,
                     Vec::to_napi_value(
                         env,
@@ -310,7 +310,7 @@ impl ToNapiValue for CqlValueWrapper {
                     // Create an empty JS object
                     let mut obj = Env::from_raw(env).create_object()?;
                     // And fill it with the wrapped values
-                    add_type_to_napi_value(
+                    make_napi_value_and_type_pair(
                         env,
                         fields
                             .iter()
@@ -336,12 +336,12 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlValue::Time(val) => {
                     LocalTimeWrapper::to_napi_value(env, LocalTimeWrapper::from_cql_time(val))
                 }
-                CqlValue::Timeuuid(val) => add_type_to_napi_value(
+                CqlValue::Timeuuid(val) => make_napi_value_and_type_pair(
                     env,
                     Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
                     CqlType::Timeuuid,
                 ),
-                CqlValue::Tuple(val) => add_type_to_napi_value(
+                CqlValue::Tuple(val) => make_napi_value_and_type_pair(
                     env,
                     Vec::to_napi_value(
                         env,
@@ -359,7 +359,7 @@ impl ToNapiValue for CqlValueWrapper {
                     CqlType::Tuple,
                 ),
 
-                CqlValue::Uuid(val) => add_type_to_napi_value(
+                CqlValue::Uuid(val) => make_napi_value_and_type_pair(
                     env,
                     Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
                     CqlType::Uuid,
@@ -369,7 +369,7 @@ impl ToNapiValue for CqlValueWrapper {
                         num_bigint::BigInt::from_signed_bytes_be(val.as_signed_bytes_be_slice())
                             .to_u64_digits();
 
-                    add_type_to_napi_value(
+                    make_napi_value_and_type_pair(
                         env,
                         BigInt::to_napi_value(
                             env,
