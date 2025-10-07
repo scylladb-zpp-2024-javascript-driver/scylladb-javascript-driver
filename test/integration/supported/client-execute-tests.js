@@ -1504,6 +1504,48 @@ describe("Client @SERVER_API", function () {
                     done,
                 );
             });
+            // First hint is invalid because it contains 4 elements instead of 3
+            // Second hint is invalid because it contains invalid subtype (text instead of int)
+            ["tuple<text, int, blob, int>", "tuple<text, text, blob>"].forEach(
+                function (hint) {
+                    vit(
+                        "2.1",
+                        "should throw for improper tuple parameter hints: " +
+                            hint,
+                        function (done) {
+                            const client = setupInfo.client;
+                            const id = types.Uuid.random();
+                            const tuple = new types.Tuple(
+                                "Surf Rider",
+                                110,
+                                utils.allocBufferFromString("0f0f", "hex"),
+                            );
+                            utils.series(
+                                [
+                                    function insert(next) {
+                                        const query =
+                                            "INSERT INTO tbl_tuples (id, tuple_col) VALUES (?, ?)";
+                                        client.execute(
+                                            query,
+                                            [id, tuple],
+                                            { hints: [null, hint] },
+                                            function (err, result) {
+                                                // TODO: This should probably be a SyntaxError
+                                                helper.assertInstanceOf(
+                                                    err,
+                                                    Error,
+                                                );
+                                                next();
+                                            },
+                                        );
+                                    },
+                                ],
+                                done,
+                            );
+                        },
+                    );
+                },
+            );
             vit("2.2", "should allow insertions as json", function (done) {
                 const client = setupInfo.client;
                 const o = {
