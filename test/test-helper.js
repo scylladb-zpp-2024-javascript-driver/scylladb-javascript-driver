@@ -1199,7 +1199,10 @@ helper.ccm.startAll = function (nodeLength, options, callback) {
                     start.push("--quiet-windows");
                 }
 
-                if (Array.isArray(options.jvmArgs)) {
+                if (
+                    Array.isArray(options.jvmArgs) &&
+                    !helper.getServerInfo().isScylla
+                ) {
                     options.jvmArgs.forEach(function (arg) {
                         start.push("--jvm_arg", arg);
                     }, this);
