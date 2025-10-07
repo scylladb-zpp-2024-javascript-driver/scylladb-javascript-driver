@@ -54,7 +54,7 @@ describe("Encoder.guessDataType()", function () {
         );
         assertGuessed(
             types.TimeUuid.now(),
-            rust.CqlType.Uuid,
+            rust.CqlType.Timeuuid,
             "Guess type for a TimeUuid value failed",
         );
         assertGuessed(
