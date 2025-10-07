@@ -753,9 +753,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // Returns invalid column types (#238)
-        // TODO: Fix this test
-        /* it("should return the column definitions", function (done) {
+        it("should return the column definitions", function (done) {
             const client = setupInfo.client;
             // insert at least 1 row
             const insertQuery = util.format(
@@ -795,21 +793,23 @@ describe("Client @SERVER_API", function () {
                                 result.columns[4].type.code,
                                 types.dataTypes.list,
                             );
-                            assert.ok(result.columns[4].type.info);
+                            // TODO: Would require #245
+                            /* assert.ok(result.columns[4].type.info);
                             assert.strictEqual(
                                 result.columns[4].type.info.code,
                                 types.dataTypes.int,
-                            );
+                            ); */
                             assert.strictEqual(
                                 result.columns[5].type.code,
                                 types.dataTypes.map,
                             );
-                            assert.ok(
+                            // TODO: Would require #245
+                            /* assert.ok(
                                 result.columns[5].type.info[0].code ===
-                                    types.dataTypes.text ||
-                                    result.columns[5].type.info[0].code ===
-                                        types.dataTypes.varchar,
-                            );
+                                types.dataTypes.text ||
+                                result.columns[5].type.info[0].code ===
+                                types.dataTypes.varchar,
+                            ); */
                             next();
                         });
                     },
@@ -828,11 +828,9 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
 
-        // No support for used types (decimal)
-        // TODO: Fix this test
-        /* it("should return rows that are serializable to json", function (done) {
+        it("should return rows that are serializable to json", function (done) {
             const client = setupInfo.client;
             const id = types.Uuid.random();
             const timeId = types.TimeUuid.now();
@@ -876,7 +874,7 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
 
         // No support for ExecutionProfile consistency levels
         // TODO: Fix this test
@@ -1822,9 +1820,7 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for used types
-        // TODO: Fix this test
-        /* describe("with json support", function () {
+        describe("with json support", function () {
             before(function (done) {
                 const client = setupInfo.client;
                 const query =
@@ -1949,7 +1945,9 @@ describe("Client @SERVER_API", function () {
                     );
                 },
             );
-            vit(
+            // No support for used types
+            // TODO: Fix this test
+            /* vit(
                 "2.2",
                 "should allow insert of all non - ECMAScript types as json",
                 function (done) {
@@ -2033,8 +2031,8 @@ describe("Client @SERVER_API", function () {
                         done,
                     );
                 },
-            );
-        }); */
+            ); */
+        });
         describe("with no callback specified", function () {
             vit(
                 "2.0",
