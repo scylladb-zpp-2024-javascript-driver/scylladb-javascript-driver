@@ -226,7 +226,27 @@ fn cql_value_from_napi_value(typ: &ComplexType, elem: &Array, pos: u32) -> napi:
                 .try_into()
                 .map_err(|_| js_error("Value must be Buffer with 16 elements to be Uuid"))?,
         ),
-        CqlType::Varint => todo!(),
+        CqlType::Varint => {
+            let big_int = get_element!(BigInt);
+            let other_bigint = num_bigint::BigInt::from_bytes_le(
+                if big_int.sign_bit {
+                    num_bigint::Sign::Minus
+                } else {
+                    num_bigint::Sign::Plus
+                },
+                // Node API gives us BigInt in little-endian format:
+                // See: https://nodejs.org/api/n-api.html#napi_get_value_bigint_words
+                big_int
+                    .words
+                    .into_iter()
+                    .flat_map(|e| e.to_le_bytes())
+                    .collect::<Vec<u8>>()
+                    .as_slice(),
+            );
+            CqlValue::Varint(scylla::value::CqlVarint::from_signed_bytes_be(
+                other_bigint.to_signed_bytes_be(),
+            ))
+        }
         CqlType::Unprovided => return Err(js_error("Expected type information for the value")),
         CqlType::Empty => unreachable!("Should not receive Empty type here."),
         CqlType::Custom => unreachable!("Should not receive Custom type here."),

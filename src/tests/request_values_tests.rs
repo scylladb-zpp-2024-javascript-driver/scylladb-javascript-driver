@@ -72,6 +72,8 @@ pub fn tests_from_value_get_type(test: String) -> ComplexType {
             ]);
         }
         "Uuid" => (CqlType::Uuid, None, None),
+        "Varint" => (CqlType::Varint, None, None),
+        "Negative Varint" => (CqlType::Varint, None, None),
         _ => (CqlType::Empty, None, None),
     };
     ComplexType::two_support(
@@ -147,6 +149,14 @@ pub fn tests_from_value(test: String, value: ParameterWrapper) {
             None,
         ]),
         "Uuid" => CqlValue::Uuid(uuid!("ffffffff-eeee-ffff-ffff-ffffffffffff")),
+        "Varint" => CqlValue::Varint(scylla::value::CqlVarint::from_signed_bytes_be_slice(&[
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+        ])),
+        "Negative Varint" => {
+            CqlValue::Varint(scylla::value::CqlVarint::from_signed_bytes_be_slice(&[
+                128, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+            ]))
+        }
         _ => CqlValue::Empty,
     };
     assert_eq!(
