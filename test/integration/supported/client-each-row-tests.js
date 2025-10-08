@@ -936,7 +936,6 @@ describe("Client", function () {
             // used here with verifying prepared metadata.
             const client = setupInfo.client;
             let table;
-            const compareMetadata = helper.isDseGreaterThan("6.0");
             beforeEach((done) => {
                 table =
                     setupInfo.keyspace + "." + helper.getRandomName("table");
@@ -963,7 +962,6 @@ describe("Client", function () {
             it("should be resilient to schema change made between paging", (done) => {
                 const query = util.format("select * from %s", table);
                 let schemaChangeMade = false;
-                let originalResultId;
                 client.eachRow(
                     query,
                     null,
@@ -978,31 +976,10 @@ describe("Client", function () {
                         // first 6 rows are received before schema change and thus should lack column 'b'.
                         if (!schemaChangeMade) {
                             assert.strictEqual(Object.keys(row).length, 3);
-                            if (compareMetadata && !originalResultId) {
-                                // capture current metadata resultId to compare after schema change is made.
-                                const info = client.metadata.getPreparedInfo(
-                                    setupInfo.keyspace,
-                                    query,
-                                );
-                                originalResultId = info.meta.resultId;
-                            }
                         } else {
                             // column b should be added as this data comes in page after schema change.
                             assert.strictEqual(Object.keys(row).length, 4);
                             assert.strictEqual(row.b, null);
-                            if (compareMetadata) {
-                                // result id should have changed as schema change would have provoked
-                                // a reprepare.
-                                const info = client.metadata.getPreparedInfo(
-                                    setupInfo.keyspace,
-                                    query,
-                                );
-                                const finalResultId = info.meta.resultId;
-                                assert.notDeepEqual(
-                                    finalResultId,
-                                    originalResultId,
-                                );
-                            }
                         }
                     },
                     (err, result) => {

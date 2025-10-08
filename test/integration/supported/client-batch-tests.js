@@ -166,7 +166,13 @@ describe("Client @SERVER_API", function () {
                 const client = newInstance();
                 client.batch(["INSERT WILL FAIL"], function (err) {
                     assert.ok(err);
-                    // Would require correct error throwing
+                    assert.ok(
+                        err.message.includes(
+                            "Preparation failed on every connection from the selected pool.",
+                        ),
+                    );
+                    assert.ok(err.message.includes("syntax error"));
+                    // Would require error throwing refactor
                     // TODO: fix this test
                     /* assert.ok(err instanceof errors.ResponseError); */
                     done();
@@ -211,9 +217,8 @@ describe("Client @SERVER_API", function () {
                         );
                     })
                     .catch(function (err) {
-                        // should be an Argument Error
                         assert.ok(err);
-                        // Would require correct error throwing
+                        // Would require error throwing refactor
                         // TODO: Fix this test
                         /* if (
                             !(err instanceof errors.ArgumentError) &&
@@ -224,6 +229,19 @@ describe("Client @SERVER_API", function () {
                                     method.toString(),
                             );
                         } */
+                        if (
+                            !(err instanceof errors.ArgumentError) &&
+                            // TODO: This should be ResponseError.
+                            // For now we just check the message to make sure it's the proper error
+                            !err.message.includes(
+                                "Preparation failed on every connection from the selected pool.",
+                            )
+                        ) {
+                            throw new Error(
+                                "Expected ArgumentError or ResponseError for method " +
+                                    method.toString(),
+                            );
+                        }
                     });
             });
             setImmediate(client.shutdown.bind(client));
@@ -677,9 +695,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // Would require correct error throwing
-        // TODO: Fix this test
-        /* vit(
+        vit(
             "2.0",
             "should callback in error when the one of the queries contains syntax error",
             function (done) {
@@ -715,14 +731,18 @@ describe("Client @SERVER_API", function () {
                             queries,
                             { prepare: true },
                             function (err) {
-                                helper.assertInstanceOf(
+                                // Would require error throwing refactor
+                                // TODO: Fix this test
+                                assert.ok(err);
+                                assert.ok(err.message.includes("syntax error"));
+                                /* helper.assertInstanceOf(
                                     err,
                                     errors.ResponseError,
                                 );
                                 assert.strictEqual(
                                     err.code,
                                     types.responseErrorCodes.syntaxError,
-                                );
+                                ); */
                                 next();
                             },
                         );
@@ -730,7 +750,7 @@ describe("Client @SERVER_API", function () {
                     done,
                 );
             },
-        ); */
+        );
         vit(
             "2.0",
             "should callback in error when the type does not match",
@@ -756,8 +776,13 @@ describe("Client @SERVER_API", function () {
                             queries,
                             { prepare: true },
                             function (err) {
-                                // Would require correct error throwing
+                                // Would require error throwing refactor
                                 // TODO: Fix this test
+                                assert.ok(
+                                    err.message.includes(
+                                        "Failed to convert napi value Object into rust type",
+                                    ),
+                                );
                                 assert.strictEqual(isNativeError(err), true);
                                 /* helper.assertInstanceOf(err, TypeError); */
                                 next();
@@ -1043,12 +1068,9 @@ describe("Client @SERVER_API", function () {
                 });
             },
         );
-        // Would require correct error throwing
+        // Would require error throwing refactor
         // TODO: Fix this test
-        /* it("should not use keyspace if set on options for lower protocol versions", function () {
-            if (helper.isDseGreaterThan("6.0")) {
-                return this.skip();
-            }
+        it("should not use keyspace if set on options for lower protocol versions", function () {
             const client = newInstance({});
             const insertQuery =
                 "INSERT INTO %s (id, time, double_sample) VALUES (?, ?, ?)";
@@ -1071,10 +1093,16 @@ describe("Client @SERVER_API", function () {
                     throw new Error("should have failed");
                 })
                 .catch(function (err) {
-                    helper.assertInstanceOf(err, errors.ResponseError);
+                    assert.ok(err);
+                    assert.ok(
+                        err.message.includes(
+                            "Preparation failed on every connection from the selected pool.",
+                        ),
+                    );
+                    // helper.assertInstanceOf(err, errors.ResponseError);
                     return client.shutdown();
                 });
-        }); */
+        });
     });
 });
 

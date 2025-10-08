@@ -14,11 +14,7 @@ describe("metadata @SERVER_API", function () {
 
     const yaml = [];
 
-    if (helper.isDseGreaterThan("6")) {
-        yaml.push("cdc_enabled:true");
-    }
-
-    if (!helper.isDse() && helper.isCassandraGreaterThan("4.0")) {
+    if (helper.isCassandraGreaterThan("4.0")) {
         yaml.push("enable_materialized_views:true");
     }
 
@@ -794,20 +790,8 @@ describe("metadata @SERVER_API", function () {
                     );
                 }
 
-                if (helper.isDseGreaterThan("6")) {
-                    queries.push(
-                        "CREATE TABLE tbl_cdc_true (a int PRIMARY KEY, b text) WITH cdc=TRUE",
-                        "CREATE TABLE tbl_cdc_false (a int PRIMARY KEY, b text) WITH cdc=FALSE",
-                        "CREATE TABLE tbl_nodesync_true (a int PRIMARY KEY, b text) WITH nodesync={'enabled': 'true', 'deadline_target_sec': '86400'}",
-                        "CREATE TABLE tbl_nodesync_false (a int PRIMARY KEY, b text) WITH nodesync={'enabled': 'false'}",
-                    );
-                }
-
-                if (
-                    !helper.isCassandraGreaterThan("4.0") &&
-                    !helper.isDseGreaterThan("6.0")
-                ) {
-                    // COMPACT STORAGE is not supported by DSE 6.0 / C* 4.0.
+                if (!helper.isCassandraGreaterThan("4.0")) {
+                    // COMPACT STORAGE is not supported by C* 4.0.
                     queries.push(
                         "CREATE TABLE tbl5 (id1 uuid, id2 timeuuid, text1 text, PRIMARY KEY (id1, id2)) WITH COMPACT STORAGE",
                         "CREATE TABLE tbl6 (id uuid, text1 text, text2 text, PRIMARY KEY (id)) WITH COMPACT STORAGE",
@@ -1032,10 +1016,7 @@ describe("metadata @SERVER_API", function () {
                 });
             });
             it("should retrieve the metadata of a compact storaged table", function (done) {
-                if (
-                    helper.isCassandraGreaterThan("4.0") ||
-                    helper.isDseGreaterThan("6")
-                ) {
+                if (helper.isCassandraGreaterThan("4.0")) {
                     this.skip();
                 }
 
@@ -1076,10 +1057,7 @@ describe("metadata @SERVER_API", function () {
                 });
             });
             it("should retrieve the metadata of a compact storaged table with clustering key", function (done) {
-                if (
-                    helper.isCassandraGreaterThan("4.0") ||
-                    helper.isDseGreaterThan("6")
-                ) {
+                if (helper.isCassandraGreaterThan("4.0")) {
                     this.skip();
                 }
 
@@ -1940,10 +1918,6 @@ describe("metadata @SERVER_API", function () {
                             table.compression.constructor,
                             Object,
                         );
-
-                        if (helper.isDseGreaterThan("5.0")) {
-                            assert.isString(table.compression.class);
-                        }
                     }));
 
                 vit(
@@ -1986,11 +1960,6 @@ describe("metadata @SERVER_API", function () {
                     "CREATE TABLE ks_view_meta.scores (user TEXT, game TEXT, year INT, month INT, day INT, score INT, PRIMARY KEY (user, game, year, month, day))",
                     "CREATE MATERIALIZED VIEW ks_view_meta.dailyhigh AS SELECT game, year, month, score, user, day FROM scores WHERE game IS NOT NULL AND year IS NOT NULL AND month IS NOT NULL AND day IS NOT NULL AND score IS NOT NULL AND user IS NOT NULL PRIMARY KEY ((game, year, month, day), score, user) WITH CLUSTERING ORDER BY (score DESC, user ASC)",
                 ];
-                if (helper.isDseGreaterThan("6")) {
-                    queries.push(
-                        "CREATE MATERIALIZED VIEW ks_view_meta.dailyhigh_nodesync AS SELECT game, year, month, score, user, day FROM scores WHERE game IS NOT NULL AND year IS NOT NULL AND month IS NOT NULL AND day IS NOT NULL AND score IS NOT NULL AND user IS NOT NULL PRIMARY KEY ((game, year, month, day), score, user) WITH CLUSTERING ORDER BY (score DESC, user ASC) AND nodesync = { 'enabled': 'true', 'deadline_target_sec': '86400'}",
-                    );
-                }
                 utils.eachSeries(
                     queries,
                     client.execute.bind(client),

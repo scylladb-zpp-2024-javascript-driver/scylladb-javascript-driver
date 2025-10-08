@@ -453,25 +453,6 @@ const helper = {
     },
 
     /**
-     * Determines if the current server is a DSE instance *AND* version is greater than or equals to the version provided
-     * @param {String} version The version in string format, dot separated.
-     * @returns {Boolean}
-     */
-    isDseGreaterThan: function (version) {
-        const serverInfo = this.getServerInfo();
-        if (!serverInfo.isDse) {
-            return false;
-        }
-
-        return helper.versionCompare(serverInfo.version, version);
-    },
-
-    /** Determines if the current server is a DSE instance. */
-    isDse: function () {
-        return this.getServerInfo().isDse;
-    },
-
-    /**
      * Determines if the current C* or DSE instance version is greater than or equals to the C* version provided
      * @param {String} version The version in string format, dot separated.
      * @returns {Boolean}
@@ -1261,10 +1242,6 @@ helper.ccm.bootstrapNode = function (options, callback) {
 helper.ccm.decommissionNode = function (nodeIndex, callback) {
     helper.trace("decommissioning node", nodeIndex);
     const args = ["node" + nodeIndex, "decommission"];
-    // Special case for C* 3.12+, DSE 5.1+, force decommission (see CASSANDRA-12510)
-    if (helper.isDseGreaterThan("5.1")) {
-        args.push("--force");
-    }
     helper.ccm.exec(args, callback);
 };
 

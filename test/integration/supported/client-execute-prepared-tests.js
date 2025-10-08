@@ -23,7 +23,7 @@ describe("Client @SERVER_API", function () {
         const commonTable2 = commonKs + "." + helper.getRandomName("table");
         const yaml = ["batch_size_warn_threshold_in_kb:5"];
 
-        if (!helper.isDse() && helper.isCassandraGreaterThan("4.0")) {
+        if (helper.isCassandraGreaterThan("4.0")) {
             yaml.push("enable_materialized_views:true");
         }
 
@@ -68,7 +68,7 @@ describe("Client @SERVER_API", function () {
             const query = "SELECT WILL FAIL";
             client.execute(query, ["system"], { prepare: 1 }, function (err) {
                 assert.ok(err);
-                // Would require correct Error throwing
+                // Would require error throwing refactor
                 // TODO: fix this test
                 helper.assertInstanceOf(err, Error);
                 /* assert.strictEqual(
@@ -76,6 +76,12 @@ describe("Client @SERVER_API", function () {
                     types.responseErrorCodes.syntaxError,
                 );
                 assert.strictEqual(err.query, query); */
+                assert.ok(
+                    err.message.includes(
+                        "Preparation failed on every connection from the selected pool.",
+                    ),
+                );
+                assert.ok(err.message.includes("syntax error"));
                 done();
             });
         });
@@ -123,10 +129,7 @@ describe("Client @SERVER_API", function () {
                             params,
                             { prepare: true },
                             (err) => {
-                                // Would require correct error throwing
-                                // TODO: fix this test
-                                helper.assertInstanceOf(err, Error);
-                                // helper.assertInstanceOf(err, TypeError);
+                                helper.assertInstanceOf(err, TypeError);
                                 next();
                             },
                         ),
@@ -146,10 +149,7 @@ describe("Client @SERVER_API", function () {
                             params,
                             { prepare: true },
                             (err) => {
-                                // Would require correct error throwing
-                                // TODO: fix this test
-                                helper.assertInstanceOf(err, Error);
-                                // helper.assertInstanceOf(err, TypeError);
+                                helper.assertInstanceOf(err, TypeError);
                                 next();
                             },
                         ),
@@ -249,7 +249,7 @@ describe("Client @SERVER_API", function () {
                                     { prepare: 1 },
                                     function (err) {
                                         helper.assertInstanceOf(err, Error);
-                                        // Would require correct Error throwing
+                                        // Would require error throwing refactor
                                         // TODO: fix this test
                                         /* helper.assertInstanceOf(
                                             err,
@@ -259,6 +259,16 @@ describe("Client @SERVER_API", function () {
                                             err.code,
                                             types.responseErrorCodes.invalid,
                                         ); */
+                                        assert.ok(
+                                            err.message.includes(
+                                                "Preparation failed on every connection from the selected pool.",
+                                            ),
+                                        );
+                                        assert.ok(
+                                            err.message.includes(
+                                                "The query is syntactically correct but invalid",
+                                            ),
+                                        );
                                         next();
                                     },
                                 );
@@ -276,7 +286,7 @@ describe("Client @SERVER_API", function () {
                                     { prepare: 1 },
                                     function (err) {
                                         helper.assertInstanceOf(err, Error);
-                                        // Would require correct Error throwing
+                                        // Would require error throwing refactor
                                         // TODO: fix this test
                                         /* helper.assertInstanceOf(
                                             err,
@@ -286,6 +296,16 @@ describe("Client @SERVER_API", function () {
                                             err.code,
                                             types.responseErrorCodes.invalid,
                                         ); */
+                                        assert.ok(
+                                            err.message.includes(
+                                                "Preparation failed on every connection from the selected pool.",
+                                            ),
+                                        );
+                                        assert.ok(
+                                            err.message.includes(
+                                                "The query is syntactically correct but invalid",
+                                            ),
+                                        );
                                         next();
                                     },
                                 );
@@ -1321,9 +1341,15 @@ describe("Client @SERVER_API", function () {
 
             function validateResponseError(callback) {
                 return (err) => {
-                    // Would require full error throwing
+                    // Would require error throwing refactor
                     // TODO: fix this test
                     helper.assertInstanceOf(err, Error);
+                    assert.ok(
+                        err instanceof errors.ResponseError ||
+                            err.message.includes(
+                                "The query is syntactically correct but invalid",
+                            ),
+                    );
                     /* helper.assertInstanceOf(err, errors.ResponseError);
                     assert.strictEqual(
                         err.code,
@@ -2395,9 +2421,6 @@ describe("Client @SERVER_API", function () {
         // No support for query keyspace options
         // TODO: fix this test
         /* it("should not use keyspace if set on options for lower protocol versions", function () {
-            if (helper.isDseGreaterThan("6.0")) {
-                return this.skip();
-            }
             const client = setupInfo.client;
             return client
                 .execute(
@@ -2417,7 +2440,6 @@ describe("Client @SERVER_API", function () {
             // it should inheritently be resilient to schema changes since it uses the metadata
             // in the rows responses.  However, if NODEJS-433 is implemented the driver will
             // need to be more deliberate in handling schema changes made at runtime.
-            const compareMetadata = helper.isDseGreaterThan("6.0");
 
             // Test with two clients to ensure that a client can handle update the prepared metadata cache
             // in the following the following cases:
@@ -2480,15 +2502,6 @@ describe("Client @SERVER_API", function () {
                                         assert.strictEqual(row.a, index);
                                         assert.strictEqual(row.c, index);
                                     });
-                                    if (compareMetadata) {
-                                        // capture current metadata resultId to compare after schema change is made.
-                                        const info =
-                                            client.metadata.getPreparedInfo(
-                                                commonKs,
-                                                query,
-                                            );
-                                        originalResultId = info.meta.resultId;
-                                    }
                                     next();
                                 },
                             );
@@ -2500,14 +2513,6 @@ describe("Client @SERVER_API", function () {
                                 { prepare: true },
                                 (err, result) => {
                                     assert.ok(result);
-                                    if (compareMetadata) {
-                                        const info =
-                                            client2.metadata.getPreparedInfo(
-                                                commonKs,
-                                                query,
-                                            );
-                                        originalResultId2 = info.meta.resultId;
-                                    }
                                     next();
                                 },
                             );
@@ -2535,22 +2540,6 @@ describe("Client @SERVER_API", function () {
                                     );
                                 },
                                 () => {
-                                    if (compareMetadata) {
-                                        // We expect the metadata resultId to have changed as result of
-                                        // the server's prepared statement cache being cleared, causing
-                                        // a reprepare and update of the prepared statement cache for
-                                        // the client.
-                                        const info =
-                                            client2.metadata.getPreparedInfo(
-                                                commonKs,
-                                                query,
-                                            );
-                                        finalResultId2 = info.meta.resultId;
-                                        assert.notDeepEqual(
-                                            finalResultId2,
-                                            originalResultId2,
-                                        );
-                                    }
                                     seriesNext();
                                 },
                             );
@@ -2576,26 +2565,6 @@ describe("Client @SERVER_API", function () {
                                         assert.strictEqual(row.b, null); // b shall be present but null as no values are present.
                                         assert.strictEqual(row.c, index + 5);
                                     });
-                                    if (compareMetadata) {
-                                        // We expect the metadata resultId to have changed as result of
-                                        // the rows response containing new_metadata_id which should
-                                        // provoke the client cache to be updated.
-                                        const info =
-                                            client.metadata.getPreparedInfo(
-                                                commonKs,
-                                                query,
-                                            );
-                                        const finalResultId =
-                                            info.meta.resultId;
-                                        assert.deepEqual(
-                                            finalResultId,
-                                            finalResultId2,
-                                        );
-                                        assert.notDeepEqual(
-                                            finalResultId,
-                                            originalResultId,
-                                        );
-                                    }
                                     next();
                                 },
                             );
