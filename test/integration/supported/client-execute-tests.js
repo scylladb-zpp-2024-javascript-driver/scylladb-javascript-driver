@@ -228,9 +228,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // Type guessing doesn't allow to distinguish between UUID and TimeUUID
-        // TODO: Fix this test, and then remove reduced version below
-        /* vit("2.0", "should guess known types", function (done) {
+        vit("2.0", "should guess known types", function (done) {
             const client = setupInfo.client;
             const columns =
                 "id, timeuuid_sample, text_sample, double_sample, timestamp_sample, blob_sample, list_sample";
@@ -238,23 +236,6 @@ describe("Client @SERVER_API", function () {
             const values = [
                 types.Uuid.random(),
                 types.TimeUuid.now(),
-                "text sample 1",
-                133,
-                new Date(121212211),
-                utils.allocBufferUnsafe(100),
-                ["one", "two"],
-            ];
-            // no hint
-            insertSelectTest(client, table, columns, values, null, done);
-        }); */
-
-        vit("2.0", "should guess known types -- reduced", function (done) {
-            const client = setupInfo.client;
-            const columns =
-                "id, text_sample, double_sample, timestamp_sample, blob_sample, list_sample";
-            // a precision a float32 can represent
-            const values = [
-                types.Uuid.random(),
                 "text sample 1",
                 133,
                 new Date(121212211),
