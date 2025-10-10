@@ -44,6 +44,7 @@ async.series(
             next();
         },
         function r() {
+            console.log("Done!")
             exit(0);
         }
     ], function (err) {

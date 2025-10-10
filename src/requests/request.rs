@@ -4,6 +4,7 @@ use scylla::statement::prepared::PreparedStatement;
 use crate::{result::map_column_type_to_complex_type, types::type_wrappers::ComplexType};
 
 #[napi]
+#[derive(Clone)]
 pub struct PreparedStatementWrapper {
     pub(crate) prepared: PreparedStatement,
 }
