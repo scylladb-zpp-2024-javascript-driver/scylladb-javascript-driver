@@ -3,7 +3,6 @@ use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::response::PagingState;
 use scylla::statement::batch::Batch;
-use scylla::statement::prepared::PreparedStatement;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
 
 use crate::errors::{err_to_napi, js_error};
@@ -11,6 +10,7 @@ use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
 use crate::requests::request::QueryOptionsWrapper;
 use crate::types::encoded_data::EncodedValuesWrapper;
+use crate::types::type_wrappers::ComplexType;
 use crate::utils::bigint_to_i64;
 use crate::{requests::request::PreparedStatementWrapper, result::QueryResultWrapper};
 
@@ -103,12 +103,9 @@ impl SessionWrapper {
     }
 
     /// Prepares a statement through rust driver for a given session
-    /// Return PreparedStatementWrapper that wraps object returned by the rust driver
+    /// Return expected types for the prepared statement
     #[napi]
-    pub async fn prepare_statement(
-        &self,
-        statement: String,
-    ) -> napi::Result<PreparedStatementWrapper> {
+    pub async fn prepare_statement(&self, statement: String) -> napi::Result<Vec<ComplexType>> {
         let statement: Statement = statement.into();
         Ok(PreparedStatementWrapper {
             prepared: self
@@ -116,7 +113,8 @@ impl SessionWrapper {
                 .add_prepared_statement(&statement) // TODO: change for add_prepared_statement_to_owned after it is made public
                 .await
                 .map_err(err_to_napi)?,
-        })
+        }
+        .get_expected_types())
     }
 
     /// Execute a given prepared statement against the database with provided parameters.
@@ -132,15 +130,14 @@ impl SessionWrapper {
     #[napi]
     pub async fn execute_prepared_unpaged_encoded(
         &self,
-        query: &PreparedStatementWrapper,
+        query: String,
         params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let query = apply_prepared_options(query.prepared.clone(), options)?;
+        let query = apply_statement_options(query.into(), options)?;
         QueryResultWrapper::from_query(
             self.inner
-                .get_session()
-                .execute_unpaged(&query, params)
+                .execute_unpaged(query, params)
                 .await
                 .map_err(err_to_napi)?,
         )
@@ -202,7 +199,7 @@ impl SessionWrapper {
     #[napi]
     pub async fn execute_single_page_encoded(
         &self,
-        query: &PreparedStatementWrapper,
+        query: String,
         params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
@@ -210,12 +207,11 @@ impl SessionWrapper {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let prepared = apply_prepared_options(query.prepared.clone(), options)?;
+        let prepared = apply_statement_options(query.into(), options)?;
 
         let (result, paging_state) = self
             .inner
-            .get_session()
-            .execute_single_page(&prepared, params, paging_state)
+            .execute_single_page(prepared, params, paging_state)
             .await
             .map_err(err_to_napi)?;
         Ok(PagingResult {
@@ -229,13 +225,13 @@ impl SessionWrapper {
 /// Requires each passed statement to be already prepared.
 #[napi]
 pub fn create_prepared_batch(
-    statements: Vec<&PreparedStatementWrapper>,
+    statements: Vec<String>,
     options: &QueryOptionsWrapper,
 ) -> napi::Result<BatchWrapper> {
     let mut batch: Batch = Default::default();
     statements
         .iter()
-        .for_each(|q| batch.append_statement(q.prepared.clone()));
+        .for_each(|q| batch.append_statement(q.as_str()));
     batch = apply_batch_options(batch, options)?;
     Ok(BatchWrapper { inner: batch })
 }
@@ -344,11 +340,6 @@ macro_rules! make_non_batch_apply_options {
 }
 
 make_non_batch_apply_options!(Statement, apply_statement_options, statement_opt_partial);
-make_non_batch_apply_options!(
-    PreparedStatement,
-    apply_prepared_options,
-    prepared_opt_partial
-);
 make_apply_options!(Batch, apply_batch_options);
 
 /// Provides driver self identity, filling information on application based on session options.
