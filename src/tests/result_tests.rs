@@ -140,7 +140,11 @@ pub fn tests_get_cql_wrapper_list() -> CqlValueWrapper {
             days: 5,
             nanoseconds: 4,
         }),
-        CqlValue::Boolean(false),
+        CqlValue::Duration(CqlDuration {
+            months: 3,
+            days: 2,
+            nanoseconds: 1,
+        }),
     ]);
     CqlValueWrapper { inner: element }
 }
@@ -150,7 +154,7 @@ pub fn tests_get_cql_wrapper_list() -> CqlValueWrapper {
 pub fn tests_get_cql_wrapper_set() -> CqlValueWrapper {
     let element = CqlValue::Set(vec![
         CqlValue::Text("some text".to_owned()),
-        CqlValue::Int(1),
+        CqlValue::Text("other text".to_owned()),
     ]);
     CqlValueWrapper { inner: element }
 }
