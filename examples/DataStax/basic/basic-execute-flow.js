@@ -1,18 +1,12 @@
 "use strict";
-const cassandra = require("scylladb-javascript-driver");
-const { getClientArgs } = require("../util");
+const cassandra = require("cassandra-driver");
 const async = require("async");
-const assert = require("assert");
 
-const client = new cassandra.Client(getClientArgs());
+const client = new cassandra.Client({
+    contactPoints: [process.env.SCYLLA_URI ?? "172.17.0.2:9042"],
+    localDataCenter: "datacenter1"
+});
 
-/**
- * Example using async library for avoiding nested callbacks
- * See https://github.com/caolan/async
- * Alternately you can use the Promise-based API.
- *
- * Inserts a row and retrieves a row
- */
 const id = cassandra.types.Uuid.random();
 
 async.series(
@@ -22,36 +16,24 @@ async.series(
         },
         function createKeyspace(next) {
             const query =
-                "CREATE KEYSPACE IF NOT EXISTS examples WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3' }";
+                "CREATE KEYSPACE IF NOT EXISTS buggy WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1' }";
+            client.execute(query, next);
+        },
+        function del(next) {
+            const query =
+                "DROP TABLE IF EXISTS buggy.bug";
             client.execute(query, next);
         },
         function createTable(next) {
             const query =
-                "CREATE TABLE IF NOT EXISTS examples.basic (id uuid, txt text, val int, PRIMARY KEY(id))";
+                "CREATE TABLE IF NOT EXISTS buggy.bug (id uuid PRIMARY KEY, tuple_col1 tuple<text,int>)";
             client.execute(query, next);
         },
         function insert(next) {
+            const tuple = new cassandra.types.Tuple("XD");
             const query =
-                "INSERT INTO examples.basic (id, txt, val) VALUES (?, ?, ?)";
-            client.execute(query, [id, "Hello!", 100], { prepare: true }, next);
-        },
-        function select(next) {
-            const query =
-                "SELECT id, txt, val FROM examples.basic WHERE id = ?";
-            client.execute(
-                query,
-                [id],
-                { prepare: true },
-                function (err, result) {
-                    if (err) return next(err);
-                    const row = result.first();
-                    console.log("Obtained row: ", row);
-                    assert.strictEqual(row.id.toString(), id.toString());
-                    assert.strictEqual(row.txt, "Hello!");
-                    assert.strictEqual(row.val, 100);
-                    next();
-                },
-            );
+                "INSERT INTO buggy.bug (id, tuple_col1) VALUES (?, ?)";
+            client.execute(query, [id, tuple], { prepare: true }, next);
         },
     ],
     function (err) {
