@@ -63,7 +63,6 @@ pub struct MetaColumnWrapper {
     pub ksname: String,
     pub tablename: String,
     pub name: String,
-    pub type_code: CqlType,
 }
 
 #[napi]
@@ -147,7 +146,6 @@ impl QueryResultWrapper {
             ksname: f.table_spec().ks_name().to_owned(),
             tablename: f.table_spec().table_name().to_owned(),
             name: f.name().to_owned(),
-            type_code: map_column_type_to_complex_type(f.typ()).base_type,
         })
         .collect()
     }
