@@ -1126,7 +1126,7 @@ describe("Client @SERVER_API", function () {
 
         // No support for buffer as input to any data type
         // TODO: Fix this test
-        /* it("should support buffer as input for any data type", () => {
+        it("should support buffer as input for any data type", () => {
             const buffer4 = utils.allocBufferFromArray([0, 0, 0, 1]);
             const buffer8 = utils.allocBuffer(8);
             const buffer16 = types.Uuid.random().getBuffer();
@@ -1182,7 +1182,7 @@ describe("Client @SERVER_API", function () {
                         }),
                 ),
             );
-        }); */
+        });
 
         describe("with udt and tuple", function () {
             const sampleId = types.Uuid.random();

@@ -376,9 +376,7 @@ describe("Client @SERVER_API", function () {
                 },
             );
         });
-        // Likely failing due to missing support for used type
-        // TODO: identify the problem and fix this test
-        /* it("should serialize all guessed types", function (done) {
+        it("should serialize all guessed types", function (done) {
             const values = [
                 types.Uuid.random(),
                 "as",
@@ -398,7 +396,7 @@ describe("Client @SERVER_API", function () {
                 "id, ascii_sample, text_sample, int_sample, bigint_sample, double_sample, blob_sample, " +
                 "boolean_sample, timestamp_sample, inet_sample, timeuuid_sample, list_sample, set_sample";
             serializationTest(setupInfo.client, values, columnNames, done);
-        }); */
+        });
         it("should serialize all null values", function (done) {
             const values = [
                 types.Uuid.random(),
@@ -524,7 +522,7 @@ describe("Client @SERVER_API", function () {
                 done,
             );
         });
-        /*
+
         it("should encode and decode decimal values", function (done) {
             const client = setupInfo.client;
             const table = commonKs + "." + helper.getRandomName("table");
@@ -598,7 +596,7 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
 
         // No support for named parameters
         // TODO: fix this test
