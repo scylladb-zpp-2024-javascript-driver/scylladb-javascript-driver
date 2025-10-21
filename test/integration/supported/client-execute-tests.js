@@ -591,7 +591,7 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for ExecutionProfile
+        // No support for result.info.achievedConsistency field
         // TODO: Fix this test
         /* it("should use consistency level from profile and override profile when provided in query options", function (done) {
             const client = newInstance({
@@ -875,9 +875,7 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for ExecutionProfile consistency levels
-        // TODO: Fix this test
-        /* vit(
+        vit(
             "2.0",
             "should use serial consistency level from profile and override profile when provided in query options",
             function (done) {
@@ -905,7 +903,9 @@ describe("Client @SERVER_API", function () {
                                 function (err) {
                                     // expect an error as we used an invalid serial CL.
                                     assert.ok(err);
-                                    assert.strictEqual(err.code, 0x2200); // should be an invalid query.
+                                    // TODO: Would require error throwing refactor
+                                    helper.assertInstanceOf(err, Error);
+                                    // assert.strictEqual(err.code, 0x2200); // should be an invalid query.
                                     next();
                                 },
                             );
@@ -945,7 +945,7 @@ describe("Client @SERVER_API", function () {
                     helper.finish(client, done),
                 );
             },
-        ); */
+        );
 
         vit("2.1", "should support protocol level timestamp", function (done) {
             const client = setupInfo.client;
@@ -1065,9 +1065,7 @@ describe("Client @SERVER_API", function () {
             );
         }); */
 
-        // No support for info field
-        // TODO: Fix this test
-        /* it("should not retrieve trace id by default", function (done) {
+        it("should not retrieve trace id by default", function (done) {
             const client = setupInfo.client;
             client.execute(
                 "SELECT * FROM system.local",
@@ -1078,7 +1076,7 @@ describe("Client @SERVER_API", function () {
                     done();
                 },
             );
-        }); */
+        });
 
         // No support for info field
         // TODO: Fix this test

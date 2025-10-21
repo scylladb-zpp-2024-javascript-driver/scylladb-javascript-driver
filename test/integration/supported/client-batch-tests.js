@@ -621,9 +621,7 @@ describe("Client @SERVER_API", function () {
             );
         });
         after(helper.ccmHelper.remove);
-        // No support for varint
-        // TODO: Fix this test
-        /* vit("2.0", "should prepare and send the request", function (done) {
+        vit("2.0", "should prepare and send the request", function (done) {
             const client = newInstance();
             const id1 = types.Uuid.random();
             const id2 = types.Uuid.random();
@@ -693,8 +691,7 @@ describe("Client @SERVER_API", function () {
                     );
                 },
             );
-        }); */
-
+        });
         vit(
             "2.0",
             "should callback in error when the one of the queries contains syntax error",
