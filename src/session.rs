@@ -34,7 +34,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    inner: CachingSession,
+    pub(crate) inner: CachingSession,
 }
 
 #[napi]
