@@ -6,13 +6,13 @@ const client = new cassandra.Client(getClientArgs());
 client
     .connect()
     .then(function () {
-        // Currently the driver does not support this metadata fields
-        /* console.log(
+        console.log(
             "Connected to cluster with %d host(s): %j",
             client.hosts.length,
             client.hosts.keys(),
         );
-        console.log("Keyspaces: %j", Object.keys(client.metadata.keyspaces)); */
+        // Currently the driver does not support that metadata field.
+        // console.log("Keyspaces: %j", Object.keys(client.metadata.keyspaces));
         console.log("Connected to cluster.");
         return;
     })
