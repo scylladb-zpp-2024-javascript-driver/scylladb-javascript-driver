@@ -1699,65 +1699,6 @@ describe("metadata @SERVER_API", function () {
                     );
                 },
             );
-            // Need to investigate:
-            // https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/pull/43#discussion_r1830763855
-            /* vit(
-                "dse-6",
-                "should retrieve the cdc information of a table metadata",
-                function (done) {
-                    const client = setupInfo.client;
-                    utils.mapSeries(
-                        [
-                            ["tbl_cdc_true", true],
-                            ["tbl_cdc_false", false],
-                            ["tbl1", false],
-                        ],
-                        function mapEach(item, next) {
-                            client.metadata.getTable(
-                                keyspace,
-                                item[0],
-                                function (err, table) {
-                                    assert.ifError(err);
-                                    assert.strictEqual(table.cdc, item[1]);
-                                    next();
-                                },
-                            );
-                        },
-                        done,
-                    );
-                },
-            );
-            vit(
-                "dse-6",
-                "should retrieve the nodesync information of a table metadata",
-                function (done) {
-                    const client = setupInfo.client;
-                    utils.mapSeries(
-                        [
-                            [
-                                "tbl_nodesync_true",
-                                {
-                                    enabled: "true",
-                                    deadline_target_sec: "86400",
-                                },
-                            ],
-                            ["tbl_nodesync_false", { enabled: "false" }],
-                        ],
-                        function mapEach(item, next) {
-                            client.metadata.getTable(
-                                keyspace,
-                                item[0],
-                                function (err, table) {
-                                    assert.ifError(err);
-                                    assert.deepEqual(table.nodesync, item[1]);
-                                    next();
-                                },
-                            );
-                        },
-                        done,
-                    );
-                },
-            ); */
             vit(
                 "4.0",
                 "should retrieve the metadata of a virtual table",
