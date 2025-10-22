@@ -11,9 +11,9 @@ Although optimized for ScyllaDB, the driver is also compatible with [Apache Cass
 
 This driver is currently in the experimental state.
 
-API documentation is available [here](https://scylladb-zpp-2024-javascript-driver.github.io/scylladb-javascript-driver/docs). <!-- Note: update those links after first commit to new main -->
+API documentation is available [here](https://scylladb.github.io/nodejs-rs-driver/docs/). <!-- Note: update those links after first commit to new main -->
 
-Book is available [here](https://scylladb-zpp-2024-javascript-driver.github.io/scylladb-javascript-driver/book)
+Book is available [here](https://scylladb.github.io/nodejs-rs-driver/book)
 
 Each of the driver endpoint is listed and documented int the API documentation, while more in-depth look into the driver usage can be found in the book.
 
