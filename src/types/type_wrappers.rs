@@ -177,6 +177,11 @@ impl ComplexType {
             }),
         }
     }
+
+    #[napi]
+    pub fn get_udt_names(&self) -> Option<Vec<String>> {
+        self.udt_metadata.as_ref().map(|e| e.field_names.clone())
+    }
 }
 
 impl ComplexType {

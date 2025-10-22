@@ -3,8 +3,7 @@ use scylla::statement::prepared::PreparedStatement;
 
 use crate::{result::map_column_type_to_complex_type, types::type_wrappers::ComplexType};
 
-#[napi]
-pub struct PreparedStatementWrapper {
+pub(crate) struct PreparedStatementWrapper {
     pub(crate) prepared: PreparedStatement,
 }
 
@@ -34,9 +33,7 @@ pub struct QueryOptionsWrapper {
     pub trace_query: Option<bool>,
 }
 
-#[napi]
 impl PreparedStatementWrapper {
-    #[napi]
     /// Get array of expected types for this prepared statement.
     pub fn get_expected_types(&self) -> Vec<ComplexType> {
         self.prepared

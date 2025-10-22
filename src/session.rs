@@ -3,15 +3,14 @@ use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
 use scylla::response::PagingState;
 use scylla::statement::batch::Batch;
-use scylla::statement::prepared::PreparedStatement;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
-use scylla::value::{CqlValue, MaybeUnset};
 
 use crate::errors::{err_to_napi, js_error};
 use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
-use crate::requests::parameter_wrappers::ParameterWrapper;
 use crate::requests::request::QueryOptionsWrapper;
+use crate::types::encoded_data::EncodedValuesWrapper;
+use crate::types::type_wrappers::ComplexType;
 use crate::utils::bigint_to_i64;
 use crate::{requests::request::PreparedStatementWrapper, result::QueryResultWrapper};
 
@@ -87,31 +86,26 @@ impl SessionWrapper {
     /// -- each value must be tuple of its ComplexType and the value itself.
     /// If the provided types will not be correct, this query will fail.
     #[napi]
-    pub async fn query_unpaged(
+    pub async fn query_unpaged_encoded(
         &self,
         query: String,
-        params: Vec<ParameterWrapper>,
+        params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
         let statement: Statement = apply_statement_options(query.into(), options)?;
-        let params_vec: Vec<Option<MaybeUnset<CqlValue>>> =
-            params.into_iter().map(|e| e.row).collect();
         let query_result = self
             .inner
             .get_session()
-            .query_unpaged(statement, params_vec)
+            .query_unpaged(statement, params)
             .await
             .map_err(err_to_napi)?;
         QueryResultWrapper::from_query(query_result)
     }
 
     /// Prepares a statement through rust driver for a given session
-    /// Return PreparedStatementWrapper that wraps object returned by the rust driver
+    /// Return expected types for the prepared statement
     #[napi]
-    pub async fn prepare_statement(
-        &self,
-        statement: String,
-    ) -> napi::Result<PreparedStatementWrapper> {
+    pub async fn prepare_statement(&self, statement: String) -> napi::Result<Vec<ComplexType>> {
         let statement: Statement = statement.into();
         Ok(PreparedStatementWrapper {
             prepared: self
@@ -119,7 +113,8 @@ impl SessionWrapper {
                 .add_prepared_statement(&statement) // TODO: change for add_prepared_statement_to_owned after it is made public
                 .await
                 .map_err(err_to_napi)?,
-        })
+        }
+        .get_expected_types())
     }
 
     /// Execute a given prepared statement against the database with provided parameters.
@@ -133,19 +128,16 @@ impl SessionWrapper {
     /// Currently `execute_unpaged` from rust driver is used, so no paging is done
     /// and there is no support for any query options
     #[napi]
-    pub async fn execute_prepared_unpaged(
+    pub async fn execute_prepared_unpaged_encoded(
         &self,
-        query: &PreparedStatementWrapper,
-        params: Vec<ParameterWrapper>,
+        query: String,
+        params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let params_vec: Vec<Option<MaybeUnset<CqlValue>>> =
-            params.into_iter().map(|e| e.row).collect();
-        let query = apply_prepared_options(query.prepared.clone(), options)?;
+        let query = apply_statement_options(query.into(), options)?;
         QueryResultWrapper::from_query(
             self.inner
-                .get_session()
-                .execute_unpaged(&query, params_vec)
+                .execute_unpaged(query, params)
                 .await
                 .map_err(err_to_napi)?,
         )
@@ -155,18 +147,14 @@ impl SessionWrapper {
     ///
     /// Returns a wrapper of the result provided by the rust driver
     #[napi]
-    pub async fn batch(
+    pub async fn batch_encoded(
         &self,
         batch: &BatchWrapper,
-        params: Vec<Vec<ParameterWrapper>>,
+        params: Vec<Vec<EncodedValuesWrapper>>,
     ) -> napi::Result<QueryResultWrapper> {
-        let params_vec: Vec<Vec<Option<MaybeUnset<CqlValue>>>> = params
-            .into_iter()
-            .map(|e| e.into_iter().map(|f| f.row).collect())
-            .collect();
         QueryResultWrapper::from_query(
             self.inner
-                .batch(&batch.inner, params_vec)
+                .batch(&batch.inner, params)
                 .await
                 .map_err(err_to_napi)?,
         )
@@ -177,13 +165,11 @@ impl SessionWrapper {
     /// For the first page, paging state is not required.
     /// For the following pages you need to provide page state
     /// received from the previous page
-    ///
-    /// Currently it clones each argument on each call -- quite inefficient
     #[napi]
-    pub async fn query_single_page(
+    pub async fn query_single_page_encoded(
         &self,
         query: String,
-        params: Vec<ParameterWrapper>,
+        params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
     ) -> napi::Result<PagingResult> {
@@ -191,12 +177,11 @@ impl SessionWrapper {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let values: Vec<Option<MaybeUnset<CqlValue>>> = params.into_iter().map(|e| e.row).collect();
 
         let (result, paging_state_response) = self
             .inner
             .get_session()
-            .query_single_page(statement, values, paging_state)
+            .query_single_page(statement, params, paging_state)
             .await
             .map_err(err_to_napi)?;
 
@@ -211,26 +196,22 @@ impl SessionWrapper {
     /// For the first page, paging state is not required.
     /// For the following pages you need to provide page state
     /// received from the previous page
-    ///
-    /// Currently it clones each argument on each call -- quite inefficient
     #[napi]
-    pub async fn execute_single_page(
+    pub async fn execute_single_page_encoded(
         &self,
-        query: &PreparedStatementWrapper,
-        params: Vec<ParameterWrapper>,
+        query: String,
+        params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
     ) -> napi::Result<PagingResult> {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let values: Vec<Option<MaybeUnset<CqlValue>>> = params.into_iter().map(|e| e.row).collect();
-        let prepared = apply_prepared_options(query.prepared.clone(), options)?;
+        let prepared = apply_statement_options(query.into(), options)?;
 
         let (result, paging_state) = self
             .inner
-            .get_session()
-            .execute_single_page(&prepared, values, paging_state)
+            .execute_single_page(prepared, params, paging_state)
             .await
             .map_err(err_to_napi)?;
         Ok(PagingResult {
@@ -244,13 +225,13 @@ impl SessionWrapper {
 /// Requires each passed statement to be already prepared.
 #[napi]
 pub fn create_prepared_batch(
-    statements: Vec<&PreparedStatementWrapper>,
+    statements: Vec<String>,
     options: &QueryOptionsWrapper,
 ) -> napi::Result<BatchWrapper> {
     let mut batch: Batch = Default::default();
     statements
         .iter()
-        .for_each(|q| batch.append_statement(q.prepared.clone()));
+        .for_each(|q| batch.append_statement(q.as_str()));
     batch = apply_batch_options(batch, options)?;
     Ok(BatchWrapper { inner: batch })
 }
@@ -359,11 +340,6 @@ macro_rules! make_non_batch_apply_options {
 }
 
 make_non_batch_apply_options!(Statement, apply_statement_options, statement_opt_partial);
-make_non_batch_apply_options!(
-    PreparedStatement,
-    apply_prepared_options,
-    prepared_opt_partial
-);
 make_apply_options!(Batch, apply_batch_options);
 
 /// Provides driver self identity, filling information on application based on session options.

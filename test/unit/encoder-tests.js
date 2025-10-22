@@ -1236,7 +1236,7 @@ describe("encoder", function () {
 
         it("should return unset when value is unset", function () {
             const encoder = new Encoder(4, {});
-            assert.strictEqual(encoder.encode(types.unset), types.unset);
+            assert.strictEqual(encoder.encode(types.unset), undefined);
         });
 
         it("should return null when value is undefined", function () {
@@ -1248,7 +1248,7 @@ describe("encoder", function () {
             const encoder = new Encoder(4, {
                 encoding: { useUndefinedAsUnset: true },
             });
-            assert.strictEqual(encoder.encode(undefined), types.unset);
+            assert.strictEqual(encoder.encode(undefined), undefined);
         });
 
         it("should throw TypeError when value is unset with low protocol version", function () {
