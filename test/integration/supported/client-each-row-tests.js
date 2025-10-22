@@ -544,9 +544,7 @@ describe("Client", function () {
                 }
             },
         );
-        // TODO: Fix this test
-        // Lack of support for pageState and fetchSize
-        /* vit("2.0", "should use pageState and fetchSize", function (done) {
+        vit("2.0", "should use pageState and fetchSize", function (done) {
             const client = newInstance({
                 keyspace: setupInfo.keyspace,
                 queryOptions: { consistency: types.consistencies.quorum },
@@ -621,10 +619,8 @@ describe("Client", function () {
                 ],
                 done,
             );
-        }); */
-        // TODO: Fix this test
-        // No support for pagingState variable
-        /* vit("2.0", "should expose result.nextPage() method", function (done) {
+        });
+        vit("2.0", "should expose result.nextPage() method", function (done) {
             const client = newInstance({
                 keyspace: setupInfo.keyspace,
                 queryOptions: { consistency: types.consistencies.quorum },
@@ -709,7 +705,7 @@ describe("Client", function () {
                 ],
                 done,
             );
-        }); */
+        });
         vit(
             "2.0",
             "should not expose result.nextPage() method when no more rows",
