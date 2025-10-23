@@ -18,7 +18,7 @@ const maxI32 = Number(2147483647);
 describe("Cql value wrapper", function () {
     it("should get ascii type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperAscii();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Ascii });
         /* Corresponding value:
         let element = CqlValue::Ascii("test value".to_owned()); */
         assert.strictEqual(value, "test value");
@@ -26,7 +26,7 @@ describe("Cql value wrapper", function () {
 
     it("should get bigInt type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperBigint();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.BigInt });
         /* Corresponding value:
         let element = CqlValue::BigInt(69); */
         assert.strictEqual(Long.fromString("69").equals(value), true);
@@ -34,7 +34,7 @@ describe("Cql value wrapper", function () {
 
     it("should get boolean type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperBoolean();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Boolean });
         /* Corresponding value:
         let element = CqlValue::Boolean(false); */
         assert.strictEqual(value, false);
@@ -42,7 +42,7 @@ describe("Cql value wrapper", function () {
 
     it("should get blob type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperBlob();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Blob });
         /* Corresponding value:
         let element = CqlValue::Blob((0..4).collect()); */
         let expected = Buffer.from([0, 1, 2, 3]);
@@ -51,7 +51,7 @@ describe("Cql value wrapper", function () {
 
     it("should get counter type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperCounter();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Counter });
         /* Corresponding value:
         let element = CqlValue::Counter(Counter(i64::MAX)); */
         assert.strictEqual(value, maxI64);
@@ -59,7 +59,7 @@ describe("Cql value wrapper", function () {
 
     it("should get decimal type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperDecimal();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Decimal });
         assert.instanceOf(value, BigDecimal);
         /* Corresponding value:
         let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(
@@ -78,7 +78,7 @@ describe("Cql value wrapper", function () {
 
     it("should get decimal type with negative sign correctly from napi", function () {
         let element = rust.testsGetCqlWrapperDecimalNegative();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Decimal });
         assert.instanceOf(value, BigDecimal);
         /* Corresponding value:
         let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(&[246], 0));
@@ -89,7 +89,7 @@ describe("Cql value wrapper", function () {
 
     it("should get decimal type with negative exponent correctly from napi", function () {
         let element = rust.testsGetCqlWrapperDecimalNegativeExponent();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Decimal });
         assert.instanceOf(value, BigDecimal);
         /* Corresponding value:
         let element = CqlValue::Decimal(CqlDecimal::from_signed_be_bytes_slice_and_exponent(&[69], -10));
@@ -100,7 +100,7 @@ describe("Cql value wrapper", function () {
 
     it("should get LocalDate type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperDate();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Date });
         assert.instanceOf(value, LocalDate);
         /* Corresponding value: 
         let element = CqlValue::Date(CqlDate((1 << 31) + 7)); */
@@ -110,7 +110,7 @@ describe("Cql value wrapper", function () {
 
     it("should get double type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperDouble();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Double });
         /* Corresponding value: 
         let element = CqlValue::Double(f64::MAX); */
         assert.strictEqual(value, Number.MAX_VALUE);
@@ -118,7 +118,7 @@ describe("Cql value wrapper", function () {
 
     it("should get duration type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperDuration();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Duration });
         assert.instanceOf(value, Duration);
         /* Corresponding value: 
         let element = CqlValue::Duration(CqlDuration {
@@ -132,7 +132,7 @@ describe("Cql value wrapper", function () {
 
     it("should get float type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperFloat();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Float });
         /* Corresponding value: 
         let element = CqlValue::Float(0_f32); */
         assert.strictEqual(value, Number(0));
@@ -140,7 +140,7 @@ describe("Cql value wrapper", function () {
 
     it("should get int type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperInt();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Int });
         /* Corresponding value: 
         let element = CqlValue::Int(i32::MAX); */
         assert.strictEqual(value, maxI32);
@@ -148,7 +148,7 @@ describe("Cql value wrapper", function () {
 
     it("should get text type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperText();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Text });
         /* Corresponding value: 
         let element = CqlValue::Text("".to_owned()); */
         assert.strictEqual(value, "");
@@ -156,7 +156,7 @@ describe("Cql value wrapper", function () {
 
     it("should get timestamp type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperTimestamp();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Timestamp });
         /* Corresponding value:
         let element = CqlValue::Timestamp(CqlTimestamp(1_000_000_i64)); */
         assert.strictEqual(
@@ -167,7 +167,10 @@ describe("Cql value wrapper", function () {
 
     it("should get list type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperList();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, {
+            code: rust.CqlType.List,
+            info: { code: rust.CqlType.Duration },
+        });
         /* Corresponding value:
         let element = CqlValue::List(vec![
             CqlValue::Duration(CqlDuration {
@@ -175,29 +178,47 @@ describe("Cql value wrapper", function () {
                 days: 5,
                 nanoseconds: 4,
             }),
-            CqlValue::Boolean(false),
+            CqlValue::Duration(CqlDuration {
+                months: 3,
+                days: 2,
+                nanoseconds: 1,
+            }),
         ]); */
-        let expectedDuration = new Duration(6, 5, 4);
+        let expectedDuration1 = new Duration(6, 5, 4);
+        let expectedDuration2 = new Duration(3, 2, 1);
         assert.strictEqual(Array.isArray(value), true);
         assert.strictEqual(value.length, 2);
-        assert.strictEqual(expectedDuration.equals(value[0]), true);
-        assert.strictEqual(value[1], false);
+        assert.strictEqual(expectedDuration1.equals(value[0]), true);
+        assert.strictEqual(expectedDuration2.equals(value[1]), true);
     });
 
     it("should get set type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperSet();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, {
+            code: rust.CqlType.Set,
+            info: { code: rust.CqlType.Text },
+        });
         /* Corresponding value: 
         let element = CqlValue::Set(vec![
             CqlValue::Text("some text".to_owned()),
-            CqlValue::Int(1),
+            CqlValue::Text("other text".to_owned()),
         ]); */
-        assert.deepEqual(value, ["some text", Number(1)]);
+        assert.deepEqual(value, ["some text", "other text"]);
     });
 
     it("should get udt type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperUdt();
-        let value = getCqlObject(element);
+
+        let value = getCqlObject(element, {
+            code: rust.CqlType.UserDefinedType,
+            info: {
+                fields: [
+                    { name: "field1", type: { code: rust.CqlType.Text } },
+                    { name: "field2", type: { code: rust.CqlType.Int } },
+                    { name: "field3", type: { code: rust.CqlType.Text } },
+                ],
+            },
+        });
         /* Corresponding value:
         let element = CqlValue::UserDefinedType {
             keyspace: String::from("keyspace"),
@@ -220,7 +241,10 @@ describe("Cql value wrapper", function () {
 
     it("should get map type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperMap();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, {
+            code: rust.CqlType.Map,
+            info: [{ code: rust.CqlType.Uuid }, { code: rust.CqlType.Int }],
+        });
         /* Corresponding value:
         let element = CqlValue::Map(vec![(
             CqlValue::Uuid(uuid!("ffffffff-ffff-ffff-eeee-ffffffffffff")),
@@ -235,7 +259,7 @@ describe("Cql value wrapper", function () {
 
     it("should get small int type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperSmallInt();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.SmallInt });
         /* Corresponding value: 
         let element = CqlValue::SmallInt(-1); */
         assert.strictEqual(value, Number(-1));
@@ -243,7 +267,7 @@ describe("Cql value wrapper", function () {
 
     it("should get tiny int type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperTinyInt();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.TinyInt });
         /* Corresponding value: 
         let element = CqlValue::TinyInt(3); */
         assert.strictEqual(value, Number(3));
@@ -251,7 +275,7 @@ describe("Cql value wrapper", function () {
 
     it("should get uuid type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperUuid();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Uuid });
         assert.instanceOf(value, Uuid);
         /* Corresponding value: 
         let element = CqlValue::Uuid(uuid!("ffffffff-ffff-ffff-ffff-ffffffffffff")); */
@@ -263,7 +287,14 @@ describe("Cql value wrapper", function () {
 
     it("should get tuple type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperTuple();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, {
+            code: rust.CqlType.Tuple,
+            info: [
+                { code: rust.CqlType.Text },
+                { code: rust.CqlType.Int },
+                { code: rust.CqlType.Ascii },
+            ],
+        });
         assert.instanceOf(value, Tuple);
         /* Corresponding value:
         let element = CqlValue::Tuple(vec![
@@ -279,7 +310,7 @@ describe("Cql value wrapper", function () {
 
     it("should get time uuid type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperTimeUuid();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Timeuuid });
         assert.instanceOf(value, TimeUuid);
         /* Corresponding value: 
         let element =
@@ -292,7 +323,7 @@ describe("Cql value wrapper", function () {
 
     it("should get LocalTime type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperTime();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Time });
         assert.instanceOf(value, LocalTime);
         /* Corresponding value: 
         let element = CqlValue::Time(CqlTime(64 * 1_000_000_000)); */
@@ -302,7 +333,7 @@ describe("Cql value wrapper", function () {
 
     it("should get inet type correctly from napi", function () {
         let element = rust.testsGetCqlWrapperInet();
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Inet });
         assert.instanceOf(value, InetAddress);
         /* Corresponding value: 
         let element = CqlValue::Inet(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))); */
@@ -315,7 +346,7 @@ describe("Cql value wrapper", function () {
         /**
          * @type BigInt
          */
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Varint });
         /* Corresponding value: 
         let element = CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])) */
         assert.strictEqual(value, BigInt("79850778293499848189627010061"));
@@ -326,7 +357,7 @@ describe("Cql value wrapper", function () {
         /**
          * @type BigInt
          */
-        let value = getCqlObject(element);
+        let value = getCqlObject(element, { code: rust.CqlType.Varint });
         /* Corresponding value: 
         let element = CqlValue::Varint(CqlVarint::from_signed_bytes_be_slice(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])) */
         assert.strictEqual(value, BigInt("-10140582186046599701377542583283"));

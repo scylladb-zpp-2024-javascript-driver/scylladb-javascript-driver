@@ -63,7 +63,6 @@ pub struct MetaColumnWrapper {
     pub ksname: String,
     pub tablename: String,
     pub name: String,
-    pub type_code: CqlType,
 }
 
 #[napi]
@@ -117,6 +116,21 @@ impl QueryResultWrapper {
         .collect()
     }
 
+    /// Get the names of the columns in order, as they appear in the query result
+    #[napi]
+    pub fn get_columns_types(&self) -> Vec<ComplexType> {
+        match &self.inner {
+            QueryResultVariant::RowsResult(v) => v,
+            QueryResultVariant::EmptyResult(_) => {
+                return vec![];
+            }
+        }
+        .column_specs()
+        .iter()
+        .map(|f| map_column_type_to_complex_type(f.typ()))
+        .collect()
+    }
+
     /// Get the specification of all columns as they appear in the query result
     #[napi]
     pub fn get_columns_specs(&self) -> Vec<MetaColumnWrapper> {
@@ -132,7 +146,6 @@ impl QueryResultWrapper {
             ksname: f.table_spec().ks_name().to_owned(),
             tablename: f.table_spec().table_name().to_owned(),
             name: f.name().to_owned(),
-            type_code: map_column_type_to_complex_type(f.typ()).base_type,
         })
         .collect()
     }
@@ -185,25 +198,6 @@ impl From<Row> for RowWrapper {
     }
 }
 
-/// Converts value into tuple of elements:
-/// ``(typ, value)``
-/// for a given CQL Value.
-///
-/// Intended to be used when there is ambiguity how the given value
-/// should be provided, based on its type.
-///
-/// # Safety
-///
-/// Valid pointer to napi env must be provided
-unsafe fn make_napi_value_and_type_pair(
-    env: napi::sys::napi_env,
-    value: napi::Result<napi::sys::napi_value>,
-    typ: CqlType,
-) -> napi::Result<napi::sys::napi_value> {
-    // Caller of this function ensures a valid pointer to napi env is provided
-    unsafe { Vec::to_napi_value(env, vec![CqlType::to_napi_value(env, typ), value]) }
-}
-
 impl ToNapiValue for CqlValueWrapper {
     /// # Safety
     ///
@@ -218,11 +212,7 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlValue::Ascii(val) => String::to_napi_value(env, val),
                 CqlValue::Boolean(val) => bool::to_napi_value(env, val),
                 CqlValue::Blob(val) => Buffer::to_napi_value(env, val.into()),
-                CqlValue::Counter(val) => make_napi_value_and_type_pair(
-                    env,
-                    BigInt::to_napi_value(env, val.0.into()),
-                    CqlType::Counter,
-                ),
+                CqlValue::Counter(val) => BigInt::to_napi_value(env, val.0.into()),
                 CqlValue::Decimal(val) => {
                     const EXP_SIZE: usize = 4;
                     // JS driver expects decimal to be in the format of Decimal from CQL protocol.
@@ -233,11 +223,7 @@ impl ToNapiValue for CqlValueWrapper {
                     let mut buf = vec![0u8; EXP_SIZE + value.len()];
                     buf[0..EXP_SIZE].copy_from_slice(&len.to_be_bytes());
                     buf[EXP_SIZE..].copy_from_slice(value);
-                    make_napi_value_and_type_pair(
-                        env,
-                        Buffer::to_napi_value(env, Buffer::from(buf)),
-                        CqlType::Decimal,
-                    )
+                    Buffer::to_napi_value(env, Buffer::from(buf))
                 }
                 CqlValue::Date(val) => {
                     LocalDateWrapper::to_napi_value(env, LocalDateWrapper::from_cql_date(val))
@@ -249,58 +235,34 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlValue::Empty => todo!(),
                 CqlValue::Float(val) => f32::to_napi_value(env, val),
                 CqlValue::Int(val) => i32::to_napi_value(env, val),
-                CqlValue::BigInt(val) => make_napi_value_and_type_pair(
-                    env,
-                    BigInt::to_napi_value(env, val.into()),
-                    CqlType::BigInt,
-                ),
+                CqlValue::BigInt(val) => BigInt::to_napi_value(env, val.into()),
                 CqlValue::Text(val) => String::to_napi_value(env, val),
-                CqlValue::Timestamp(val) => make_napi_value_and_type_pair(
-                    env,
-                    BigInt::to_napi_value(env, val.0.into()),
-                    CqlType::Timestamp,
-                ),
+                CqlValue::Timestamp(val) => BigInt::to_napi_value(env, val.0.into()),
                 CqlValue::Inet(val) => {
                     InetAddressWrapper::to_napi_value(env, InetAddressWrapper::from_ip_addr(val))
                 }
-                CqlValue::List(val) => make_napi_value_and_type_pair(
+                CqlValue::List(val) => Vec::to_napi_value(
                     env,
-                    Vec::to_napi_value(
-                        env,
-                        val.into_iter()
-                            .map(|e| {
-                                CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e })
-                            })
-                            .collect(),
-                    ),
-                    CqlType::List,
+                    val.into_iter()
+                        .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
+                        .collect(),
                 ),
-                CqlValue::Map(val) => make_napi_value_and_type_pair(
+                CqlValue::Map(val) => Vec::to_napi_value(
                     env,
-                    Vec::to_napi_value(
-                        env,
-                        val.into_iter()
-                            .map(|e: (CqlValue, CqlValue)| {
-                                vec![
-                                    CqlValueWrapper { inner: e.0 },
-                                    CqlValueWrapper { inner: e.1 },
-                                ]
-                            })
-                            .collect(),
-                    ),
-                    CqlType::Map,
+                    val.into_iter()
+                        .map(|e: (CqlValue, CqlValue)| {
+                            vec![
+                                CqlValueWrapper { inner: e.0 },
+                                CqlValueWrapper { inner: e.1 },
+                            ]
+                        })
+                        .collect(),
                 ),
-                CqlValue::Set(val) => make_napi_value_and_type_pair(
+                CqlValue::Set(val) => Vec::to_napi_value(
                     env,
-                    Vec::to_napi_value(
-                        env,
-                        val.into_iter()
-                            .map(|e| {
-                                CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e })
-                            })
-                            .collect(),
-                    ),
-                    CqlType::Set,
+                    val.into_iter()
+                        .map(|e| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: e }))
+                        .collect(),
                 ),
                 CqlValue::UserDefinedType {
                     keyspace: _,
@@ -310,25 +272,22 @@ impl ToNapiValue for CqlValueWrapper {
                     // Create an empty JS object
                     let mut obj = Env::from_raw(env).create_object()?;
                     // And fill it with the wrapped values
-                    make_napi_value_and_type_pair(
-                        env,
-                        fields
-                            .iter()
-                            .try_for_each(|(field_name, field_value)| {
-                                obj.set(
-                                    field_name,
-                                    field_value.as_ref().map(|e| {
-                                        CqlValueWrapper::to_napi_value(
-                                            // Value wrapping
-                                            env,
-                                            CqlValueWrapper { inner: e.clone() },
-                                        )
-                                    }),
-                                )
-                            })
-                            .map(|_| obj.raw()),
-                        CqlType::UserDefinedType,
-                    )
+
+                    fields
+                        .iter()
+                        .try_for_each(|(field_name, field_value)| {
+                            obj.set(
+                                field_name,
+                                field_value.as_ref().map(|e| {
+                                    CqlValueWrapper::to_napi_value(
+                                        // Value wrapping
+                                        env,
+                                        CqlValueWrapper { inner: e.clone() },
+                                    )
+                                }),
+                            )
+                        })
+                        .map(|_| obj.raw())
                 }
 
                 CqlValue::SmallInt(val) => i16::to_napi_value(env, val),
@@ -336,49 +295,39 @@ impl ToNapiValue for CqlValueWrapper {
                 CqlValue::Time(val) => {
                     LocalTimeWrapper::to_napi_value(env, LocalTimeWrapper::from_cql_time(val))
                 }
-                CqlValue::Timeuuid(val) => make_napi_value_and_type_pair(
+                CqlValue::Timeuuid(val) => {
+                    Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice()))
+                }
+
+                CqlValue::Tuple(val) => Vec::to_napi_value(
                     env,
-                    Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
-                    CqlType::Timeuuid,
-                ),
-                CqlValue::Tuple(val) => make_napi_value_and_type_pair(
-                    env,
-                    Vec::to_napi_value(
-                        env,
-                        val.into_iter()
-                            .map(|v| {
-                                v.map(|e| {
-                                    CqlValueWrapper::to_napi_value(
-                                        env,
-                                        CqlValueWrapper { inner: e.clone() },
-                                    )
-                                })
+                    val.into_iter()
+                        .map(|v| {
+                            v.map(|e| {
+                                CqlValueWrapper::to_napi_value(
+                                    env,
+                                    CqlValueWrapper { inner: e.clone() },
+                                )
                             })
-                            .collect(),
-                    ),
-                    CqlType::Tuple,
+                        })
+                        .collect(),
                 ),
 
-                CqlValue::Uuid(val) => make_napi_value_and_type_pair(
-                    env,
-                    Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice())),
-                    CqlType::Uuid,
-                ),
+                CqlValue::Uuid(val) => {
+                    Buffer::to_napi_value(env, Buffer::from(val.as_bytes().as_slice()))
+                }
+
                 CqlValue::Varint(val) => {
                     let (sign, words) =
                         num_bigint::BigInt::from_signed_bytes_be(val.as_signed_bytes_be_slice())
                             .to_u64_digits();
 
-                    make_napi_value_and_type_pair(
+                    BigInt::to_napi_value(
                         env,
-                        BigInt::to_napi_value(
-                            env,
-                            BigInt {
-                                sign_bit: sign == num_bigint::Sign::Minus,
-                                words,
-                            },
-                        ),
-                        CqlType::Varint,
+                        BigInt {
+                            sign_bit: sign == num_bigint::Sign::Minus,
+                            words,
+                        },
                     )
                 }
                 other => unimplemented!("Missing implementation for CQL value {:?}", other),
