@@ -2,8 +2,7 @@ const { assert } = require("chai");
 const rust = require("../../index");
 const utils = require("../../lib/utils");
 const types = require("../../lib/types");
-const typeGuessing = require("../../lib/types/type-guessing");
-const { rustConvertHint } = require("../../lib/types/cql-utils");
+const Encoder = require("../../lib/encoder");
 
 describe("Encoder.guessDataType()", function () {
     it("should guess the native types", function () {
@@ -54,7 +53,7 @@ describe("Encoder.guessDataType()", function () {
         );
         assertGuessed(
             types.TimeUuid.now(),
-            rust.CqlType.Timeuuid,
+            rust.CqlType.Uuid,
             "Guess type for a TimeUuid value failed",
         );
         assertGuessed(
@@ -87,11 +86,11 @@ describe("Encoder.guessDataType()", function () {
             rust.CqlType.Inet,
             "Guess type for a inet value failed",
         );
-        /* assertGuessed(
+        assertGuessed(
             new types.Tuple(1, 2, 3),
             rust.CqlType.Tuple,
             "Guess type for a tuple value failed",
-        ); */
+        );
         assertGuessed(
             new types.LocalDate(2010, 4, 29),
             rust.CqlType.Date,
@@ -102,23 +101,20 @@ describe("Encoder.guessDataType()", function () {
             rust.CqlType.Time,
             "Guess type for a time value failed",
         );
-        /* assertGuessed(
+        assertGuessed(
             new Float32Array([1.2, 3.4, 5.6]),
             rust.CqlType.Custom,
             "Guess type for a Float32 TypedArray value failed",
-        ); */
+        );
         assertGuessed({}, null, "Objects must not be guessed");
     });
 
     function assertGuessed(value, expectedType, message) {
-        let type = typeGuessing.guessType(value);
-        if (type === null) {
-            if (expectedType !== null) {
-                assert.ok(false, "Type not guessed for value " + value);
-            }
-            return;
-        }
-        type = rustConvertHint(type).baseType;
-        assert.strictEqual(type, expectedType, message + ": " + value);
+        let type = Encoder.guessDataType(value);
+        assert.strictEqual(
+            type === null ? null : type.code,
+            expectedType,
+            message + ": " + value,
+        );
     }
 });
