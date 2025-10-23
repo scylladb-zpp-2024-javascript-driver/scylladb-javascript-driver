@@ -1,37 +1,41 @@
 use napi::bindgen_prelude::BigInt;
 use scylla::statement::prepared::PreparedStatement;
 
-use crate::{result::map_column_type_to_complex_type, types::type_wrappers::ComplexType};
+use crate::{
+    create_serializable_object, result::map_column_type_to_complex_type,
+    types::type_wrappers::ComplexType,
+};
 
 pub(crate) struct PreparedStatementWrapper {
     pub(crate) prepared: PreparedStatement,
 }
 
-#[napi]
-pub struct QueryOptionsWrapper {
-    pub auto_page: Option<bool>,
-    pub capture_stack_trace: Option<bool>,
-    pub consistency: Option<u16>,
-    pub counter: Option<bool>,
-    // customPayload?: any;
-    // executionProfile?: string | ExecutionProfile;
-    pub fetch_size: Option<i32>,
-    // hints?: string[] | string[][];
-    // host?: Host;
-    pub is_idempotent: Option<bool>,
-    pub keyspace: Option<String>,
-    pub logged: Option<bool>,
-    // pageState?: Buffer | string;
-    pub prepare: Option<bool>,
-    pub read_timeout: Option<i32>,
-    // retry?: policies.retry.RetryPolicy;
-    pub routing_indexes: Option<Vec<i32>>,
-    // routingKey?: Buffer | Buffer[];
-    pub routing_names: Option<Vec<String>>,
-    pub serial_consistency: Option<i16>,
-    pub timestamp: Option<BigInt>,
-    pub trace_query: Option<bool>,
-}
+// Missing fields
+// customPayload?, any;
+// executionProfile?, string | ExecutionProfile;
+// hints?, string[] | string[][];
+// host?, Host;
+// pageState?, Buffer | string;
+// retry?, policies.retry.RetryPolicy;
+// routingKey?, Buffer | Buffer[];
+create_serializable_object!(
+    QueryOptionsWrapper,
+    {auto_page, bool},
+    {capture_stack_trace, bool},
+    {consistency, u16},
+    {counter, bool},
+    {fetch_size, i32},
+    {is_idempotent, bool},
+    {keyspace, String},
+    {logged, bool},
+    {prepare, bool},
+    {read_timeout, i32},
+    {routing_indexes, Vec<i32>},
+    {routing_names, Vec<String>},
+    {serial_consistency, i16},
+    {timestamp, BigInt},
+    {trace_query, bool}
+);
 
 impl PreparedStatementWrapper {
     /// Get array of expected types for this prepared statement.
@@ -41,30 +45,5 @@ impl PreparedStatementWrapper {
             .iter()
             .map(|e| map_column_type_to_complex_type(e.typ()))
             .collect()
-    }
-}
-
-#[napi]
-impl QueryOptionsWrapper {
-    /// Constructor for empty QueryOptionsWrapper
-    #[napi]
-    pub fn empty_options() -> QueryOptionsWrapper {
-        QueryOptionsWrapper {
-            auto_page: None,
-            capture_stack_trace: None,
-            consistency: None,
-            counter: None,
-            fetch_size: None,
-            is_idempotent: None,
-            keyspace: None,
-            logged: None,
-            prepare: None,
-            read_timeout: None,
-            routing_indexes: None,
-            routing_names: None,
-            serial_consistency: None,
-            timestamp: None,
-            trace_query: None,
-        }
     }
 }

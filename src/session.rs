@@ -90,9 +90,9 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<EncodedValuesWrapper>,
-        options: &QueryOptionsWrapper,
+        options: QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let statement: Statement = apply_statement_options(query.into(), options)?;
+        let statement: Statement = apply_statement_options(query.into(), &options)?;
         let query_result = self
             .inner
             .get_session()
@@ -132,9 +132,9 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<EncodedValuesWrapper>,
-        options: &QueryOptionsWrapper,
+        options: QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let query = apply_statement_options(query.into(), options)?;
+        let query = apply_statement_options(query.into(), &options)?;
         QueryResultWrapper::from_query(
             self.inner
                 .execute_unpaged(query, params)
@@ -170,10 +170,10 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<EncodedValuesWrapper>,
-        options: &QueryOptionsWrapper,
+        options: QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
     ) -> napi::Result<PagingResult> {
-        let statement: Statement = apply_statement_options(query.into(), options)?;
+        let statement: Statement = apply_statement_options(query.into(), &options)?;
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
@@ -201,13 +201,13 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<EncodedValuesWrapper>,
-        options: &QueryOptionsWrapper,
+        options: QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
     ) -> napi::Result<PagingResult> {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let prepared = apply_statement_options(query.into(), options)?;
+        let prepared = apply_statement_options(query.into(), &options)?;
 
         let (result, paging_state) = self
             .inner
@@ -226,13 +226,13 @@ impl SessionWrapper {
 #[napi]
 pub fn create_prepared_batch(
     statements: Vec<String>,
-    options: &QueryOptionsWrapper,
+    options: QueryOptionsWrapper,
 ) -> napi::Result<BatchWrapper> {
     let mut batch: Batch = Default::default();
     statements
         .iter()
         .for_each(|q| batch.append_statement(q.as_str()));
-    batch = apply_batch_options(batch, options)?;
+    batch = apply_batch_options(batch, &options)?;
     Ok(BatchWrapper { inner: batch })
 }
 
@@ -264,14 +264,14 @@ fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
 #[napi]
 pub fn create_unprepared_batch(
     statements: Vec<String>,
-    options: &QueryOptionsWrapper,
+    options: QueryOptionsWrapper,
 ) -> napi::Result<BatchWrapper> {
     let mut batch: Batch = Default::default();
     statements
         .into_iter()
         .for_each(|q| batch.append_statement(q.as_str()));
 
-    batch = apply_batch_options(batch, options)?;
+    batch = apply_batch_options(batch, &options)?;
     Ok(BatchWrapper { inner: batch })
 }
 
