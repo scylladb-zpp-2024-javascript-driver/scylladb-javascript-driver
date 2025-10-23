@@ -33,9 +33,6 @@ pub enum CqlType {
     Uuid = 0x000C,
     Varint = 0x000E,
     Custom = 0x0000,
-    // This type is not part of the CQL protocol.
-    // TODO: Remove it in favour of better handling of unprovided type information.
-    Unprovided = 0x0070,
 }
 
 /// This struct is part of the `ComplexType` struct and is used to store information about UDTs.
@@ -77,30 +74,6 @@ impl ComplexType {
         self.inner_types.clone()
     }
 
-    /// Create a new copy of the ComplexType, with first support type set to the provided type and the same base type
-    ///
-    /// Intended for filling types of the list / set values in case no support type was initially provided
-    #[napi]
-    pub fn remap_list_support_type(&self, new_subtype: &ComplexType) -> ComplexType {
-        ComplexType::one_support(self.base_type, Some(new_subtype.clone()))
-    }
-
-    /// Create a new copy of the ComplexType, with first and second support type set to the provided types and the same base type
-    ///
-    /// Intended for filling types of the map keys and value in case no support types were initially provided
-    #[napi]
-    pub fn remap_map_support_type(
-        &self,
-        key_new_subtype: &ComplexType,
-        val_new_subtype: &ComplexType,
-    ) -> ComplexType {
-        ComplexType::two_support(
-            self.base_type,
-            Some(key_new_subtype.clone()),
-            Some(val_new_subtype.clone()),
-        )
-    }
-
     #[napi]
     pub fn get_udt_field_names(&self) -> Option<Vec<String>> {
         // Batch query to NAPI minimizes number of calls
@@ -121,66 +94,6 @@ impl ComplexType {
         self.udt_metadata
             .as_ref()
             .map(|metadata| metadata.name.clone())
-    }
-
-    /// Create a new ComplexType for tuple with provided inner types.
-    #[napi]
-    pub fn remap_tuple_support_type(new_subtypes: Vec<Option<&ComplexType>>) -> ComplexType {
-        ComplexType::from_tuple(
-            new_subtypes
-                .into_iter()
-                // HACK:
-                // There is a chance, user doesn't provide a type for some tuple value.
-                // If this value is null or unset, we can still correctly handle that case.
-                // For this reason we set here Unprovided type, a type that will never be used in request.
-                // If we encounter Unprovided in parsing value, this means that insufficient type information was provided.
-                //
-                // This will be fixed at a later time, as it requires more investigation into how tuple works.
-                .map(|e| {
-                    e.unwrap_or(&ComplexType::simple_type(CqlType::Unprovided))
-                        .clone()
-                })
-                .collect(),
-        )
-    }
-
-    /// Create a new ComplexType for UDT with provided inner types and field names. Used in JS part of the driver during type guessing.
-    #[napi]
-    pub fn new_udt_type(
-        new_subtypes: Vec<Option<&ComplexType>>,
-        field_names: Vec<String>,
-        keyspace: String,
-        name: String,
-    ) -> ComplexType {
-        ComplexType {
-            base_type: CqlType::UserDefinedType,
-            support_type_1: None,
-            support_type_2: None,
-            inner_types: new_subtypes
-                .into_iter()
-                // HACK:
-                // There is a chance, user doesn't provide a type for some UDT value.
-                // If this value is null or unset, we can still correctly handle that case.
-                // For this reason we set here Unprovided type, a type that will never be used in request.
-                // If we encounter Unprovided in parsing value, this means, that unsufficient type information was provided.
-                //
-                // This will be fixed at a later time, as it requires more investigation into how UDT works.
-                .map(|e| {
-                    e.cloned()
-                        .unwrap_or_else(|| ComplexType::simple_type(CqlType::Unprovided))
-                })
-                .collect(),
-            udt_metadata: Some(UdtMetadata {
-                keyspace,
-                name,
-                field_names,
-            }),
-        }
-    }
-
-    #[napi]
-    pub fn get_udt_names(&self) -> Option<Vec<String>> {
-        self.udt_metadata.as_ref().map(|e| e.field_names.clone())
     }
 }
 
