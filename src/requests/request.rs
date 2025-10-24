@@ -38,6 +38,19 @@ define_js_to_rust_convertible_object!(
     }
 );
 
+#[napi]
+pub struct QueryOptionsWrapper {
+    pub(crate) options: QueryOptionsObj,
+}
+
+#[napi]
+impl QueryOptionsWrapper {
+    #[napi(constructor)]
+    pub fn new(options: QueryOptionsObj) -> Self {
+        QueryOptionsWrapper { options }
+    }
+}
+
 impl PreparedStatementWrapper {
     /// Get array of expected types for this prepared statement.
     pub fn get_expected_types(&self) -> Vec<ComplexType> {
