@@ -1,3 +1,5 @@
+pub mod from_napi_obj;
+
 use crate::errors::js_error;
 use napi::bindgen_prelude::BigInt;
 use std::fmt::{self, Display};
