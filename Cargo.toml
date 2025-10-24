@@ -17,6 +17,7 @@ uuid = "1"
 regex = "1.11.1"
 thiserror = "2.0.12"
 num-bigint = "0.4.6"
+convert_case = "0.8.0"
 
 
 [build-dependencies]
