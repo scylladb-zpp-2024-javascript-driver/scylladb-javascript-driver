@@ -13,7 +13,7 @@ const NANO_SEC_IN_MILLIS: i64 = 1_000_000;
 
 #[napi]
 pub struct LocalTimeWrapper {
-    pub value: BigInt,
+    pub(crate) value: BigInt,
     pub hour: i64,
     pub minute: i64,
     pub second: i64,
@@ -41,6 +41,11 @@ impl LocalTimeWrapper {
             nanosecond,
             ns_value,
         }
+    }
+
+    #[napi]
+    pub fn get_value(&self) -> BigInt {
+        self.value.clone()
     }
 
     #[napi]
