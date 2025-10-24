@@ -8,7 +8,7 @@ use scylla::statement::{Consistency, SerialConsistency, Statement};
 use crate::errors::{err_to_napi, js_error};
 use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
-use crate::requests::request::QueryOptionsWrapper;
+use crate::requests::request::{QueryOptionsObj, QueryOptionsWrapper};
 use crate::types::encoded_data::EncodedValuesWrapper;
 use crate::types::type_wrappers::ComplexType;
 use crate::utils::bigint_to_i64;
@@ -90,9 +90,9 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<EncodedValuesWrapper>,
-        options: QueryOptionsWrapper,
+        options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let statement: Statement = apply_statement_options(query.into(), &options)?;
+        let statement: Statement = apply_statement_options(query.into(), &options.options)?;
         let query_result = self
             .inner
             .get_session()
@@ -132,9 +132,9 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<EncodedValuesWrapper>,
-        options: QueryOptionsWrapper,
+        options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let query = apply_statement_options(query.into(), &options)?;
+        let query = apply_statement_options(query.into(), &options.options)?;
         QueryResultWrapper::from_query(
             self.inner
                 .execute_unpaged(query, params)
@@ -170,10 +170,10 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<EncodedValuesWrapper>,
-        options: QueryOptionsWrapper,
+        options: &QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
     ) -> napi::Result<PagingResult> {
-        let statement: Statement = apply_statement_options(query.into(), &options)?;
+        let statement: Statement = apply_statement_options(query.into(), &options.options)?;
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
@@ -201,13 +201,13 @@ impl SessionWrapper {
         &self,
         query: String,
         params: Vec<EncodedValuesWrapper>,
-        options: QueryOptionsWrapper,
+        options: &QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
     ) -> napi::Result<PagingResult> {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let prepared = apply_statement_options(query.into(), &options)?;
+        let prepared = apply_statement_options(query.into(), &options.options)?;
 
         let (result, paging_state) = self
             .inner
@@ -226,13 +226,13 @@ impl SessionWrapper {
 #[napi]
 pub fn create_prepared_batch(
     statements: Vec<String>,
-    options: QueryOptionsWrapper,
+    options: &QueryOptionsWrapper,
 ) -> napi::Result<BatchWrapper> {
     let mut batch: Batch = Default::default();
     statements
         .iter()
         .for_each(|q| batch.append_statement(q.as_str()));
-    batch = apply_batch_options(batch, &options)?;
+    batch = apply_batch_options(batch, &options.options)?;
     Ok(BatchWrapper { inner: batch })
 }
 
@@ -264,14 +264,14 @@ fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
 #[napi]
 pub fn create_unprepared_batch(
     statements: Vec<String>,
-    options: QueryOptionsWrapper,
+    options: &QueryOptionsWrapper,
 ) -> napi::Result<BatchWrapper> {
     let mut batch: Batch = Default::default();
     statements
         .into_iter()
         .for_each(|q| batch.append_statement(q.as_str()));
 
-    batch = apply_batch_options(batch, &options)?;
+    batch = apply_batch_options(batch, &options.options)?;
     Ok(BatchWrapper { inner: batch })
 }
 
@@ -280,7 +280,7 @@ macro_rules! make_apply_options {
     ($statement_type: ty, $fn_name: ident) => {
         fn $fn_name(
             mut statement: $statement_type,
-            options: &QueryOptionsWrapper,
+            options: &QueryOptionsObj,
         ) -> napi::Result<$statement_type> {
             if let Some(o) = options.consistency {
                 statement.set_consistency(
@@ -323,7 +323,7 @@ macro_rules! make_non_batch_apply_options {
         make_apply_options!($statement_type, $partial_name);
         fn $fn_name(
             statement: $statement_type,
-            options: &QueryOptionsWrapper,
+            options: &QueryOptionsObj,
         ) -> napi::Result<$statement_type> {
             // Statement with partial options applied -
             // those that are common with batch queries

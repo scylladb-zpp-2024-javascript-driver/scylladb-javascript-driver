@@ -19,7 +19,7 @@ pub(crate) struct PreparedStatementWrapper {
 // retry?, policies.retry.RetryPolicy;
 // routingKey?, Buffer | Buffer[];
 create_serializable_object!(
-    QueryOptionsWrapper,
+    QueryOptionsObj,
     {auto_page, bool},
     {capture_stack_trace, bool},
     {consistency, u16},
@@ -36,6 +36,19 @@ create_serializable_object!(
     {timestamp, BigInt},
     {trace_query, bool}
 );
+
+#[napi]
+pub struct QueryOptionsWrapper {
+    pub(crate) options: QueryOptionsObj,
+}
+
+#[napi]
+impl QueryOptionsWrapper {
+    #[napi(constructor)]
+    pub fn new(options: QueryOptionsObj) -> Self {
+        QueryOptionsWrapper { options }
+    }
+}
 
 impl PreparedStatementWrapper {
     /// Get array of expected types for this prepared statement.
