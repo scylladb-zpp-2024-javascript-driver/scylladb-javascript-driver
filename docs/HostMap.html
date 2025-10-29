@@ -95,7 +95,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line134">line 134</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line143">line 143</a>
     </li></ul></dd>
     
 
@@ -170,7 +170,10 @@ method within async operations.</p></div>
 
 
 <div class="description">
-    <p>Removes all items from the map.</p>
+    <h1>WARNING:</h1>
+<p>Editing host map does not affect the connection to the database.
+You only edit the local copy of the connected hosts.</p>
+<p>Removes all items from the map.</p>
 </div>
 
 
@@ -214,7 +217,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line306">line 306</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line305">line 305</a>
     </li></ul></dd>
     
 
@@ -368,7 +371,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line160">line 160</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line169">line 169</a>
     </li></ul></dd>
     
 
@@ -505,7 +508,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line172">line 172</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line181">line 181</a>
     </li></ul></dd>
     
 
@@ -611,7 +614,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line180">line 180</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line189">line 189</a>
     </li></ul></dd>
     
 
@@ -673,7 +676,10 @@ method within async operations.</p></div>
 
 
 <div class="description">
-    <p>Removes an item from the map.</p>
+    <h1>WARNING:</h1>
+<p>Editing host map does not affect the connection to the database.
+You only edit the local copy of the connected hosts.</p>
+<p>Removes an item from the map.</p>
 </div>
 
 
@@ -766,7 +772,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line189">line 189</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line202">line 202</a>
     </li></ul></dd>
     
 
@@ -815,7 +821,10 @@ method within async operations.</p></div>
 
 
 <div class="description">
-    <p>Removes multiple hosts from the map.</p>
+    <h1>WARNING:</h1>
+<p>Editing host map does not affect the connection to the database.
+You only edit the local copy of the connected hosts.</p>
+<p>Removes multiple hosts from the map.</p>
 </div>
 
 
@@ -908,7 +917,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line211">line 211</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line228">line 228</a>
     </li></ul></dd>
     
 
@@ -957,7 +966,10 @@ method within async operations.</p></div>
 
 
 <div class="description">
-    <p>Adds a new item to the map.</p>
+    <h1>WARNING:</h1>
+<p>Editing host map does not affect the connection to the database.
+You only edit the local copy of the connected hosts.</p>
+<p>Adds a new item to the map.</p>
 </div>
 
 
@@ -1073,7 +1085,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line241">line 241</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line262">line 262</a>
     </li></ul></dd>
     
 
@@ -1168,7 +1180,7 @@ method within async operations.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line293">line 293</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line288">line 288</a>
     </li></ul></dd>
     
 
@@ -1217,6 +1229,143 @@ method within async operations.</p></div>
 
 
         
+            
+
+    
+
+    
+    <h4 class="name" id=".fromRust"><span class="type-signature">(package, static) </span>fromRust<span class="signature">(hostsList)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Converts a list of HostWrapper from Rust to a HostMap</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>hostsList</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;_rust.HostWrapper></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line343">line 343</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
     
 
     
@@ -1238,7 +1387,7 @@ method within async operations.</p></div>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Thu Oct 23 2025 13:34:27 GMT+0000 (Coordinated Universal Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Oct 29 2025 12:08:28 GMT+0000 (Coordinated Universal Time)
 </footer>
 
 <script> prettyPrint(); </script>

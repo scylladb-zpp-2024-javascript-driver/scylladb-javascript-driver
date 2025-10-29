@@ -97,7 +97,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line11">line 11</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line13">line 13</a>
     </li></ul></dd>
     
 
@@ -212,7 +212,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line21">line 21</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line23">line 23</a>
     </li></ul></dd>
     
 
@@ -284,7 +284,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line27">line 27</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line29">line 29</a>
     </li></ul></dd>
     
 
@@ -356,7 +356,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line33">line 33</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line35">line 35</a>
     </li></ul></dd>
     
 
@@ -374,26 +374,12 @@
 
         
             
-<h4 class="name" id="dseVersion"><span class="type-signature"></span>dseVersion<span class="type-signature"> :String</span></h4>
+<h4 class="name" id="dseVersion"><span class="type-signature"></span>dseVersion<span class="type-signature"></span></h4>
 
 
 
 
-<div class="description">
-    <p>Gets string containing the DSE version or null if not set.</p>
-</div>
 
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">String</span>
-
-
-        </li>
-    </ul>
 
 
 
@@ -416,6 +402,8 @@
     
 
     
+        <dt class="important tag-deprecated">Deprecated:</dt><dd><ul class="dummy"><li>Not supported by the driver. Usage will throw an error.</li></ul></dd>
+    
 
     
 
@@ -428,7 +416,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line59">line 59</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line61">line 61</a>
     </li></ul></dd>
     
 
@@ -501,7 +489,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line53">line 53</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line55">line 55</a>
     </li></ul></dd>
     
 
@@ -573,7 +561,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line39">line 39</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line41">line 41</a>
     </li></ul></dd>
     
 
@@ -645,7 +633,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line45">line 45</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line47">line 47</a>
     </li></ul></dd>
     
 
@@ -663,32 +651,12 @@
 
         
             
-<h4 class="name" id="workloads"><span class="type-signature"></span>workloads<span class="type-signature"> :Array.&lt;string></span></h4>
+<h4 class="name" id="workloads"><span class="type-signature"></span>workloads<span class="type-signature"></span></h4>
 
 
 
 
-<div class="description">
-    <p>Gets the DSE Workloads the host is running.</p>
-<p>This is based on the &quot;workload&quot; or &quot;workloads&quot; columns in {@code system.local} and {@code system.peers}.</p>
-<p>Workload labels may vary depending on the DSE version in use;e.g. DSE 5.1 may report two distinct workloads:</p>
-<p><code>Search</code> and <code>Analytics</code>, while DSE 5.0 would report a single
-<code>SearchAnalytics</code> workload instead. The driver simply returns the workload labels as reported by
-DSE, without any form of pre-processing.</p>
-<p>When the information is unavailable, this property returns an empty array.</p>
-</div>
 
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">Array.&lt;string></span>
-
-
-        </li>
-    </ul>
 
 
 
@@ -711,6 +679,8 @@ DSE, without any form of pre-processing.</p>
     
 
     
+        <dt class="important tag-deprecated">Deprecated:</dt><dd><ul class="dummy"><li>Not supported by the driver. Usage will throw an error.</li></ul></dd>
+    
 
     
 
@@ -723,7 +693,7 @@ DSE, without any form of pre-processing.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line76">line 76</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line73">line 73</a>
     </li></ul></dd>
     
 
@@ -804,7 +774,7 @@ Deprecated: Use Host#isUp() instead.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line92">line 92</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line95">line 95</a>
     </li></ul></dd>
     
 
@@ -911,7 +881,7 @@ position.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line101">line 101</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line104">line 104</a>
     </li></ul></dd>
     
 
@@ -965,17 +935,12 @@ position.</p>
     
 
     
-    <h4 class="name" id="getDseVersion"><span class="type-signature"></span>getDseVersion<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
+    <h4 class="name" id="getDseVersion"><span class="type-signature"></span>getDseVersion<span class="signature">()</span><span class="type-signature"></span></h4>
     
 
     
 
 
-
-<div class="description">
-    <p>Gets the DSE version of the host as an Array, containing the major version in the first position.
-In case the cluster is not a DSE cluster, it returns an empty Array.</p>
-</div>
 
 
 
@@ -1006,6 +971,8 @@ In case the cluster is not a DSE cluster, it returns an empty Array.</p>
     
 
     
+        <dt class="important tag-deprecated">Deprecated:</dt><dd><ul class="dummy"><li>Not supported by the driver. Usage will throw an error.</li></ul></dd>
+    
 
     
 
@@ -1018,7 +985,7 @@ In case the cluster is not a DSE cluster, it returns an empty Array.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line116">line 116</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line117">line 117</a>
     </li></ul></dd>
     
 
@@ -1043,24 +1010,6 @@ In case the cluster is not a DSE cluster, it returns an empty Array.</p>
 
 
 
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Array</span>
-
-
-    </dd>
-</dl>
-
-    
 
 
 
@@ -1124,7 +1073,7 @@ In case the cluster is not a DSE cluster, it returns an empty Array.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="host.js.html">host.js</a>, <a href="host.js.html#line83">line 83</a>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line86">line 86</a>
     </li></ul></dd>
     
 
@@ -1173,6 +1122,143 @@ In case the cluster is not a DSE cluster, it returns an empty Array.</p>
 
 
         
+            
+
+    
+
+    
+    <h4 class="name" id=".fromRust"><span class="type-signature">(package, static) </span>fromRust<span class="signature">(hostWrapper)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Creates a Host instance from a Rust HostWrapper.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>hostWrapper</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">_rust.HostWrapper</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="host.js.html">host.js</a>, <a href="host.js.html#line126">line 126</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
     
 
     
@@ -1194,7 +1280,7 @@ In case the cluster is not a DSE cluster, it returns an empty Array.</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Thu Oct 23 2025 13:34:27 GMT+0000 (Coordinated Universal Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Oct 29 2025 12:08:28 GMT+0000 (Coordinated Universal Time)
 </footer>
 
 <script> prettyPrint(); </script>
