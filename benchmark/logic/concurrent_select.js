@@ -19,7 +19,7 @@ async.series(
             for (let i = 0; i < 10; i++) {
                 let id = cassandra.types.Uuid.random();
                 try {
-                    await client.execute(query, [id, 100], { prepare: true, collectResults: true });
+                    await client.execute(query, [id, 100], { prepare: true });
                 } catch (err) {
                     return next(err);
                 }
@@ -35,7 +35,7 @@ async.series(
                     });
                 }
                 try {
-                    const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true });
+                    const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true, collectResults: true });
                 } catch (err) {
                     return next(err);
                 }
