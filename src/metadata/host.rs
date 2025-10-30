@@ -1,14 +1,15 @@
 use napi::bindgen_prelude::Buffer;
 
-use crate::session::SessionWrapper;
+use crate::{session::SessionWrapper, utils::to_napi_obj::define_rust_to_js_convertible_object};
 
-#[napi]
-pub struct HostWrapper {
-    pub host_id: Buffer,
-    pub address: String,
-    pub datacenter: Option<String>,
-    pub rack: Option<String>,
-}
+define_rust_to_js_convertible_object!(
+    HostWrapper {
+        host_id, hostId: Buffer,
+        address, address: String,
+        datacenter, datacenter: Option<String>,
+        rack, rack: Option<String>
+    }
+);
 
 #[napi]
 impl SessionWrapper {
