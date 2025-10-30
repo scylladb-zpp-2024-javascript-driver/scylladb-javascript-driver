@@ -1,4 +1,5 @@
 pub mod from_napi_obj;
+pub mod to_napi_obj;
 
 use crate::errors::js_error;
 use napi::bindgen_prelude::BigInt;
