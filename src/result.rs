@@ -7,8 +7,8 @@ use crate::{
     },
 };
 use napi::{
-    Env, NapiRaw, Result,
-    bindgen_prelude::{BigInt, Buffer, ToNapiValue},
+    Env, JsValue, Result,
+    bindgen_prelude::{BigInt, Buffer, JsObjectValue, Object, ToNapiValue},
 };
 use scylla::{
     cluster::metadata::{CollectionType, NativeType},
@@ -270,19 +270,20 @@ impl ToNapiValue for CqlValueWrapper {
                     fields,
                 } => {
                     // Create an empty JS object
-                    let mut obj = Env::from_raw(env).create_object()?;
-                    // And fill it with the wrapped values
+                    let env_obj = Env::from_raw(env);
+                    let mut obj = Object::new(&env_obj)?;
 
+                    // And fill it with the wrapped values
                     fields
-                        .iter()
+                        .into_iter()
                         .try_for_each(|(field_name, field_value)| {
-                            obj.set(
-                                field_name,
-                                field_value.as_ref().map(|e| {
+                            obj.set_named_property(
+                                &field_name,
+                                field_value.map(|e| {
                                     CqlValueWrapper::to_napi_value(
                                         // Value wrapping
                                         env,
-                                        CqlValueWrapper { inner: e.clone() },
+                                        CqlValueWrapper { inner: e },
                                     )
                                 }),
                             )

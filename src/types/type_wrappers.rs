@@ -4,6 +4,7 @@ use crate::result::map_column_type_to_complex_type;
 use scylla::frame::response::result::ColumnType;
 
 /// Represents CQL types with their corresponding numeric values from the CQL protocol.
+#[derive(Clone)]
 #[napi]
 pub enum CqlType {
     Ascii = 0x0001,

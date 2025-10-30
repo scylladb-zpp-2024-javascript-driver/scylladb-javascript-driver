@@ -32,7 +32,7 @@ static DATE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 pub struct LocalDateWrapper {
     /// wrapper for number of days from 01.01.1970
     pub value: i32,
-    pub date: Option<Ymd>,
+    pub(crate) date: Option<Ymd>,
     /// value can be represented as Date class in JS
     pub in_date: bool,
 }
@@ -62,6 +62,11 @@ impl LocalDateWrapper {
             date,
             in_date: (MIN_JS_DATE..=MAX_JS_DATE).contains(&value),
         })
+    }
+
+    #[napi]
+    pub fn get_date(&self) -> Option<Ymd> {
+        self.date.clone()
     }
 
     #[napi(js_name = "toString")]
