@@ -7,6 +7,12 @@ use scylla::{
     policies::address_translator::{AddressTranslator, UntranslatedPeer},
 };
 
+#[napi]
+pub enum AddressTranslatorPolicies {
+    CustomPolicy,
+    EC2MultiRegion,
+}
+
 pub struct EC2MultiRegionTranslator {}
 
 #[async_trait]
