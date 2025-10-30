@@ -6,7 +6,7 @@ const { types } = require("../../../index.js");
 const Vector = require("../../../lib/types/vector.js");
 const util = require("node:util");
 const vdescribe = helper.vdescribe;
-vdescribe("5.0.0", "Vector tests", function () {
+vdescribe(["5.0.0", "scylla"], "Vector tests", function () {
     this.timeout(120000);
 
     describe("#execute with vectors", function () {
