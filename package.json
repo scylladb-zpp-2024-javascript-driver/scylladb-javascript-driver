@@ -1,12 +1,12 @@
 {
-  "name": "scylladb-javascript-driver",
+  "name": "scylladb-nodejs-rs-driver",
   "version": "0.0.2",
   "description": "",
   "license": "Apache-2.0",
   "main": "main.js",
   "types": "main.d.ts",
   "napi": {
-    "binary-name": "scylladb-javascript-driver",
+    "binary-name": "scylladb-nodejs-rs-driver",
     "targets": [
       "aarch64-apple-darwin",
       "aarch64-linux-android",
