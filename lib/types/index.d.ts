@@ -419,4 +419,19 @@ export namespace types {
 
     toJSON(): string;
   }
+
+  class Vector {
+    static get [Symbol.species](): typeof Vector;
+    constructor(elements: Float32Array | Array<any>, subtype?: string);
+    elements: any[];
+    length: number;
+    subtype: string | undefined;
+
+    toString(): string;
+    at(index: number): any;
+    forEach(callback: (value: any, index: number, array: any[]) => void): void;
+    getSubtype(): string | undefined;
+
+    [Symbol.iterator](): IterableIterator<any>;
+  }
 }
