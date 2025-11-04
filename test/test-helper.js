@@ -13,6 +13,7 @@ const temp = require("temp").track(true);
 const Client = require("../lib/client");
 const { HostMap } = require("../lib/host");
 const promiseUtils = require("../lib/promise-utils");
+const Vector = types.Vector;
 
 util.inherits(RetryMultipleTimes, policies.retry.RetryPolicy);
 
@@ -603,7 +604,7 @@ const helper = {
 
     /**
      * Version dependent it() method for mocha test case
-     * @param {String} testVersion Minimum version of Cassandra needed for this test
+     * @param {String} testVersion Minimum version of Cassandra/Scylla needed for this test
      * @param {String} testCase Test case name
      * @param {Function} func
      */
@@ -612,13 +613,20 @@ const helper = {
     },
 
     /**
-     * Version dependent describe() method for mocha test case
-     * @param {String} testVersion Minimum version of DSE/Cassandra needed for this test
+     * Version dependent describe() method for mocha test case.
+     * Allows to define one or more versions to run the tests against.
+     * If the runner matches multiple of the provided versions, the tests may be run multiple times.
+     * @param {String|Array<String>} testVersion Minimum version of Cassandra/Scylla needed for this test
      * @param {String} title Title of the describe section.
      * @param {Function} func
      */
     vdescribe: function (testVersion, title, func) {
-        executeIfVersion(testVersion, describe, [title, func]);
+        if (!Array.isArray(testVersion)) {
+            testVersion = [testVersion];
+        }
+        testVersion.forEach((version) =>
+            executeIfVersion(version, describe, [title, func]),
+        );
     },
 
     /**
@@ -1563,6 +1571,354 @@ helper.ads.getKrb5ConfigPath = function () {
 };
 
 /**
+ * @type {Array<{subtypeString : string, typeInfo: import('../lib/encoder').VectorColumnInfo, value: Array}>}
+ */
+const dataProvider = [
+    {
+        subtypeString: "float",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.float }, 3],
+        },
+        value: [1.1122000217437744, 2.212209939956665, 3.3999900817871094],
+    },
+    {
+        subtypeString: "double",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.double }, 3],
+        },
+        value: [1.1, 2.2, 3.3],
+    },
+    {
+        subtypeString: "varchar",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.text }, 3],
+        },
+        value: ["ab", "b", "cde"],
+    },
+    {
+        subtypeString: "bigint",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.bigint }, 3],
+        },
+        value: [new types.Long(1), new types.Long(2), new types.Long(3)],
+    },
+    {
+        subtypeString: "blob",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.blob }, 3],
+        },
+        value: [
+            Buffer.from([1, 2, 3]),
+            Buffer.from([4, 5, 6]),
+            Buffer.from([7, 8, 9]),
+        ],
+    },
+    {
+        subtypeString: "boolean",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.boolean }, 3],
+        },
+        value: [true, false, true],
+    },
+    {
+        subtypeString: "decimal",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.decimal }, 3],
+        },
+        value: [
+            types.BigDecimal.fromString("1.1"),
+            types.BigDecimal.fromString("2.2"),
+            types.BigDecimal.fromString("3.3"),
+        ],
+    },
+    {
+        subtypeString: "inet",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.inet }, 3],
+        },
+        value: [
+            types.InetAddress.fromString("127.0.0.1"),
+            types.InetAddress.fromString("0.0.0.0"),
+            types.InetAddress.fromString("34.12.10.19"),
+        ],
+    },
+    {
+        subtypeString: "tinyint",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.tinyint }, 3],
+        },
+        value: [1, 2, 3],
+    },
+    {
+        subtypeString: "smallint",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.smallint }, 3],
+        },
+        value: [1, 2, 3],
+    },
+    {
+        subtypeString: "int",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.int }, 3],
+        },
+        value: [-1, 0, -3],
+    },
+    {
+        subtypeString: "duration",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            info: [
+                {
+                    code: types.dataTypes.custom,
+                    info: "org.apache.cassandra.db.marshal.DurationType",
+                },
+                3,
+            ],
+            customTypeName: "vector",
+        },
+        value: [
+            new types.Duration(1, 2, 3),
+            new types.Duration(4, 5, 6),
+            new types.Duration(7, 8, 9),
+        ],
+    },
+    {
+        subtypeString: "date",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.date }, 3],
+        },
+        value: [
+            new types.LocalDate(2020, 1, 1),
+            new types.LocalDate(2020, 2, 1),
+            new types.LocalDate(2020, 3, 1),
+        ],
+    },
+    {
+        subtypeString: "time",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.time }, 3],
+        },
+        value: [
+            new types.LocalTime(types.Long.fromString("6331999999911")),
+            new types.LocalTime(types.Long.fromString("6331999999911")),
+            new types.LocalTime(types.Long.fromString("6331999999911")),
+        ],
+    },
+    {
+        subtypeString: "timestamp",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.timestamp }, 3],
+        },
+        value: [
+            new Date(2020, 1, 1, 1, 1, 1, 1),
+            new Date(2020, 2, 1, 1, 1, 1, 1),
+            new Date(2020, 3, 1, 1, 1, 1, 1),
+        ],
+    },
+    {
+        subtypeString: "uuid",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.uuid }, 3],
+        },
+        value: [types.Uuid.random(), types.Uuid.random(), types.Uuid.random()],
+    },
+    {
+        subtypeString: "timeuuid",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.timeuuid }, 3],
+        },
+        value: [
+            types.TimeUuid.now(),
+            types.TimeUuid.now(),
+            types.TimeUuid.now(),
+        ],
+    },
+];
+
+helper.dataProvider = dataProvider;
+
+const dataProviderWithCollections = dataProvider
+    .flatMap((data) => [
+        data,
+        // vector<list<subtype>, 3>
+        {
+            subtypeString: "list<" + data.subtypeString + ">",
+            typeInfo: {
+                code: types.dataTypes.custom,
+                info: [
+                    {
+                        code: types.dataTypes.list,
+                        info: {
+                            code: data.typeInfo.info[0].code,
+                            info: data.typeInfo.info[0]["info"],
+                        },
+                    },
+                    3,
+                ],
+                customTypeName: "vector",
+            },
+            value: data.value.map((value) => [value, value, value]),
+        },
+        // vector<map<int, subtype>, 3>
+        {
+            subtypeString: "map<int, " + data.subtypeString + ">",
+            typeInfo: {
+                code: types.dataTypes.custom,
+                info: [
+                    {
+                        code: types.dataTypes.map,
+                        info: [
+                            { code: types.dataTypes.int },
+                            {
+                                code: data.typeInfo.info[0].code,
+                                info: data.typeInfo.info[0]["info"],
+                            },
+                        ],
+                    },
+                    3,
+                ],
+                customTypeName: "vector",
+            },
+            value: data.value.map((value) => ({
+                1: value,
+                2: value,
+                3: value,
+            })),
+        },
+        // vector<set<subtype>, 3>
+        {
+            subtypeString: "set<" + data.subtypeString + ">",
+            typeInfo: {
+                code: types.dataTypes.custom,
+                info: [
+                    {
+                        code: types.dataTypes.set,
+                        info: {
+                            code: data.typeInfo.info[0].code,
+                            info: data.typeInfo.info[0]["info"],
+                        },
+                    },
+                    3,
+                ],
+                customTypeName: "vector",
+            },
+            value: data.value.map((value) => [value, value, value]),
+        },
+        // vector<tuple<subtype, subtype>, 3>
+        {
+            subtypeString:
+                "tuple<" + data.subtypeString + ", " + data.subtypeString + ">",
+            typeInfo: {
+                code: types.dataTypes.custom,
+                info: [
+                    {
+                        code: types.dataTypes.tuple,
+                        info: [
+                            {
+                                code: data.typeInfo.info[0].code,
+                                info: data.typeInfo.info[0]["info"],
+                            },
+                            {
+                                code: data.typeInfo.info[0].code,
+                                info: data.typeInfo.info[0]["info"],
+                            },
+                        ],
+                    },
+                    3,
+                ],
+                customTypeName: "vector",
+            },
+            value: data.value.map((value) => new types.Tuple(value, value)),
+        },
+        // vector<vector<subtype, 3>, 3>
+        {
+            subtypeString: "vector<" + data.subtypeString + ", 3>",
+            typeInfo: {
+                code: types.dataTypes.custom,
+                info: [
+                    {
+                        code: types.dataTypes.custom,
+                        info: [
+                            {
+                                code: data.typeInfo.info[0].code,
+                                info: data.typeInfo.info[0]["info"],
+                            },
+                            3,
+                        ],
+                        customTypeName: "vector",
+                    },
+                    3,
+                ],
+                customTypeName: "vector",
+            },
+            value: data.value.map(
+                (value) =>
+                    new Vector([value, value, value], data.subtypeString),
+            ),
+        },
+    ])
+    .concat([
+        // vector<my_udt, 3>
+        {
+            subtypeString: "my_udt",
+            typeInfo: {
+                code: types.dataTypes.custom,
+                info: [
+                    {
+                        code: types.dataTypes.udt,
+                        info: {
+                            name: "my_udt",
+                            fields: [
+                                {
+                                    name: "f1",
+                                    type: { code: types.dataTypes.text },
+                                },
+                            ],
+                        },
+                    },
+                    3,
+                ],
+                customTypeName: "vector",
+            },
+            value: [{ f1: "a" }, { f1: "b" }, { f1: "c" }],
+        },
+    ]);
+
+helper.dataProviderWithCollections = dataProviderWithCollections;
+
+/**
  * A retry policy for testing purposes only, retries for a number of times
  * @param {Number} times
  * @constructor
@@ -1645,13 +2001,21 @@ FallthroughRetryPolicy.prototype.onRequestError =
 
 /**
  * Conditionally executes func if testVersion is <= the current cassandra version.
- * @param {String} testVersion Minimum version of Cassandra needed.
+ * @param {String} testVersion Minimum version of Cassandra/Scylla needed.
  * @param {Function} func The function to conditionally execute.
  * @param {Array} args the arguments to apply to the function.
  */
 function executeIfVersion(testVersion, func, args) {
     if (testVersion.startsWith("dse-")) {
         throw new Error("No support for DSE");
+    }
+
+    // TODO: For now we do not allow to filter for specific Scylla versions
+    if (testVersion === "scylla") {
+        if (helper.getServerInfo().isScylla) {
+            func.apply(this, args);
+        }
+        return;
     }
 
     let invokeFunction = helper.versionCompare(

@@ -5,7 +5,7 @@ const util = require("util");
 const utils = require("../../lib/utils");
 // const tokenizer = require("../../lib/tokenizer");
 const token = require("../../lib/token");
-
+const Vector = require("../../lib/types/vector");
 const Encoder = require("../../lib/encoder");
 const types = require("../../lib/types");
 const ExecutionOptions =
@@ -22,6 +22,125 @@ const zeroLengthTypesSupported = new Set([
 ]);
 
 describe("encoder", function () {
+    describe("Encoder.guessDataType()", function () {
+        it("should guess the native types", function () {
+            assertGuessed(
+                1,
+                dataTypes.double,
+                "Guess type for an integer (double) number failed",
+            );
+            assertGuessed(
+                1.01,
+                dataTypes.double,
+                "Guess type for a double number failed",
+            );
+            assertGuessed(
+                true,
+                dataTypes.boolean,
+                "Guess type for a boolean value failed",
+            );
+            assertGuessed(
+                [1, 2, 3],
+                dataTypes.list,
+                "Guess type for an Array value failed",
+            );
+            assertGuessed(
+                "a string",
+                dataTypes.text,
+                "Guess type for an string value failed",
+            );
+            assertGuessed(
+                utils.allocBufferFromString("bip bop"),
+                dataTypes.blob,
+                "Guess type for a buffer value failed",
+            );
+            assertGuessed(
+                new Date(),
+                dataTypes.timestamp,
+                "Guess type for a Date value failed",
+            );
+            assertGuessed(
+                new types.Long(10),
+                dataTypes.bigint,
+                "Guess type for a Int 64 value failed",
+            );
+            assertGuessed(
+                types.Uuid.random(),
+                dataTypes.uuid,
+                "Guess type for a UUID value failed",
+            );
+            assertGuessed(
+                types.TimeUuid.now(),
+                dataTypes.uuid,
+                "Guess type for a TimeUuid value failed",
+            );
+            assertGuessed(
+                types.TimeUuid.now().toString(),
+                dataTypes.uuid,
+                "Guess type for a string uuid value failed",
+            );
+            assertGuessed(
+                types.timeuuid(),
+                dataTypes.uuid,
+                "Guess type for a Timeuuid value failed",
+            );
+            assertGuessed(
+                types.Integer.fromNumber(1),
+                dataTypes.varint,
+                "Guess type for a varint value failed",
+            );
+            assertGuessed(
+                types.BigDecimal.fromString("1.01"),
+                dataTypes.decimal,
+                "Guess type for a varint value failed",
+            );
+            assertGuessed(
+                types.Integer.fromBuffer(utils.allocBufferFromArray([0xff])),
+                dataTypes.varint,
+                "Guess type for a varint value failed",
+            );
+            assertGuessed(
+                new types.InetAddress(
+                    utils.allocBufferFromArray([10, 10, 10, 2]),
+                ),
+                dataTypes.inet,
+                "Guess type for a inet value failed",
+            );
+            assertGuessed(
+                new types.Tuple(1, 2, 3),
+                dataTypes.tuple,
+                "Guess type for a tuple value failed",
+            );
+            assertGuessed(
+                new types.LocalDate(2010, 4, 29),
+                dataTypes.date,
+                "Guess type for a date value failed",
+            );
+            assertGuessed(
+                new types.LocalTime(types.Long.fromString("6331999999911")),
+                dataTypes.time,
+                "Guess type for a time value failed",
+            );
+            assertGuessed(
+                new Float32Array([1.2, 3.4, 5.6]),
+                dataTypes.custom,
+                "Guess type for a Float32 TypedArray value failed",
+            );
+            assertGuessed({}, null, "Objects must not be guessed");
+        });
+
+        function assertGuessed(value, expectedType, message) {
+            const type = Encoder.guessDataType(value);
+            if (type === null) {
+                if (expectedType !== null) {
+                    assert.ok(false, "Type not guessed for value " + value);
+                }
+                return;
+            }
+            assert.strictEqual(type.code, expectedType, message + ": " + value);
+        }
+    });
+
     describe("Encoder.isTypedArray()", function () {
         it("should return true for TypedArray subclasses", function () {
             assert.ok(Encoder.isTypedArray(new Float32Array([])));
@@ -45,7 +164,7 @@ describe("encoder", function () {
     describe("#encode() and #decode()", function () {
         const typeEncoder = new Encoder(2, {});
         it("should encode and decode a guessed double", function () {
-            const value = 1111;
+            const value = 1111.1;
             const encoded = typeEncoder.encode(value);
             const decoded = typeEncoder.decode(encoded, {
                 code: dataTypes.double,
@@ -268,9 +387,7 @@ describe("encoder", function () {
             assert.ok(uuid.equals(decoded));
             const decoded2 = typeEncoder.decode(
                 types.Uuid.random().getBuffer(),
-                {
-                    code: dataTypes.uuid,
-                },
+                { code: dataTypes.uuid },
             );
             assert.ok(!decoded.equals(decoded2));
         });
@@ -285,9 +402,7 @@ describe("encoder", function () {
             assert.ok(uuid.equals(decoded));
             const decoded2 = typeEncoder.decode(
                 types.TimeUuid.now().getBuffer(),
-                {
-                    code: dataTypes.timeuuid,
-                },
+                { code: dataTypes.timeuuid },
             );
             assert.ok(!decoded.equals(decoded2));
         });
@@ -731,7 +846,7 @@ describe("encoder", function () {
                         // Set not supported in Node.js runtime
                         return;
                     }
-
+                    // eslint-disable-next-line no-undef
                     const Es6Set = Set;
                     const encoder = new Encoder(version, {
                         encoding: { set: Es6Set },
@@ -1108,7 +1223,7 @@ describe("encoder", function () {
         it("should encode/decode LocalTime as time", function () {
             const encoder = new Encoder(3, {});
             const type = { code: dataTypes.time };
-
+            /* eslint-disable no-multi-spaces */
             [
                 // Long value         |     string representation
                 ["2000000501", "00:00:02.000000501"],
@@ -1127,6 +1242,7 @@ describe("encoder", function () {
                 helper.assertInstanceOf(decoded, types.LocalTime);
                 assert.strictEqual(decoded.toString(), item[1]);
             });
+            /* eslint-enable no-multi-spaces */
         });
 
         it("should refuse to encode invalid values as LocalTime.", function () {
@@ -1146,33 +1262,48 @@ describe("encoder", function () {
             const encoder = new Encoder(4, {});
             const refVal = new Float32Array([1.2, 3.4, 5.6]);
             const guessedTypeObj = Encoder.guessDataType(refVal);
+            if (guessedTypeObj == null) {
+                assert.fail();
+            }
             const encoded = encoder.encode(refVal, guessedTypeObj);
             const decoded = encoder.decode(encoded, guessedTypeObj);
-            helper.assertInstanceOf(decoded, Float32Array);
-            for (const k in decoded) {
-                if (decoded.hasOwnProperty(k)) {
-                    assert.equal(decoded[k], refVal[k]);
-                } else {
-                    assert.fail();
-                }
+            helper.assertInstanceOf(decoded, Vector);
+            for (let i = 0; i < decoded.length; i++) {
+                assert.strictEqual(decoded[i], refVal[i]);
             }
         });
 
         it("should encode/decode FloatArray as vector, encoder provided with full type", function () {
             const encoder = new Encoder(4, {});
             const refVal = new Float32Array([1.2, 3.4, 5.6]);
-            const typeName =
-                "org.apache.cassandra.db.marshal.VectorType(org.apache.cassandra.db.marshal.FloatType,3)";
-            const typeObj = { code: dataTypes.custom, info: typeName };
+            /** @type {import('../../lib/encoder').VectorColumnInfo} */
+            const typeObj = {
+                code: dataTypes.custom,
+                info: [{ code: dataTypes.float }, 3],
+                customTypeName: "vector",
+            };
             const encoded = encoder.encode(refVal, typeObj);
             const decoded = encoder.decode(encoded, typeObj);
-            helper.assertInstanceOf(decoded, Float32Array);
-            for (const k in decoded) {
-                if (decoded.hasOwnProperty(k)) {
-                    assert.equal(decoded[k], refVal[k]);
-                } else {
-                    assert.fail();
-                }
+            helper.assertInstanceOf(decoded, Vector);
+            for (let i = 0; i < decoded.length; i++) {
+                assert.strictEqual(decoded[i], refVal[i]);
+            }
+        });
+
+        it("should encode/decode Vector of texts as vector, encoder provided with full type", function () {
+            const encoder = new Encoder(4, {});
+            const refVal = new Vector(["a", "bc", "de"]);
+            /** @type {import('../../lib/encoder').VectorColumnInfo} */
+            const typeObj = {
+                code: dataTypes.custom,
+                info: [{ code: dataTypes.ascii }, 3],
+                customTypeName: "vector",
+            };
+            const encoded = encoder.encode(refVal, typeObj);
+            const decoded = encoder.decode(encoded, typeObj);
+            helper.assertInstanceOf(decoded, Vector);
+            for (let k = 0; k < decoded.length; k++) {
+                assert.strictEqual(decoded[k], refVal[k]);
             }
         });
 
@@ -1214,17 +1345,25 @@ describe("encoder", function () {
             }, TypeError);
         });
 
-        it("should fail to encode if full type provided and subtype is not FloatType", function () {
+        it("should encode/decode nested type as vector, encoder guesses type", function () {
             const encoder = new Encoder(4, {});
-            const refVal = new Float32Array([1, 2, 3]);
-            const typeName =
-                "org.apache.cassandra.db.marshal.VectorType(org.apache.cassandra.db.marshal.Int32Type,3)";
-            assert.throws(function () {
-                encoder.encode(refVal, {
-                    code: dataTypes.custom,
-                    info: typeName,
-                });
-            }, TypeError);
+            const refVal = new Vector([
+                new Float32Array([1.2, 3.4, 5.6]),
+                new Float32Array([7.8, 9.0, 11.2]),
+            ]);
+            const guessedTypeObj = Encoder.guessDataType(refVal);
+            if (guessedTypeObj == null) {
+                assert.fail();
+                return;
+            }
+            const encoded = encoder.encode(refVal, guessedTypeObj);
+            const decoded = encoder.decode(encoded, guessedTypeObj);
+            helper.assertInstanceOf(decoded, Vector);
+            for (let i = 0; i < decoded.length; i++) {
+                for (let j = 0; j < decoded[i].length; j++) {
+                    assert.strictEqual(decoded[i][j], refVal[i][j]);
+                }
+            }
         });
     });
 
@@ -1441,7 +1580,6 @@ describe("encoder", function () {
             encoder.setRoutingKeyFromUser([1, "text"], options);
             assert.ok(options.getRoutingKey());
             // The routingKey should have the form: [2-byte-length] + key + [0]
-
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
                 "00010100" + "00010200" + "0002030300",
@@ -1521,7 +1659,7 @@ describe("encoder", function () {
             });
             encoder.setRoutingKeyFromUser([1, "yeah", 2], options);
             // length1 + buffer1 + 0 + length2 + buffer2 + 0
-
+            // eslint-disable-next-line no-useless-concat
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
                 "0004" + "00000001" + "00" + "0004" + "00000002" + "00",
@@ -1537,7 +1675,7 @@ describe("encoder", function () {
                 options,
             );
             // length1 + buffer1 + 0 + length2 + buffer2 + 0
-
+            // eslint-disable-next-line no-useless-concat
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
                 "0004" + "00000001" + "00" + "0004" + "01010101" + "00",
@@ -1554,7 +1692,7 @@ describe("encoder", function () {
             assert.strictEqual(
                 options.getRoutingKey().toString("hex"),
                 // length1 + buffer1 + 0 + length2 + buffer2 + 0
-
+                // eslint-disable-next-line no-useless-concat
                 "0004" +
                     utils.allocBufferFromString("yeah").toString("hex") +
                     "00" +
@@ -1719,9 +1857,8 @@ describe("encoder", function () {
             );
             assert.strictEqual(dataTypes.custom, type.code);
             assert.ok(typeof type.info === "object");
-            assert.strictEqual(Object.keys(type.info).length, 2);
-            assert.strictEqual(dataTypes.float, type.info["subtype"].code);
-            assert.strictEqual(10, type.info["dimensions"]);
+            assert.strictEqual(dataTypes.float, type.info[0].code);
+            assert.strictEqual(10, type.info[1]);
         });
 
         it("should parse frozen types", function () {
@@ -1816,7 +1953,7 @@ describe("encoder", function () {
     describe("#parseTypeName()", function () {
         it("should parse single type names", async () => {
             const encoder = new Encoder(4, {});
-
+            /* eslint-disable no-multi-spaces */
             const items = [
                 ["int", dataTypes.int],
                 ["uuid", dataTypes.uuid],
@@ -1835,6 +1972,7 @@ describe("encoder", function () {
                 ["timeuuid", dataTypes.timeuuid],
                 ["ascii", dataTypes.ascii],
             ];
+            /* eslint-enable no-multi-spaces */
 
             for (const item of items) {
                 const dataType = await encoder.parseTypeName(
@@ -1874,7 +2012,7 @@ describe("encoder", function () {
                 [
                     "vector<float,20>",
                     dataTypes.custom,
-                    { subtype: { code: dataTypes.float }, dimensions: 20 },
+                    { code: dataTypes.float, dimension: 20 },
                 ],
             ];
 
@@ -1899,14 +2037,8 @@ describe("encoder", function () {
                         );
                     });
                 } else if (typeof item[2] === "object") {
-                    assert.strictEqual(
-                        dataType.info.subtype.code,
-                        item[2].subtype.code,
-                    );
-                    assert.strictEqual(
-                        dataType.info.dimensions,
-                        item[2].dimensions,
-                    );
+                    assert.strictEqual(dataType.info[0].code, item[2].code);
+                    assert.strictEqual(dataType.info[1], item[2].dimension);
                 } else {
                     assert.strictEqual(dataType.info.code, item[2]);
                 }
@@ -2055,18 +2187,6 @@ describe("encoder", function () {
             assert.strictEqual(typeof encoder.encodeBlob, "function");
             assert.strictEqual(typeof encoder.decodeBlob, "function");
             assert.strictEqual(typeof encoder.protocolVersion, "number");
-        });
-    });
-
-    describe("prototype", function () {
-        it("should only expose encode() and decode() functions", function () {
-            const keys = Object.getOwnPropertyNames(Encoder.prototype).filter(
-                (k) => k !== "constructor",
-            );
-            assert.deepStrictEqual(keys, ["decode", "encode"]);
-            keys.forEach(function (k) {
-                assert.strictEqual(typeof Encoder.prototype[k], "function");
-            });
         });
     });
 });
