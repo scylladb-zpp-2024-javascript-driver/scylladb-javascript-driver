@@ -604,7 +604,7 @@ const helper = {
 
     /**
      * Version dependent it() method for mocha test case
-     * @param {String} testVersion Minimum version of Cassandra needed for this test
+     * @param {String} testVersion Minimum version of Cassandra/Scylla needed for this test
      * @param {String} testCase Test case name
      * @param {Function} func
      */
@@ -613,13 +613,20 @@ const helper = {
     },
 
     /**
-     * Version dependent describe() method for mocha test case
-     * @param {String} testVersion Minimum version of DSE/Cassandra needed for this test
+     * Version dependent describe() method for mocha test case.
+     * Allows to define one or more versions to run the tests against.
+     * If the runner matches multiple of the provided versions, the tests may be run multiple times.
+     * @param {String|Array<String>} testVersion Minimum version of Cassandra/Scylla needed for this test
      * @param {String} title Title of the describe section.
      * @param {Function} func
      */
     vdescribe: function (testVersion, title, func) {
-        executeIfVersion(testVersion, describe, [title, func]);
+        if (!Array.isArray(testVersion)) {
+            testVersion = [testVersion];
+        }
+        testVersion.forEach((version) =>
+            executeIfVersion(version, describe, [title, func]),
+        );
     },
 
     /**
@@ -1994,13 +2001,21 @@ FallthroughRetryPolicy.prototype.onRequestError =
 
 /**
  * Conditionally executes func if testVersion is <= the current cassandra version.
- * @param {String} testVersion Minimum version of Cassandra needed.
+ * @param {String} testVersion Minimum version of Cassandra/Scylla needed.
  * @param {Function} func The function to conditionally execute.
  * @param {Array} args the arguments to apply to the function.
  */
 function executeIfVersion(testVersion, func, args) {
     if (testVersion.startsWith("dse-")) {
         throw new Error("No support for DSE");
+    }
+
+    // TODO: For now we do not allow to filter for specific Scylla versions
+    if (testVersion === "scylla") {
+        if (helper.getServerInfo().isScylla) {
+            func.apply(this, args);
+        }
+        return;
     }
 
     let invokeFunction = helper.versionCompare(
