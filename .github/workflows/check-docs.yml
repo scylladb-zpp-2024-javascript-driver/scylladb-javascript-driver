@@ -2,7 +2,11 @@ name: Compile js-doc and build mdBook
 
 on:
   push:
-
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - '**'
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
