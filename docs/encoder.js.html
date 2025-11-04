@@ -41,7 +41,22 @@ const MutableLong = require("./types/mutable-long");
 const utils = require("./utils");
 const token = require("./token");
 const { DateRange } = require("./datastax/search");
+const Vector = require("./types/vector");
 const { throwNotSupported } = require("./new-utils");
+
+// TODO: Those type definitions do not work with jsdoc
+// /**
+//  * @typedef {(singleTypeNames&lt;keyof singleTypeNames>| types.dataTypes.duration | types.dataTypes.text)} SingleTypeCodes
+//  * @typedef {{code : SingleTypeCodes, info?: null, options? : {frozen?:boolean, reversed?:boolean} }} SingleColumnInfo
+//  * @typedef {{code : (types.dataTypes.map), info : [ColumnInfo, ColumnInfo], options?: {frozen?: Boolean, reversed?: Boolean}}} MapColumnInfo
+//  * @typedef {{code : (types.dataTypes.tuple), info : Array&lt;ColumnInfo>, options?: {frozen?: Boolean, reversed?: Boolean}}} TupleColumnInfo
+//  * @typedef {{code : (types.dataTypes.tuple | types.dataTypes.list)}} TupleListColumnInfoWithoutSubtype TODO: guessDataType can return null on tuple/list info, why?
+//  * @typedef {{code : (types.dataTypes.list | types.dataTypes.set), info : ColumnInfo, options?: {frozen?: Boolean, reversed?: Boolean}}} ListSetColumnInfo
+//  * @typedef {{code : (types.dataTypes.udt), info : {name : string, fields : Array&lt;{name : string, type : ColumnInfo}>}, options? : {frozen?: Boolean, reversed?: Boolean}}} UdtColumnInfo
+//  * @typedef {{code : (types.dataTypes.custom), customTypeName : ('vector'), info : [ColumnInfo, number], options? : {frozen?:boolean, reversed?:boolean}}} VectorColumnInfo
+//  * @typedef {{code : (types.dataTypes.custom), info : string, options? : {frozen?:boolean, reversed?:boolean}}} OtherCustomColumnInfo
+//  * @typedef {SingleColumnInfo | MapColumnInfo | TupleColumnInfo | ListSetColumnInfo | VectorColumnInfo | OtherCustomColumnInfo | UdtColumnInfo | TupleListColumnInfoWithoutSubtype} ColumnInfo If this is a simple type, info is null; if this is a collection type with a simple subtype, info is a string, if this is a nested collection type, info is a ColumnInfo object
+//  */
 
 const uuidRegex =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -107,7 +122,7 @@ const singleTypeNames = Object.freeze({
     "org.apache.cassandra.db.marshal.IntegerType": dataTypes.varint,
     "org.apache.cassandra.db.marshal.CounterColumnType": dataTypes.counter,
 });
-const singleTypeNamesByDataType = invertObject(singleTypeNames);
+
 const singleFqTypeNamesLength = Object.keys(singleTypeNames).reduce(function (
     previous,
     current,
@@ -159,66 +174,92 @@ class Encoder {
     /**
      * Try to guess the Cassandra type to be stored, based on the javascript value type
      * @param value
-     * @returns {{code: number, info: object}|null}
+     * @returns {ColumnInfo | null}
      * @ignore
      * @internal
      */
     static guessDataType(value) {
-        let code = null;
-        let info = null;
         const esTypeName = typeof value;
         if (esTypeName === "number") {
-            code = dataTypes.double;
+            return { code: dataTypes.double };
         } else if (esTypeName === "string") {
-            code = dataTypes.text;
             if (value.length === 36 &amp;&amp; uuidRegex.test(value)) {
-                code = dataTypes.uuid;
+                return { code: dataTypes.uuid };
             }
+            return { code: dataTypes.text };
         } else if (esTypeName === "boolean") {
-            code = dataTypes.boolean;
+            return { code: dataTypes.boolean };
         } else if (value instanceof Buffer) {
-            code = dataTypes.blob;
+            return { code: dataTypes.blob };
         } else if (value instanceof Date) {
-            code = dataTypes.timestamp;
+            return { code: dataTypes.timestamp };
         } else if (value instanceof Long) {
-            code = dataTypes.bigint;
+            return { code: dataTypes.bigint };
         } else if (value instanceof Integer) {
-            code = dataTypes.varint;
+            return { code: dataTypes.varint };
         } else if (value instanceof BigDecimal) {
-            code = dataTypes.decimal;
+            return { code: dataTypes.decimal };
         } else if (value instanceof types.Uuid) {
-            code = dataTypes.uuid;
+            return { code: dataTypes.uuid };
         } else if (value instanceof types.InetAddress) {
-            code = dataTypes.inet;
+            return { code: dataTypes.inet };
         } else if (value instanceof types.Tuple) {
-            code = dataTypes.tuple;
+            return { code: dataTypes.tuple };
         } else if (value instanceof types.LocalDate) {
-            code = dataTypes.date;
+            return { code: dataTypes.date };
         } else if (value instanceof types.LocalTime) {
-            code = dataTypes.time;
+            return { code: dataTypes.time };
         } else if (value instanceof types.Duration) {
-            code = dataTypes.custom;
-            info = customTypeNames.duration;
+            return {
+                code: dataTypes.custom,
+                info: customTypeNames.duration,
+            };
         }
 
         // Map JS TypedArrays onto vectors
-        else if (Encoder.isTypedArray(value)) {
-            code = dataTypes.custom;
-            // TODO: another area that we have to generalize if we ever need to support vector subtypes other than float
-            info = buildParameterizedCustomType(customTypeNames.vector, [
-                singleTypeNamesByDataType[dataTypes.float],
-                value.length,
-            ]);
+        else if (value instanceof types.Vector) {
+            if (value &amp;&amp; value.length > 0) {
+                if (value instanceof Float32Array) {
+                    return {
+                        code: dataTypes.custom,
+                        customTypeName: "vector",
+                        info: [{ code: dataTypes.float }, value.length],
+                    };
+                }
+
+                /** @type {ColumnInfo?} */
+                let subtypeColumnInfo = null;
+                // try to fetch the subtype from the Vector, or else guess
+                if (value.subtype) {
+                    try {
+                        subtypeColumnInfo = dataTypes.getByName(value.subtype);
+                    } catch (TypeError) {
+                        // ignore
+                    }
+                }
+                if (subtypeColumnInfo == null) {
+                    subtypeColumnInfo = this.guessDataType(value[0]);
+                }
+                if (subtypeColumnInfo != null) {
+                    return {
+                        code: dataTypes.custom,
+                        customTypeName: "vector",
+                        info: [subtypeColumnInfo, value.length],
+                    };
+                }
+                throw new TypeError(
+                    "Cannot guess subtype from element " + value[0],
+                );
+            } else {
+                throw new TypeError("Cannot guess subtype of empty vector");
+            }
         } else if (Array.isArray(value)) {
-            code = dataTypes.list;
+            return { code: dataTypes.list };
         } else if (value instanceof DateRange) {
             throwNotSupported("encoding DateRange");
         }
 
-        if (code === null) {
-            return null;
-        }
-        return { code: code, info: info };
+        return null;
     }
     static isTypedArray(arg) {
         // The TypedArray superclass isn't available directly so to detect an instance of a TypedArray
@@ -231,9 +272,7 @@ class Encoder {
      *
      * This is part of an &lt;b>experimental&lt;/b> API, this can be changed future releases.
      * @param {Buffer} buffer Raw buffer to be decoded.
-     * @param {Object} type An object containing the data type `code` and `info`.
-     * @param {Number} type.code Type code.
-     * @param {Object} [type.info] Additional information on the type for complex / nested types.
+     * @param {ColumnInfo} type
      */
     decode(buffer, type) {
         if (
@@ -249,7 +288,7 @@ class Encoder {
             throw new Error("Unknown data type: " + type.code);
         }
 
-        return decoder.call(this, buffer, type.info);
+        return decoder.call(this, buffer, type);
     }
     /**
      * Encodes Javascript types into Buffer according to the Cassandra protocol.
@@ -298,24 +337,20 @@ class Encoder {
             return value;
         }
 
-        /** @type {{code: Number, info: object}} */
-        let type = {
-            code: null,
-            info: null,
-        };
+        /** @type {ColumnInfo | null} */
+        let type = null;
 
         if (typeInfo) {
             if (typeof typeInfo === "number") {
-                type.code = typeInfo;
+                type = {
+                    code: typeInfo,
+                };
             } else if (typeof typeInfo === "string") {
                 type = dataTypes.getByName(typeInfo);
+            } else if (typeof typeInfo.code === "number") {
+                type = typeInfo;
             }
-
-            if (typeof typeInfo.code === "number") {
-                type.code = typeInfo.code;
-                type.info = typeInfo.info;
-            }
-            if (typeof type.code !== "number") {
+            if (type == null || typeof type.code !== "number") {
                 throw new TypeError(
                     "Type information not valid, only String and Number values are valid hints",
                 );
@@ -337,7 +372,7 @@ class Encoder {
             throw new Error("Type not supported " + type.code);
         }
 
-        return encoder.call(this, value, type.info);
+        return encoder.call(this, value, type);
     }
 }
 
@@ -381,24 +416,37 @@ function defineInstanceMembers() {
     this.decodeBlob = function (bytes) {
         return this.handleBuffer(bytes);
     };
-    this.decodeCustom = function (bytes, typeName) {
+
+    /**
+     *
+     * @param {Buffer} bytes
+     * @param {OtherCustomColumnInfo | VectorColumnInfo} columnInfo
+     */
+    this.decodeCustom = function (bytes, columnInfo) {
         // Make sure we actually have something to process in typeName before we go any further
-        if (!typeName || typeName.length === 0) {
+        if (!columnInfo) {
             return this.handleBuffer(bytes);
         }
 
         // Special handling for vector custom types (since they have args)
-        if (typeName.startsWith(customTypeNames.vector)) {
-            return this.decodeVector(
-                bytes,
-                this.parseVectorTypeArgs(
-                    typeName,
-                    customTypeNames.vector,
-                    this.parseFqTypeName,
-                ),
-            );
+        if (
+            "customTypeName" in columnInfo &amp;&amp;
+            columnInfo.customTypeName === "vector"
+        ) {
+            return this.decodeVector(bytes, columnInfo);
         }
-        const handler = customDecoders[typeName];
+
+        if (
+            typeof columnInfo.info === "string" &amp;&amp;
+            columnInfo.info.startsWith(customTypeNames.vector)
+        ) {
+            const vectorColumnInfo = /** @type {VectorColumnInfo} */ (
+                this.parseFqTypeName(columnInfo.info)
+            );
+            return this.decodeVector(bytes, vectorColumnInfo);
+        }
+
+        const handler = customDecoders[columnInfo.info];
         if (handler) {
             return handler.call(this, bytes);
         }
@@ -486,7 +534,8 @@ function defineInstanceMembers() {
     /*
      * Reads a list from bytes
      */
-    this.decodeList = function (bytes, subtype) {
+    this.decodeList = function (bytes, columnInfo) {
+        const subtype = columnInfo.info;
         const totalItems = this.decodeCollectionLength(bytes, 0);
         let offset = this.collectionLengthSize;
         const list = new Array(totalItems);
@@ -506,8 +555,8 @@ function defineInstanceMembers() {
     /*
      * Reads a Set from bytes
      */
-    this.decodeSet = function (bytes, subtype) {
-        const arr = this.decodeList(bytes, subtype);
+    this.decodeSet = function (bytes, columnInfo) {
+        const arr = this.decodeList(bytes, columnInfo);
         if (this.encodingOptions.set) {
             const setConstructor = this.encodingOptions.set;
             return new setConstructor(arr);
@@ -517,7 +566,8 @@ function defineInstanceMembers() {
     /*
      * Reads a map (key / value) from bytes
      */
-    this.decodeMap = function (bytes, subtypes) {
+    this.decodeMap = function (bytes, columnInfo) {
+        const subtypes = columnInfo.info;
         let map;
         const totalItems = this.decodeCollectionLength(bytes, 0);
         let offset = this.collectionLengthSize;
@@ -569,10 +619,11 @@ function defineInstanceMembers() {
     /**
      * Decodes a user defined type into an object
      * @param {Buffer} bytes
-     * @param {{fields: Array}} udtInfo
+     * @param {UdtColumnInfo} columnInfo
      * @private
      */
-    this.decodeUdt = function (bytes, udtInfo) {
+    this.decodeUdt = function (bytes, columnInfo) {
+        const udtInfo = columnInfo.info;
         const result = {};
         let offset = 0;
         for (
@@ -598,7 +649,8 @@ function defineInstanceMembers() {
         return result;
     };
 
-    this.decodeTuple = function (bytes, tupleInfo) {
+    this.decodeTuple = function (bytes, columnInfo) {
+        const tupleInfo = columnInfo.info;
         const elements = new Array(tupleInfo.length);
         let offset = 0;
 
@@ -958,25 +1010,35 @@ function defineInstanceMembers() {
         }
         return value;
     };
-    this.encodeCustom = function (value, customTypeName) {
-        // Special handling for vector custom types (since they have args)
-        if (customTypeName.startsWith(customTypeNames.vector)) {
-            return this.encodeVector(
-                value,
-                this.parseVectorTypeArgs(
-                    customTypeName,
-                    customTypeNames.vector,
-                    this.parseFqTypeName,
-                ),
-            );
+
+    /**
+     *
+     * @param {any} value
+     * @param {OtherCustomColumnInfo | VectorColumnInfo} columnInfo
+     */
+    this.encodeCustom = function (value, columnInfo) {
+        if (
+            "customTypeName" in columnInfo &amp;&amp;
+            columnInfo.customTypeName === "vector"
+        ) {
+            return this.encodeVector(value, columnInfo);
         }
-        const handler = customEncoders[customTypeName];
+
+        if (
+            typeof columnInfo.info === "string" &amp;&amp;
+            columnInfo.info.startsWith(customTypeNames.vector)
+        ) {
+            const vectorColumnInfo = /** @type {VectorColumnInfo} */ (
+                this.parseFqTypeName(columnInfo.info)
+            );
+            return this.encodeVector(value, vectorColumnInfo);
+        }
+
+        const handler = customEncoders[columnInfo.info];
         if (handler) {
             return handler.call(this, value);
         }
-        throw new TypeError(
-            "No encoding handler found for type " + customTypeName,
-        );
+        throw new TypeError("No encoding handler found for type " + columnInfo);
     };
     /**
      * @param {Boolean} value
@@ -1015,7 +1077,7 @@ function defineInstanceMembers() {
         return buf;
     };
     /**
-     * @param {Number|String} value
+     * @param {Number} value
      * @private
      */
     this.encodeTinyint = function (value) {
@@ -1028,7 +1090,8 @@ function defineInstanceMembers() {
         buf.writeInt8(value, 0);
         return buf;
     };
-    this.encodeList = function (value, subtype) {
+    this.encodeList = function (value, columnInfo) {
+        const subtype = columnInfo.info;
         if (!Array.isArray(value)) {
             throw new TypeError(
                 "Not a valid list value, expected Array obtained " +
@@ -1059,7 +1122,7 @@ function defineInstanceMembers() {
         }
         return Buffer.concat(parts);
     };
-    this.encodeSet = function (value, subtype) {
+    this.encodeSet = function (value, columnInfo) {
         if (
             this.encodingOptions.set &amp;&amp;
             value instanceof this.encodingOptions.set
@@ -1068,18 +1131,19 @@ function defineInstanceMembers() {
             value.forEach(function (x) {
                 arr.push(x);
             });
-            return this.encodeList(arr, subtype);
+            return this.encodeList(arr, columnInfo);
         }
-        return this.encodeList(value, subtype);
+        return this.encodeList(value, columnInfo);
     };
     /**
      * Serializes a map into a Buffer
      * @param value
-     * @param {Array} [subtypes]
+     * @param {MapColumnInfo} columnInfo
      * @returns {Buffer}
      * @private
      */
-    this.encodeMap = function (value, subtypes) {
+    this.encodeMap = function (value, columnInfo) {
+        const subtypes = columnInfo.info;
         const parts = [];
         let propCounter = 0;
         let keySubtype = null;
@@ -1139,7 +1203,13 @@ function defineInstanceMembers() {
         parts.unshift(this.getLengthBuffer(propCounter));
         return Buffer.concat(parts);
     };
-    this.encodeUdt = function (value, udtInfo) {
+    /**
+     *
+     * @param {any} value
+     * @param {UdtColumnInfo} columnInfo
+     */
+    this.encodeUdt = function (value, columnInfo) {
+        const udtInfo = columnInfo.info;
         const parts = [];
         let totalLength = 0;
         for (let i = 0; i &lt; udtInfo.fields.length; i++) {
@@ -1163,7 +1233,13 @@ function defineInstanceMembers() {
         }
         return Buffer.concat(parts, totalLength);
     };
-    this.encodeTuple = function (value, tupleInfo) {
+    /**
+     *
+     * @param {any} value
+     * @param {TupleColumnInfo} columnInfo
+     */
+    this.encodeTuple = function (value, columnInfo) {
+        const tupleInfo = columnInfo.info;
         const parts = [];
         let totalLength = 0;
         const length = Math.min(tupleInfo.length, value.length);
@@ -1194,82 +1270,129 @@ function defineInstanceMembers() {
         return Buffer.concat(parts, totalLength);
     };
 
+    /**
+     *
+     * @param {Buffer} buffer
+     * @param {VectorColumnInfo} params
+     * @returns {Vector}
+     */
     this.decodeVector = function (buffer, params) {
-        const subtype = params["subtype"];
-        const dimensions = params["dimensions"];
-        const elemLength = 4; // TODO: figure this out based on the subtype
-        const expectedLength = buffer.length / elemLength;
-        if (elemLength * dimensions !== buffer.length) {
-            throw new TypeError(
-                `Expected buffer of subtype ${subtype} with dimensions ${dimensions} to be of size ${expectedLength}, observed size ${buffer.length}`,
-            );
-        }
+        const subtype = params.info[0];
+        const dimension = params.info[1];
+        const elemLength = this.serializationSizeIfFixed(subtype);
+
         const rv = [];
-        for (let i = 0; i &lt; dimensions; i++) {
-            let offset = i * elemLength;
-            rv[i] = this.decode(
-                buffer.slice(offset, offset + elemLength),
-                subtype,
-            );
+        let offset = 0;
+        for (let i = 0; i &lt; dimension; i++) {
+            if (elemLength === -1) {
+                // var sized
+                const [size, bytesRead] = utils.VIntCoding.uvintUnpack(
+                    buffer.subarray(offset),
+                );
+                offset += bytesRead;
+                if (offset + size > buffer.length) {
+                    throw new TypeError(
+                        "Not enough bytes to decode the vector",
+                    );
+                }
+                rv[i] = this.decode(
+                    buffer.subarray(offset, offset + size),
+                    subtype,
+                );
+                offset += size;
+            } else {
+                if (offset + elemLength > buffer.length) {
+                    throw new TypeError(
+                        "Not enough bytes to decode the vector",
+                    );
+                }
+                rv[i] = this.decode(
+                    buffer.subarray(offset, offset + elemLength),
+                    subtype,
+                );
+                offset += elemLength;
+            }
         }
-        return new Float32Array(rv);
+        if (offset !== buffer.length) {
+            throw new TypeError("Extra bytes found after decoding the vector");
+        }
+        const typeInfo = types.getDataTypeNameByCode(subtype);
+        return new Vector(rv, typeInfo);
     };
 
     /**
-     * @param {CqlVector} value
-     * @param {Object} params
+     * @param {ColumnInfo} cqlType
+     * @returns {Number}
+     */
+    this.serializationSizeIfFixed = function (cqlType) {
+        switch (cqlType.code) {
+            case dataTypes.bigint:
+                return 8;
+            case dataTypes.boolean:
+                return 1;
+            case dataTypes.timestamp:
+                return 8;
+            case dataTypes.double:
+                return 8;
+            case dataTypes.float:
+                return 4;
+            case dataTypes.int:
+                return 4;
+            case dataTypes.timeuuid:
+                return 16;
+            case dataTypes.uuid:
+                return 16;
+            case dataTypes.custom:
+                if (
+                    "customTypeName" in cqlType &amp;&amp;
+                    cqlType.customTypeName === "vector"
+                ) {
+                    const subtypeSerialSize = this.serializationSizeIfFixed(
+                        cqlType.info[0],
+                    );
+                    if (subtypeSerialSize === -1) {
+                        return -1;
+                    }
+                    return subtypeSerialSize * cqlType.info[1];
+                }
+                return -1;
+            default:
+                return -1;
+        }
+    };
+    /**
+     * @param {Vector} value
+     * @param {VectorColumnInfo} params
+     * @returns {Buffer}
      */
     this.encodeVector = function (value, params) {
-        // Evaluate params to encodeVector(), returning the computed subtype
-        function evalParams() {
-            if (!(value instanceof Float32Array)) {
-                throw new TypeError(
-                    "Driver only supports vectors of 4 byte floating point values",
-                );
-            }
-
-            // Perform client-side validation iff we were actually supplied with meaningful type info.  In practice
-            // this will only occur when using prepared statements.
-            if (
-                Object.prototype.hasOwnProperty.call(params, "subtype") &amp;&amp;
-                Object.prototype.hasOwnProperty.call(params, "dimensions")
-            ) {
-                const subtype = params["subtype"];
-                const dimensions = params["dimensions"];
-                if (value.length !== dimensions) {
-                    throw new TypeError(
-                        `Expected vector with ${dimensions} dimensions, observed size of ${value.length}`,
-                    );
-                }
-                if (subtype.code !== dataTypes.float) {
-                    throw new TypeError(
-                        "Driver only supports vectors of 4 byte floating point values",
-                    );
-                }
-                return subtype;
-            }
-
-            return { code: dataTypes.float };
-        }
-
-        if (!Encoder.isTypedArray(value)) {
+        if (!(value instanceof Vector)) {
             throw new TypeError(
-                "Expected TypedArray subclass, obtained " + util.inspect(value),
+                "Driver only supports Vector type when encoding a vector",
             );
         }
+
+        const dimension = params.info[1];
+        if (value.length !== dimension) {
+            throw new TypeError(
+                `Expected vector with ${dimension} dimensions, observed size of ${value.length}`,
+            );
+        }
+
         if (value.length === 0) {
             throw new TypeError("Cannot encode empty array as vector");
         }
 
-        const subtype = evalParams();
-
-        // TypedArrays are _not_ JS arrays so explicitly convert them here before trying to write them
-        // into a buffer
-        const elems = [];
+        const serializationSize = this.serializationSizeIfFixed(params.info[0]);
+        const encoded = [];
         for (const elem of value) {
-            elems.push(this.encode(elem, subtype));
+            const elemBuffer = this.encode(elem, params.info[0]);
+            if (serializationSize === -1) {
+                encoded.push(utils.VIntCoding.uvintPack(elemBuffer.length));
+            }
+            encoded.push(elemBuffer);
         }
-        return Buffer.concat(elems);
+        return Buffer.concat(encoded);
     };
 
     /**
@@ -1278,7 +1401,7 @@ function defineInstanceMembers() {
      * @param {String} typeName
      * @param {String} stringToExclude Leading string indicating this is a vector type (to be excluded when eval'ing args)
      * @param {Function} subtypeResolveFn Function used to resolve subtype type; varies depending on type naming convention
-     * @returns {Object}
+     * @returns {VectorColumnInfo}
      * @internal
      */
     this.parseVectorTypeArgs = function (
@@ -1290,11 +1413,18 @@ function defineInstanceMembers() {
         const argsLength = typeName.length - (stringToExclude.length + 2);
         const params = parseParams(typeName, argsStartIndex, argsLength);
         if (params.length === 2) {
-            return {
-                subtype: subtypeResolveFn(params[0]),
-                dimensions: parseInt(params[1], 10),
+            /** @type {VectorColumnInfo} */
+            const columnInfo = {
+                code: dataTypes.custom,
+                info: [
+                    subtypeResolveFn.bind(this)(params[0].trim()),
+                    parseInt(params[1].trim(), 10),
+                ],
+                customTypeName: "vector",
             };
+            return columnInfo;
         }
+
         throw new TypeError("Not a valid type " + typeName);
     };
 
@@ -1468,8 +1598,10 @@ function defineInstanceMembers() {
      * @param {Number} startIndex
      * @param {Number|null} length
      * @param {Function} udtResolver
-     * @returns {Promise&lt;{err, info, options}>} callback Callback invoked with err and  {{code: number, info: Object|Array|null, options: {frozen: Boolean}}}
+     * @async
+     * @returns {Promise.&lt;ColumnInfo>} callback Callback invoked with err and  {{code: number, info: Object|Array|null, options: {frozen: Boolean}}}
      * @internal
+     * @throws {Error}
      * @ignore
      */
     this.parseTypeName = async function (
@@ -1484,20 +1616,16 @@ function defineInstanceMembers() {
             length = typeName.length;
         }
 
-        const dataType = {
-            code: 0,
-            info: null,
-            options: {
-                frozen: false,
-            },
-        };
-
         let innerTypes;
+        let frozen = false;
 
         if (typeName.indexOf("'", startIndex) === startIndex) {
             // If quoted, this is a custom type.
-            dataType.info = typeName.substr(startIndex + 1, length - 2);
-            return dataType;
+            const info = typeName.substr(startIndex + 1, length - 2);
+            return {
+                code: dataTypes.custom,
+                info: info,
+            };
         }
 
         if (!length) {
@@ -1508,7 +1636,7 @@ function defineInstanceMembers() {
             // Remove the frozen token
             startIndex += cqlNames.frozen.length + 1;
             length -= cqlNames.frozen.length + 2;
-            dataType.options.frozen = true;
+            frozen = true;
         }
 
         if (typeName.indexOf(cqlNames.list, startIndex) === startIndex) {
@@ -1521,15 +1649,20 @@ function defineInstanceMembers() {
                 throw new TypeError("Not a valid type " + typeName);
             }
 
-            dataType.code = dataTypes.list;
-            dataType.info = await this.parseTypeName(
+            const info = await this.parseTypeName(
                 keyspace,
                 innerTypes[0],
                 0,
                 null,
                 udtResolver,
             );
-            return dataType;
+            return {
+                code: dataTypes.list,
+                info: info,
+                options: {
+                    frozen: frozen,
+                },
+            };
         }
 
         if (typeName.indexOf(cqlNames.set, startIndex) === startIndex) {
@@ -1542,15 +1675,20 @@ function defineInstanceMembers() {
                 throw new TypeError("Not a valid type " + typeName);
             }
 
-            dataType.code = dataTypes.set;
-            dataType.info = await this.parseTypeName(
+            const info = await this.parseTypeName(
                 keyspace,
                 innerTypes[0],
                 0,
                 null,
                 udtResolver,
             );
-            return dataType;
+            return {
+                code: dataTypes.set,
+                info: info,
+                options: {
+                    frozen: frozen,
+                },
+            };
         }
 
         if (typeName.indexOf(cqlNames.map, startIndex) === startIndex) {
@@ -1564,13 +1702,18 @@ function defineInstanceMembers() {
                 throw new TypeError("Not a valid type " + typeName);
             }
 
-            dataType.code = dataTypes.map;
-            dataType.info = await this._parseChildTypes(
+            const info = await this._parseChildTypes(
                 keyspace,
                 innerTypes,
                 udtResolver,
             );
-            return dataType;
+            return {
+                code: dataTypes.map,
+                info: info,
+                options: {
+                    frozen: frozen,
+                },
+            };
         }
 
         if (typeName.indexOf(cqlNames.tuple, startIndex) === startIndex) {
@@ -1583,33 +1726,34 @@ function defineInstanceMembers() {
                 throw new TypeError("Not a valid type " + typeName);
             }
 
-            dataType.code = dataTypes.tuple;
-            dataType.info = await this._parseChildTypes(
+            const info = await this._parseChildTypes(
                 keyspace,
                 innerTypes,
                 udtResolver,
             );
-            return dataType;
+            return {
+                code: dataTypes.tuple,
+                info: info,
+                options: { frozen: frozen },
+            };
         }
 
         if (typeName.indexOf(cqlNames.vector, startIndex) === startIndex) {
             // It's a vector, so record the subtype and dimension.
-            dataType.code = dataTypes.custom;
 
             // parseVectorTypeArgs is not an async function but we are.  To keep things simple let's ask the
             // function to just return whatever it finds for an arg and we'll eval it after the fact
-            const params = this.parseVectorTypeArgs(
+            const params = this.parseVectorTypeArgs.bind(this)(
                 typeName,
                 cqlNames.vector,
                 (arg) => arg,
             );
-            params["subtype"] = await this.parseTypeName(
+            params["info"][0] = await this.parseTypeName(
                 keyspace,
-                params["subtype"],
+                params["info"][0],
             );
-            dataType.info = params;
 
-            return dataType;
+            return params;
         }
 
         const quoted = typeName.indexOf('"', startIndex) === startIndex;
@@ -1631,26 +1775,27 @@ function defineInstanceMembers() {
 
         const typeCode = dataTypes[typeName];
         if (typeof typeCode === "number") {
-            dataType.code = typeCode;
-            return dataType;
+            return { code: typeCode, info: null };
         }
 
         if (typeName === cqlNames.duration) {
-            dataType.info = customTypeNames.duration;
-            return dataType;
+            return { code: dataTypes.custom, info: customTypeNames.duration };
         }
 
         if (typeName === cqlNames.empty) {
             // Set as custom
-            dataType.info = "empty";
-            return dataType;
+            return { code: dataTypes.custom, info: "empty" };
         }
 
         const udtInfo = await udtResolver(keyspace, typeName);
         if (udtInfo) {
-            dataType.code = dataTypes.udt;
-            dataType.info = udtInfo;
-            return dataType;
+            return {
+                code: dataTypes.udt,
+                info: udtInfo,
+                options: {
+                    frozen: frozen,
+                },
+            };
         }
 
         throw new TypeError('Not a valid type "' + typeName + '"');
@@ -1676,20 +1821,14 @@ function defineInstanceMembers() {
      * @param {String} typeName
      * @param {Number} [startIndex]
      * @param {Number} [length]
-     * @throws TypeError
-     * @returns {{code: number, info: Object|Array|null, options: {frozen: Boolean, reversed: Boolean}}}
+     * @throws {TypeError}
+     * @returns {ColumnInfo}
      * @internal
      * @ignore
      */
     this.parseFqTypeName = function (typeName, startIndex, length) {
-        const dataType = {
-            code: 0,
-            info: null,
-            options: {
-                reversed: false,
-                frozen: false,
-            },
-        };
+        let frozen = false;
+        let reversed = false;
         startIndex = startIndex || 0;
         let params;
         if (!length) {
@@ -1702,7 +1841,7 @@ function defineInstanceMembers() {
             // Remove the reversed token
             startIndex += complexTypeNames.reversed.length + 1;
             length -= complexTypeNames.reversed.length + 2;
-            dataType.options.reversed = true;
+            reversed = true;
         }
         if (
             length > complexTypeNames.frozen.length &amp;&amp;
@@ -1711,12 +1850,19 @@ function defineInstanceMembers() {
             // Remove the frozen token
             startIndex += complexTypeNames.frozen.length + 1;
             length -= complexTypeNames.frozen.length + 2;
-            dataType.options.frozen = true;
+            frozen = true;
         }
+        const options = {
+            frozen: frozen,
+            reversed: reversed,
+        };
         if (typeName === complexTypeNames.empty) {
             // set as custom
-            dataType.info = "empty";
-            return dataType;
+            return {
+                code: dataTypes.custom,
+                info: "empty",
+                options: options,
+            };
         }
         // Quick check if its a single type
         if (length &lt;= singleFqTypeNamesLength) {
@@ -1725,8 +1871,11 @@ function defineInstanceMembers() {
             }
             const typeCode = singleTypeNames[typeName];
             if (typeof typeCode === "number") {
-                dataType.code = typeCode;
-                return dataType;
+                return { code: typeCode, info: null, options: options };
+            }
+            // special handling for duration
+            if (typeName === customTypeNames.duration) {
+                return { code: dataTypes.duration, options: options };
             }
             throw new TypeError('Not a valid type "' + typeName + '"');
         }
@@ -1742,9 +1891,12 @@ function defineInstanceMembers() {
             if (params.length !== 1) {
                 throw new TypeError("Not a valid type " + typeName);
             }
-            dataType.code = dataTypes.list;
-            dataType.info = this.parseFqTypeName(params[0]);
-            return dataType;
+            const info = this.parseFqTypeName(params[0]);
+            return {
+                code: dataTypes.list,
+                info: info,
+                options: options,
+            };
         }
         if (typeName.indexOf(complexTypeNames.set, startIndex) === startIndex) {
             // Its a set
@@ -1756,9 +1908,12 @@ function defineInstanceMembers() {
             if (params.length !== 1) {
                 throw new TypeError("Not a valid type " + typeName);
             }
-            dataType.code = dataTypes.set;
-            dataType.info = this.parseFqTypeName(params[0]);
-            return dataType;
+            const info = this.parseFqTypeName(params[0]);
+            return {
+                code: dataTypes.set,
+                info: info,
+                options: options,
+            };
         }
         if (typeName.indexOf(complexTypeNames.map, startIndex) === startIndex) {
             // org.apache.cassandra.db.marshal.MapType(keyType,valueType)
@@ -1770,18 +1925,21 @@ function defineInstanceMembers() {
             if (params.length !== 2) {
                 throw new TypeError("Not a valid type " + typeName);
             }
-            dataType.code = dataTypes.map;
-            dataType.info = [
-                this.parseFqTypeName(params[0]),
-                this.parseFqTypeName(params[1]),
-            ];
-            return dataType;
+            const info1 = this.parseFqTypeName(params[0]);
+            const info2 = this.parseFqTypeName(params[1]);
+            return {
+                code: dataTypes.map,
+                info: [info1, info2],
+                options: options,
+            };
         }
         if (typeName.indexOf(complexTypeNames.udt, startIndex) === startIndex) {
             // move cursor across the name and bypass the parenthesis
             startIndex += complexTypeNames.udt.length + 1;
             length -= complexTypeNames.udt.length + 2;
-            return this._parseUdtName(typeName, startIndex, length);
+            const udtType = this._parseUdtName(typeName, startIndex, length);
+            udtType.options = options;
+            return udtType;
         }
         if (
             typeName.indexOf(complexTypeNames.tuple, startIndex) === startIndex
@@ -1793,27 +1951,34 @@ function defineInstanceMembers() {
             if (params.length &lt; 1) {
                 throw new TypeError("Not a valid type " + typeName);
             }
-            dataType.code = dataTypes.tuple;
-            dataType.info = params.map((x) => this.parseFqTypeName(x));
-            return dataType;
+            const info = params.map((x) => this.parseFqTypeName(x));
+            return {
+                code: dataTypes.tuple,
+                info: info,
+                options: options,
+            };
         }
 
         if (
             typeName.indexOf(customTypeNames.vector, startIndex) === startIndex
         ) {
             // It's a vector, so record the subtype and dimension.
-            dataType.code = dataTypes.custom;
-            dataType.info = this.parseVectorTypeArgs(
+            const params = this.parseVectorTypeArgs.bind(this)(
                 typeName,
                 customTypeNames.vector,
                 this.parseFqTypeName,
             );
-            return dataType;
+            params.options = options;
+            return params;
         }
 
         // Assume custom type if cannot be parsed up to this point.
-        dataType.info = typeName.substr(startIndex, length);
-        return dataType;
+        const info = typeName.substr(startIndex, length);
+        return {
+            code: dataTypes.custom,
+            info: info,
+            options: options,
+        };
     };
     /**
      * Parses type names with composites
@@ -1891,16 +2056,22 @@ function defineInstanceMembers() {
             isComposite: isComposite,
         };
     };
+    /**
+     *
+     * @param {string} typeName
+     * @param {number} startIndex
+     * @param {number} length
+     * @returns {UdtColumnInfo}
+     */
     this._parseUdtName = function (typeName, startIndex, length) {
         const udtParams = parseParams(typeName, startIndex, length);
         if (udtParams.length &lt; 2) {
             // It should contain at least the keyspace, name of the udt and a type
             throw new TypeError("Not a valid type " + typeName);
         }
-        const dataType = {
-            code: dataTypes.udt,
-            info: null,
-        };
+        /**
+         * @type {{keyspace: String, name: String, fields: Array}}
+         */
         const udtInfo = {
             keyspace: udtParams[0],
             name: utils.allocBufferFromString(udtParams[1], "hex").toString(),
@@ -1921,8 +2092,10 @@ function defineInstanceMembers() {
                 type: fieldType,
             });
         }
-        dataType.info = udtInfo;
-        return dataType;
+        return {
+            code: dataTypes.udt,
+            info: udtInfo,
+        };
     };
 }
 
@@ -2089,7 +2262,7 @@ function encodeDuration(value) {
  * @param {Number} length
  * @param {String} [open]
  * @param {String} [close]
- * @returns {Array}
+ * @returns {Array&lt;String>}
  * @private
  */
 function parseParams(value, startIndex, length, open, close) {
@@ -2143,20 +2316,6 @@ function concatRoutingKey(parts, totalLength) {
     return routingKey;
 }
 
-function buildParameterizedCustomType(customTypeName, args) {
-    return `${customTypeName}(${args.join(",")})`;
-}
-
-function invertObject(obj) {
-    const rv = {};
-    for (const k in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, k)) {
-            rv[obj[k]] = k;
-        }
-    }
-    return rv;
-}
-
 module.exports = Encoder;
 </code></pre>
         </article>
@@ -2168,13 +2327,13 @@ module.exports = Encoder;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Integer">Integer</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arbitraryValueToBigInt">arbitraryValueToBigInt</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#bigintToLong">bigintToLong</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#convertComplexType">convertComplexType</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeParams">encodeParams</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getColumnsMetadata">getColumnsMetadata</a></li><li><a href="global.html#getCqlObject">getCqlObject</a></li><li><a href="global.html#getRowsFromResultsWrapper">getRowsFromResultsWrapper</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#longToBigint">longToBigint</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#napiErrorHandler">napiErrorHandler</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#queryOptionsIntoWrapper">queryOptionsIntoWrapper</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-auth.html">auth</a></li><li><a href="module-concurrent.html">concurrent</a></li><li><a href="module-datastax.html">datastax</a></li><li><a href="module-errors.html">errors</a></li><li><a href="module-geometry.html">geometry</a></li><li><a href="module-mapping.html">mapping</a></li><li><a href="module-metadata.html">metadata</a></li><li><a href="module-metrics.html">metrics</a></li><li><a href="module-policies.html">policies</a></li><li><a href="module-policies_addressResolution.html">policies/addressResolution</a></li><li><a href="module-policies_loadBalancing.html">policies/loadBalancing</a></li><li><a href="module-policies_reconnection.html">policies/reconnection</a></li><li><a href="module-policies_retry.html">policies/retry</a></li><li><a href="module-policies_speculativeExecution.html">policies/speculativeExecution</a></li><li><a href="module-policies_timestampGeneration.html">policies/timestampGeneration</a></li><li><a href="module-tracker.html">tracker</a></li><li><a href="module-types.html">types</a></li></ul><h3>Classes</h3><ul><li><a href="AddressResolver.html">AddressResolver</a></li><li><a href="ByteOrderedToken.html">ByteOrderedToken</a></li><li><a href="Client.html">Client</a></li><li><a href="Encoder.html">Encoder</a></li><li><a href="ExecutionOptions.html">ExecutionOptions</a></li><li><a href="ExecutionProfile.html">ExecutionProfile</a></li><li><a href="HashSet.html">HashSet</a></li><li><a href="Host.html">Host</a></li><li><a href="HostMap.html">HostMap</a></li><li><a href="LineString.html">LineString</a></li><li><a href="Murmur3Token.html">Murmur3Token</a></li><li><a href="Point.html">Point</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="RandomToken.html">RandomToken</a></li><li><a href="Token.html">Token</a></li><li><a href="TokenRange.html">TokenRange</a></li><li><a href="TransitionalModePlainTextAuthenticator.html">TransitionalModePlainTextAuthenticator</a></li><li><a href="module-auth-AuthProvider.html">AuthProvider</a></li><li><a href="module-auth-Authenticator.html">Authenticator</a></li><li><a href="module-auth-PlainTextAuthProvider.html">PlainTextAuthProvider</a></li><li><a href="module-errors-ArgumentError.html">ArgumentError</a></li><li><a href="module-errors-AuthenticationError.html">AuthenticationError</a></li><li><a href="module-errors-BusyConnectionError.html">BusyConnectionError</a></li><li><a href="module-errors-DriverInternalError.html">DriverInternalError</a></li><li><a href="module-errors-NoHostAvailableError.html">NoHostAvailableError</a></li><li><a href="module-errors-NotSupportedError.html">NotSupportedError</a></li><li><a href="module-errors-OperationTimedOutError.html">OperationTimedOutError</a></li><li><a href="module-errors-ResponseError.html">ResponseError</a></li><li><a href="module-mapping-DefaultTableMappings.html">DefaultTableMappings</a></li><li><a href="module-mapping-Mapper.html">Mapper</a></li><li><a href="module-mapping-ModelBatchItem.html">ModelBatchItem</a></li><li><a href="module-mapping-ModelMapper.html">ModelMapper</a></li><li><a href="module-mapping-Result.html">Result</a></li><li><a href="module-mapping-UnderscoreCqlToCamelCaseMappings.html">UnderscoreCqlToCamelCaseMappings</a></li><li><a href="module-metadata-Aggregate.html">Aggregate</a></li><li><a href="module-metadata-ClientState.html">ClientState</a></li><li><a href="module-metadata-DataCollection.html">DataCollection</a></li><li><a href="module-metadata-Index.html">Index</a></li><li><a href="module-metadata-MaterializedView.html">MaterializedView</a></li><li><a href="module-metadata-Metadata.html">Metadata</a></li><li><a href="module-metadata-SchemaFunction.html">SchemaFunction</a></li><li><a href="module-metadata-TableMetadata.html">TableMetadata</a></li><li><a href="module-metrics-DefaultMetrics.html">DefaultMetrics</a></li><li><a href="module-policies_addressResolution-AddressTranslator.html">AddressTranslator</a></li><li><a href="module-policies_addressResolution-EC2MultiRegionTranslator.html">EC2MultiRegionTranslator</a></li><li><a href="module-policies_loadBalancing-AllowListPolicy.html">AllowListPolicy</a></li><li><a href="module-policies_loadBalancing-DCAwareRoundRobinPolicy.html">DCAwareRoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-DefaultLoadBalancingPolicy.html">DefaultLoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-LoadBalancingPolicy.html">LoadBalancingPolicy</a></li><li><a href="module-policies_loadBalancing-RoundRobinPolicy.html">RoundRobinPolicy</a></li><li><a href="module-policies_loadBalancing-TokenAwarePolicy.html">TokenAwarePolicy</a></li><li><a href="module-policies_loadBalancing-WhiteListPolicy.html">WhiteListPolicy</a></li><li><a href="module-policies_reconnection-ConstantReconnectionPolicy.html">ConstantReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ExponentialReconnectionPolicy.html">ExponentialReconnectionPolicy</a></li><li><a href="module-policies_reconnection-ReconnectionPolicy.html">ReconnectionPolicy</a></li><li><a href="module-policies_retry-FallthroughRetryPolicy.html">FallthroughRetryPolicy</a></li><li><a href="module-policies_retry-IdempotenceAwareRetryPolicy.html">IdempotenceAwareRetryPolicy</a></li><li><a href="module-policies_retry-RetryPolicy.html">RetryPolicy</a></li><li><a href="module-policies_speculativeExecution-ConstantSpeculativeExecutionPolicy.html">ConstantSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-NoSpeculativeExecutionPolicy.html">NoSpeculativeExecutionPolicy</a></li><li><a href="module-policies_speculativeExecution-SpeculativeExecutionPolicy.html">SpeculativeExecutionPolicy</a></li><li><a href="module-policies_timestampGeneration-MonotonicTimestampGenerator.html">MonotonicTimestampGenerator</a></li><li><a href="module-policies_timestampGeneration-TimestampGenerator.html">TimestampGenerator</a></li><li><a href="module-tracker-RequestLogger.html">RequestLogger</a></li><li><a href="module-types-BigDecimal.html">BigDecimal</a></li><li><a href="module-types-Duration.html">Duration</a></li><li><a href="module-types-InetAddress.html">InetAddress</a></li><li><a href="module-types-Integer.html">Integer</a></li><li><a href="module-types-LocalDate.html">LocalDate</a></li><li><a href="module-types-LocalTime.html">LocalTime</a></li><li><a href="module-types-Long.html">Long</a></li><li><a href="module-types-ResultSet.html">ResultSet</a></li><li><a href="module-types-ResultStream.html">ResultStream</a></li><li><a href="module-types-Row.html">Row</a></li><li><a href="module-types-TimeUuid.html">TimeUuid</a></li><li><a href="module-types-Tuple.html">Tuple</a></li><li><a href="module-types-Uuid.html">Uuid</a></li><li><a href="module-types-Vector.html">Vector</a></li></ul><h3>Interfaces</h3><ul><li><a href="module-mapping-TableMappings.html">TableMappings</a></li><li><a href="module-metrics-ClientMetrics.html">ClientMetrics</a></li><li><a href="module-tracker-RequestTracker.html">RequestTracker</a></li></ul><h3>Events</h3><ul><li><a href="Client.html#event:hostAdd">hostAdd</a></li><li><a href="Client.html#event:hostDown">hostDown</a></li><li><a href="Client.html#event:hostRemove">hostRemove</a></li><li><a href="Client.html#event:hostUp">hostUp</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Integer">Integer</a></li><li><a href="global.html#VIntCoding">VIntCoding</a></li><li><a href="global.html#_parseUdtName">_parseUdtName</a></li><li><a href="global.html#adaptNamedParamsPrepared">adaptNamedParamsPrepared</a></li><li><a href="global.html#adaptNamedParamsWithHints">adaptNamedParamsWithHints</a></li><li><a href="global.html#allocBuffer">allocBuffer</a></li><li><a href="global.html#allocBufferFromArray">allocBufferFromArray</a></li><li><a href="global.html#allocBufferFromString">allocBufferFromString</a></li><li><a href="global.html#allocBufferUnsafe">allocBufferUnsafe</a></li><li><a href="global.html#arbitraryValueToBigInt">arbitraryValueToBigInt</a></li><li><a href="global.html#arrayIterator">arrayIterator</a></li><li><a href="global.html#bigintToLong">bigintToLong</a></li><li><a href="global.html#binarySearch">binarySearch</a></li><li><a href="global.html#callbackOnce">callbackOnce</a></li><li><a href="global.html#convertComplexType">convertComplexType</a></li><li><a href="global.html#copyBuffer">copyBuffer</a></li><li><a href="global.html#coreConnectionsPerHostV2">coreConnectionsPerHostV2</a></li><li><a href="global.html#coreConnectionsPerHostV3">coreConnectionsPerHostV3</a></li><li><a href="global.html#decodeCustom">decodeCustom</a></li><li><a href="global.html#decodeVector">decodeVector</a></li><li><a href="global.html#deepExtend">deepExtend</a></li><li><a href="global.html#defaultOptions">defaultOptions</a></li><li><a href="global.html#defaultPromiseFactory">defaultPromiseFactory</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#each">each</a></li><li><a href="global.html#eachSeries">eachSeries</a></li><li><a href="global.html#emptyArray">emptyArray</a></li><li><a href="global.html#emptyObject">emptyObject</a></li><li><a href="global.html#encodeCustom">encodeCustom</a></li><li><a href="global.html#encodeParams">encodeParams</a></li><li><a href="global.html#encodeTuple">encodeTuple</a></li><li><a href="global.html#encodeUdt">encodeUdt</a></li><li><a href="global.html#encodeVector">encodeVector</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#fixStack">fixStack</a></li><li><a href="global.html#forEachOf">forEachOf</a></li><li><a href="global.html#fromCallback">fromCallback</a></li><li><a href="global.html#fromEvent">fromEvent</a></li><li><a href="global.html#getCallback">getCallback</a></li><li><a href="global.html#getColumnsMetadata">getColumnsMetadata</a></li><li><a href="global.html#getCqlObject">getCqlObject</a></li><li><a href="global.html#getRowsFromResultsWrapper">getRowsFromResultsWrapper</a></li><li><a href="global.html#ifUndefined">ifUndefined</a></li><li><a href="global.html#ifUndefined3">ifUndefined3</a></li><li><a href="global.html#insertSorted">insertSorted</a></li><li><a href="global.html#iteratorToArray">iteratorToArray</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#longToBigint">longToBigint</a></li><li><a href="global.html#map">map</a></li><li><a href="global.html#mapSeries">mapSeries</a></li><li><a href="global.html#maxInt">maxInt</a></li><li><a href="global.html#maxRequestsPerConnectionV2">maxRequestsPerConnectionV2</a></li><li><a href="global.html#maxRequestsPerConnectionV3">maxRequestsPerConnectionV3</a></li><li><a href="global.html#napiErrorHandler">napiErrorHandler</a></li><li><a href="global.html#newQueryPlan">newQueryPlan</a></li><li><a href="global.html#objectValues">objectValues</a></li><li><a href="global.html#optionalCallback">optionalCallback</a></li><li><a href="global.html#parallel">parallel</a></li><li><a href="global.html#parseVectorTypeArgs">parseVectorTypeArgs</a></li><li><a href="global.html#promiseWrapper">promiseWrapper</a></li><li><a href="global.html#queryOptionsIntoWrapper">queryOptionsIntoWrapper</a></li><li><a href="global.html#serializationSizeIfFixed">serializationSizeIfFixed</a></li><li><a href="global.html#series">series</a></li><li><a href="global.html#setMetadataDependent">setMetadataDependent</a></li><li><a href="global.html#stringRepeat">stringRepeat</a></li><li><a href="global.html#throwNotSupported">throwNotSupported</a></li><li><a href="global.html#times">times</a></li><li><a href="global.html#timesLimit">timesLimit</a></li><li><a href="global.html#timesSeries">timesSeries</a></li><li><a href="global.html#toBackground">toBackground</a></li><li><a href="global.html#toCallback">toCallback</a></li><li><a href="global.html#toLowerCaseProperties">toLowerCaseProperties</a></li><li><a href="global.html#totalLength">totalLength</a></li><li><a href="global.html#validateFn">validateFn</a></li><li><a href="global.html#whilst">whilst</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Thu Oct 30 2025 16:08:44 GMT+0000 (Coordinated Universal Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Tue Nov 04 2025 14:26:22 GMT+0000 (Coordinated Universal Time)
 </footer>
 
 <script> prettyPrint(); </script>
