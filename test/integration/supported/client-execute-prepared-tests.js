@@ -37,9 +37,7 @@ describe("Client @SERVER_API", function () {
             ccmOptions: { yaml },
         });
 
-        // No support for client hosts
-        // TODO: fix this test
-        /* it("should execute a prepared query with parameters on all hosts", function (done) {
+        it("should execute a prepared query with parameters on all hosts", function (done) {
             const client = setupInfo.client;
             const query = util.format(
                 "SELECT * FROM %s WHERE id1 = ?",
@@ -63,7 +61,7 @@ describe("Client @SERVER_API", function () {
                 },
                 done,
             );
-        }); */
+        });
         it("should callback with error when query is invalid", function (done) {
             const client = setupInfo.client;
             const query = "SELECT WILL FAIL";

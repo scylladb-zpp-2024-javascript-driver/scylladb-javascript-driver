@@ -152,7 +152,7 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for treating empty buffers as values
+        // Would require #191
         // TODO: Fix this test
         /* it("should support retrieving empty buffers as values", () => {
             // Include some columns to make sure the behaviour is consistent across different types.
@@ -204,8 +204,7 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for profiles
-        /* it("should fail if non-existent profile provided", function (done) {
+        it("should fail if non-existent profile provided", function (done) {
             const client = newInstance();
             utils.series(
                 [
@@ -228,7 +227,7 @@ describe("Client @SERVER_API", function () {
                 ],
                 done,
             );
-        }); */
+        });
 
         vit("2.0", "should guess known types", function (done) {
             const client = setupInfo.client;
