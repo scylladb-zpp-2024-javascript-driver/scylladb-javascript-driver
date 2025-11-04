@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use scylla::client::SelfIdentity;
 use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
@@ -8,6 +10,7 @@ use scylla::statement::{Consistency, SerialConsistency, Statement};
 use crate::errors::{err_to_napi, js_error};
 use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
+use crate::policies::address_translation::{AddressTranslatorPolicies, EC2MultiRegionTranslator};
 use crate::requests::request::{QueryOptionsObj, QueryOptionsWrapper};
 use crate::types::encoded_data::EncodedValuesWrapper;
 use crate::types::type_wrappers::ComplexType;
@@ -24,7 +27,8 @@ define_js_to_rust_convertible_object!(SessionOptions {
     application_version, applicationVersion: String,
     credentials_username, credentialsUsername: String,
     credentials_password, credentialsPassword: String,
-    cache_size, cacheSize: u32
+    cache_size, cacheSize: u32,
+    address_translation_policy, addressTranslationPolicy:Option<AddressTranslatorPolicies>
 });
 
 #[napi]
@@ -239,6 +243,17 @@ fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
                 "There is a check in JS Client constructor that should have prevented only one credential passed"
             )
         }
+    }
+
+    if let Some(Some(translation_policy)) = &options.address_translation_policy {
+        builder = match translation_policy {
+            AddressTranslatorPolicies::CustomPolicy => {
+                unimplemented!("Support for custom policies is not yet implemented")
+            }
+            AddressTranslatorPolicies::EC2MultiRegion => {
+                builder.address_translator(Arc::new(EC2MultiRegionTranslator {}))
+            }
+        };
     }
     builder
 }
