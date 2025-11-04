@@ -1,10 +1,10 @@
-# ScyllaDB JS Driver
+# ScyllaDB Node.js-RS Driver
 
 ![Static Badge](https://img.shields.io/badge/API%20coverage-0%25-red)
 ![test workflow](https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/workflows/tests.yml/badge.svg?branch=main)
 ![quality workflow](https://github.com/scylladb-zpp-2024-javascript-driver/scylladb-javascript-driver/actions/workflows/code-quality.yml/badge.svg?branch=main)
 
-This is a client-side driver for [ScyllaDB](https://www.scylladb.com/) written in Node.js.
+This is a client-side driver for [ScyllaDB](https://www.scylladb.com/) written in Node.js and Rust.
 This driver is an overlay over the [ScyllaDB Rust Driver](https://github.com/scylladb/scylla-rust-driver),
 with the interface based on the [DataStax Node.js Driver](https://github.com/datastax/nodejs-driver).
 Although optimized for ScyllaDB, the driver is also compatible with [Apache Cassandra®].
