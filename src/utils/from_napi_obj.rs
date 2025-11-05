@@ -40,24 +40,22 @@
 /// ```
 macro_rules! define_js_to_rust_convertible_object {
     ($struct_name: ident{$($field_name:ident, $js_name:ident: $field_type:ty),*}) => {
-        use napi::bindgen_prelude::{FromNapiValue, Object};
-
         #[derive(Debug)]
         pub struct $struct_name {
             $(
                 pub $field_name: Option<$field_type>,
             )*
         }
-        impl FromNapiValue for $struct_name {
+        impl ::napi::bindgen_prelude::FromNapiValue for $struct_name {
             /// # Safety
             ///
             /// Valid pointer to napi env must be provided
             unsafe fn from_napi_value(
-                env: napi::sys::napi_env,
-                napi_val: napi::sys::napi_value,
-            ) -> napi::Result<Self> {
+                env: ::napi::sys::napi_env,
+                napi_val: ::napi::sys::napi_value,
+            ) -> ::napi::Result<Self> {
                 // Caller of this function ensures a valid pointer to napi env is provided
-                let o = unsafe { Object::from_napi_value(env, napi_val) }?;
+                let o = unsafe { ::napi::bindgen_prelude::Object::from_napi_value(env, napi_val) }?;
                 Ok($struct_name {
                     $(
                         $field_name: o.get::<$field_type>(stringify!($js_name))?,
