@@ -619,10 +619,6 @@ describe("exports", function () {
         );
         assert.strictEqual(api.policies.retry, retry);
         assert.strictEqual(typeof api.policies.retry.RetryPolicy, "function");
-        assert.strictEqual(
-            typeof api.policies.retry.IdempotenceAwareRetryPolicy,
-            "function",
-        );
         assert.instanceOf(
             api.policies.defaultRetryPolicy(),
             api.policies.retry.RetryPolicy,
