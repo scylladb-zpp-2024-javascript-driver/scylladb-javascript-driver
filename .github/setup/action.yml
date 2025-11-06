@@ -1,0 +1,43 @@
+name: Setup the driver
+
+inputs:
+  host:
+    required: true
+    type: string
+  target:
+    required: true
+    type: string
+  node-version:
+    required: false
+    type: number
+    default: 20
+
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - name: Setup node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+    - name: Install
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        targets: ${{ inputs.target }}
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          ~/.napi-rs
+          .cargo-cache
+          target/
+        key: ${{ inputs.target }}-cargo-${{ inputs.host }}
+    - name: Install dependencies
+      shell: bash
+      run: npm i
