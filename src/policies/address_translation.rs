@@ -66,3 +66,36 @@ impl AddressTranslator for EC2MultiRegionTranslator {
         }
     }
 }
+
+#[cfg(test)]
+use std::str::FromStr;
+
+#[tokio::test]
+async fn return_same_address_when_not_resolved() {
+    let policy = EC2MultiRegionTranslator {};
+    let addr = SocketAddr::from_str("192.0.2.1:9042").unwrap();
+    let peer = UntranslatedPeer::new(addr);
+    let res: Result<SocketAddr, TranslationError> = policy.translate_address(&peer).await;
+    assert_eq!(res.expect("Expected to obtain the address"), addr);
+}
+
+#[tokio::test]
+async fn return_the_other_ip_associated_with_the_domain() {
+    let policy = EC2MultiRegionTranslator {};
+    let addr = SocketAddr::from_str("1.1.1.1:9042").unwrap();
+    let addr2 = SocketAddr::from_str("1.0.0.1:9042").unwrap();
+    let peer = UntranslatedPeer::new(addr);
+    for _ in 0..100 {
+        let res: SocketAddr = policy
+            .translate_address(&peer)
+            .await
+            .expect("Expected to obtain the address");
+        // Success: we got different address than provided.
+        if res == addr2 {
+            return;
+        }
+    }
+    unreachable!(
+        "Unlikely to happen: with each repetition we have 50:50 chance to get the other address"
+    );
+}

@@ -5,6 +5,8 @@ const dns = require("dns");
 const addressResolution = require("../../lib/policies/address-resolution");
 const EC2MultiRegionTranslator = addressResolution.EC2MultiRegionTranslator;
 
+// Those unit tests check the JS side version of the logic.
+// Rust version of this policy is tested on the rust side with cargo test
 describe("EC2MultiRegionTranslator", function () {
     this.timeout(10000);
     describe("#translate()", function () {
