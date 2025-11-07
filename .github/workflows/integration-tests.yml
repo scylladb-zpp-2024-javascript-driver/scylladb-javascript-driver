@@ -56,7 +56,11 @@ jobs:
       - name: Install dependencies
         run: npm i
       - name: Install ccm
+        # We need a copy of the repo for the ssl tests.
+        # When installing ccm as a package, we do not save the certificates, 
+        # that are present in the ./ssl directory
         run: |
+          git clone https://github.com/scylladb/scylla-ccm.git
           pip install --user --upgrade psutil
           pip install --user https://github.com/scylladb/scylla-ccm/archive/master.zip
       - name: Build
@@ -65,4 +69,5 @@ jobs:
       - name: Run integration tests on scylla
         env: 
           CCM_IS_SCYLLA: "true"
+          CCM_PATH: "./scylla-ccm"
         run: npm run integration

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use scylla::client::SelfIdentity;
 use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
@@ -12,20 +14,31 @@ use crate::requests::request::{QueryOptionsObj, QueryOptionsWrapper};
 use crate::types::encoded_data::EncodedValuesWrapper;
 use crate::types::type_wrappers::ComplexType;
 use crate::utils::bigint_to_i64;
+use crate::utils::from_napi_obj::define_js_to_rust_convertible_object;
+use crate::utils::tls::DummyVerifier;
 use crate::{requests::request::PreparedStatementWrapper, result::QueryResultWrapper};
 
 const DEFAULT_CACHE_SIZE: u32 = 512;
 
-#[napi]
-pub struct SessionOptions {
-    pub connect_points: Vec<String>,
-    pub keyspace: Option<String>,
-    pub application_name: Option<String>,
-    pub application_version: Option<String>,
-    pub credentials_username: Option<String>,
-    pub credentials_password: Option<String>,
-    pub cache_size: Option<u32>,
-}
+// For now, ssl options include only rejectUnauthorized.
+// In practice, user can provide more options to configure
+// the ssl connection (see: ConnectionOptions typescript class)
+// This specific option is added, as it's used in the existing integration tests
+define_js_to_rust_convertible_object!(SslOptions {
+    reject_unauthorized,
+    rejectUnauthorized: bool
+});
+
+define_js_to_rust_convertible_object!(SessionOptions {
+    connect_points, connectPoints: Vec<String>,
+    keyspace, keyspace: String,
+    application_name, applicationName: String,
+    application_version, applicationVersion: String,
+    credentials_username, credentialsUsername: String,
+    credentials_password, credentialsPassword: String,
+    cache_size, cacheSize: u32,
+    ssl_options, sslOptions: SslOptions
+});
 
 #[napi]
 pub struct BatchWrapper {
@@ -38,28 +51,11 @@ pub struct SessionWrapper {
 }
 
 #[napi]
-impl SessionOptions {
-    /// Empty SessionOptions constructor
-    #[napi]
-    pub fn empty() -> Self {
-        SessionOptions {
-            connect_points: vec![],
-            keyspace: None,
-            application_name: None,
-            application_version: None,
-            credentials_username: None,
-            credentials_password: None,
-            cache_size: None,
-        }
-    }
-}
-
-#[napi]
 impl SessionWrapper {
     /// Creates session based on the provided session options.
     #[napi]
-    pub async fn create_session(options: &SessionOptions) -> napi::Result<Self> {
-        let builder = configure_session_builder(options);
+    pub async fn create_session(options: SessionOptions) -> napi::Result<Self> {
+        let builder = configure_session_builder(&options)?;
         let session = builder.build().await.map_err(err_to_napi)?;
         let session: CachingSession = CachingSession::from(
             session,
@@ -236,10 +232,10 @@ pub fn create_prepared_batch(
     Ok(BatchWrapper { inner: batch })
 }
 
-fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
+fn configure_session_builder(options: &SessionOptions) -> napi::Result<SessionBuilder> {
     let mut builder = SessionBuilder::new();
     builder = builder.custom_identity(self_identity(options));
-    builder = builder.known_nodes(&options.connect_points);
+    builder = builder.known_nodes(options.connect_points.as_ref().unwrap_or(&vec![]));
     if let Some(keyspace) = &options.keyspace {
         builder = builder.use_keyspace(keyspace, false);
     }
@@ -257,7 +253,23 @@ fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
             )
         }
     }
-    builder
+
+    if let Some(_ssl_options) = &options.ssl_options {
+        let ssl_context_builder = rustls::ClientConfig::builder();
+
+        // For now we ignore all configuration options, and we connect using TSL,
+        // WITHOUT verifying the server at all. This may be, the same behavior as
+        // openssl `reject_unauthorized`, or it may allow for something more -
+        // without bigger research I cannot determine that.
+        let ssl_context_builder = ssl_context_builder
+            .dangerous()
+            .with_custom_certificate_verifier(Arc::new(DummyVerifier {}));
+
+        let ssl_context = ssl_context_builder.with_no_client_auth();
+
+        builder = builder.tls_context(Some(Arc::new(ssl_context)));
+    }
+    Ok(builder)
 }
 
 /// Creates object representing unprepared batch of statements.

@@ -32,14 +32,13 @@
 /// ```
 macro_rules! define_rust_to_js_convertible_object {
     ($struct_name: ident{$($field_name:ident, $js_name:ident: $field_type:ty),*}) => {
-        use napi::{Env, JsValue, bindgen_prelude::{JsObjectValue, Object, ToNapiValue}};
-
         pub struct $struct_name {
             $(
                 pub $field_name: $field_type,
             )*
         }
-        impl ToNapiValue for $struct_name {
+
+        impl napi::bindgen_prelude::ToNapiValue for $struct_name {
             /// # Safety
             ///
             /// Valid pointer to napi env must be provided
@@ -47,8 +46,8 @@ macro_rules! define_rust_to_js_convertible_object {
                 env: napi::sys::napi_env,
                 val: Self,
             ) -> napi::Result<napi::sys::napi_value> {
-                let env = Env::from_raw(env);
-                let mut o = Object::new(&env)?;
+                let env = napi::Env::from_raw(env);
+                let mut o = napi::bindgen_prelude::Object::new(&env)?;
                 $(o.set_named_property(stringify!($js_name), val.$field_name)?;)*
                 Ok(o.raw())
             }

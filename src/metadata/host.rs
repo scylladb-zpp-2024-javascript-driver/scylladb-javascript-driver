@@ -1,4 +1,5 @@
 use napi::bindgen_prelude::Buffer;
+use napi::{JsValue, bindgen_prelude::JsObjectValue};
 
 use crate::{session::SessionWrapper, utils::to_napi_obj::define_rust_to_js_convertible_object};
 
