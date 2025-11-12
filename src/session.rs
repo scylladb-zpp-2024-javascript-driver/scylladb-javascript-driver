@@ -5,7 +5,7 @@ use scylla::response::PagingState;
 use scylla::statement::batch::Batch;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
 
-use crate::errors::{err_to_napi, js_error};
+use crate::errors::{ConvertedError, JsResult, ToConvertable, err_to_napi, js_error};
 use crate::options;
 use crate::paging::{PagingResult, PagingStateWrapper};
 use crate::requests::request::{QueryOptionsObj, QueryOptionsWrapper};
@@ -151,13 +151,12 @@ impl SessionWrapper {
         &self,
         batch: &BatchWrapper,
         params: Vec<Vec<EncodedValuesWrapper>>,
-    ) -> napi::Result<QueryResultWrapper> {
-        QueryResultWrapper::from_query(
-            self.inner
-                .batch(&batch.inner, params)
-                .await
-                .map_err(err_to_napi)?,
-        )
+    ) -> JsResult<QueryResultWrapper> {
+        let z: Result<QueryResultWrapper, ConvertedError> = async {
+            QueryResultWrapper::from_query(self.inner.batch(&batch.inner, params).await?).cnv()
+        }
+        .await;
+        z.into()
     }
 
     /// Query a single page of a prepared statement
@@ -172,23 +171,26 @@ impl SessionWrapper {
         params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
-    ) -> napi::Result<PagingResult> {
-        let statement: Statement = apply_statement_options(query.into(), &options.options)?;
-        let paging_state = paging_state
-            .map(|e| e.inner.clone())
-            .unwrap_or(PagingState::start());
+    ) -> JsResult<PagingResult> {
+        let z: Result<PagingResult, ConvertedError> = async {
+            let statement: Statement = apply_statement_options(query.into(), &options.options)?;
+            let paging_state = paging_state
+                .map(|e| e.inner.clone())
+                .unwrap_or(PagingState::start());
 
-        let (result, paging_state_response) = self
-            .inner
-            .get_session()
-            .query_single_page(statement, params, paging_state)
-            .await
-            .map_err(err_to_napi)?;
+            let (result, paging_state_response) = self
+                .inner
+                .get_session()
+                .query_single_page(statement, params, paging_state)
+                .await?;
 
-        Ok(PagingResult {
-            result: QueryResultWrapper::from_query(result)?,
-            paging_state: paging_state_response.into(),
-        })
+            Ok(PagingResult {
+                result: QueryResultWrapper::from_query(result)?,
+                paging_state: paging_state_response.into(),
+            })
+        }
+        .await;
+        z.into()
     }
 
     /// Execute a single page of a prepared statement
