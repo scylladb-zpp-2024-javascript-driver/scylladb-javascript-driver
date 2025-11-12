@@ -692,9 +692,6 @@ describe("exports", function () {
             api.metadata.Metadata,
             require("../../lib/metadata"),
         );
-        assert.ok(api.Encoder);
-        assert.strictEqual(typeof api.Encoder, "function");
-        assert.strictEqual(api.Encoder, require("../../lib/encoder"));
         assert.ok(api.defaultOptions());
         assert.strictEqual(api.tracker, require("../../lib/tracker"));
         assert.strictEqual(typeof api.tracker.RequestTracker, "function");
