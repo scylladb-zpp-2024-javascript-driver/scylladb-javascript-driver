@@ -33,7 +33,6 @@ const Metadata = require("./lib/metadata");
 exports.metadata = {
   Metadata: Metadata,
 };
-exports.Encoder = require("./lib/encoder");
 exports.geometry = require("./lib/geometry");
 exports.datastax = require("./lib/datastax");
 /**
