@@ -308,7 +308,7 @@ macro_rules! make_apply_options {
 macro_rules! make_non_batch_apply_options {
     ($statement_type: ty, $fn_name: ident, $partial_name: ident) => {
         make_apply_options!($statement_type, $partial_name);
-        fn $fn_name(
+        pub(crate) fn $fn_name(
             statement: $statement_type,
             options: &QueryOptionsObj,
         ) -> napi::Result<$statement_type> {
