@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use scylla::client::SelfIdentity;
 use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
@@ -34,7 +36,7 @@ pub struct BatchWrapper {
 
 #[napi]
 pub struct SessionWrapper {
-    pub(crate) inner: CachingSession,
+    pub(crate) inner: Arc<CachingSession>,
 }
 
 #[napi]
@@ -48,7 +50,9 @@ impl SessionWrapper {
             session,
             options.cache_size.unwrap_or(DEFAULT_CACHE_SIZE) as usize,
         );
-        Ok(SessionWrapper { inner: session })
+        Ok(SessionWrapper {
+            inner: Arc::new(session),
+        })
     }
 
     /// Returns the name of the current keyspace
