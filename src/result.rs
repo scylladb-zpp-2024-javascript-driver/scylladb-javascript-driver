@@ -389,10 +389,9 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             definition.keyspace.to_string(),
         ),
         ColumnType::Tuple(t) => ComplexType::tuple_from_column_type(t.as_slice()),
-        ColumnType::Vector {
-            typ: _,
-            dimensions: _,
-        } => todo!(),
+        ColumnType::Vector { typ, dimensions } => {
+            ComplexType::from_vector(map_column_type_to_complex_type(typ), *dimensions)
+        }
         other => unimplemented!("Missing implementation for CQL type {:?}", other),
     }
 }
