@@ -28,4 +28,17 @@ describe("JsResult", function () {
             assert.strictEqual(e.name, "Error");
         }
     });
+
+    it("should get the correct error from JsResult::NapiError", function (done) {
+        try {
+            rust.testsReturnJsResultAsync(3).then((e) => {
+                helper.assertInstanceOf(e, Error);
+                assert.strictEqual(e.message, "Error#Napi-error");
+                assert.strictEqual(e.name, "Error");
+                done();
+            });
+        } catch (e) {
+            assert.fail("Error should be handled in promise");
+        }
+    });
 });
