@@ -331,6 +331,12 @@ impl ToNapiValue for CqlValueWrapper {
                         },
                     )
                 }
+                CqlValue::Vector(val) => Vec::to_napi_value(
+                    env,
+                    val.into_iter()
+                        .map(|v| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: v }))
+                        .collect(),
+                ),
                 other => unimplemented!("Missing implementation for CQL value {:?}", other),
             }
         }
@@ -389,10 +395,9 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             definition.keyspace.to_string(),
         ),
         ColumnType::Tuple(t) => ComplexType::tuple_from_column_type(t.as_slice()),
-        ColumnType::Vector {
-            typ: _,
-            dimensions: _,
-        } => todo!(),
+        ColumnType::Vector { typ, dimensions } => {
+            ComplexType::from_vector(map_column_type_to_complex_type(typ), *dimensions)
+        }
         other => unimplemented!("Missing implementation for CQL type {:?}", other),
     }
 }
