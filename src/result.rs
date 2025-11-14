@@ -331,6 +331,12 @@ impl ToNapiValue for CqlValueWrapper {
                         },
                     )
                 }
+                CqlValue::Vector(val) => Vec::to_napi_value(
+                    env,
+                    val.into_iter()
+                        .map(|v| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: v }))
+                        .collect(),
+                ),
                 other => unimplemented!("Missing implementation for CQL value {:?}", other),
             }
         }
