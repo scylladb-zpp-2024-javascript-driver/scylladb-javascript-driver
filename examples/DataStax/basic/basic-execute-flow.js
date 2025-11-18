@@ -1,5 +1,5 @@
 "use strict";
-const cassandra = require("scylladb-javascript-driver");
+const cassandra = require("scylladb-nodejs-rs-driver");
 const { getClientArgs } = require("../util");
 const async = require("async");
 const assert = require("assert");
