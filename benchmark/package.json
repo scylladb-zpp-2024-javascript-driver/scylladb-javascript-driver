@@ -7,6 +7,6 @@
     "dependencies": {
         "async": "^1.5.2",
         "cassandra-driver": "^4.8.0",
-        "scylladb-javascript-driver": "file:./../"
+        "scylladb-nodejs-rs-driver": "file:./../"
     }
 }
