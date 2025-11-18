@@ -359,7 +359,13 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             NativeType::Float => CqlType::Float,
             NativeType::Int => CqlType::Int,
             NativeType::BigInt => CqlType::BigInt,
-            NativeType::Text => CqlType::Text,
+            // Rust Driver unifies both VARCHAR and TEXT into NativeType::Text.
+            // CPP Driver, in accordance to the CQL protocol, has separate types for VARCHAR and TEXT.
+            // Even worse, Rust Driver even does not handle CQL TEXT correctly!
+            // It errors out on TEXT type...
+            // As the DBs (Cassandra and ScyllaDB) seem to send the VARCHAR type in the protocol,
+            // we will assume that the NativeType::Text is actually a VARCHAR type.
+            NativeType::Text => CqlType::Varchar,
             NativeType::Timestamp => CqlType::Timestamp,
             NativeType::Inet => CqlType::Inet,
             NativeType::SmallInt => CqlType::SmallInt,

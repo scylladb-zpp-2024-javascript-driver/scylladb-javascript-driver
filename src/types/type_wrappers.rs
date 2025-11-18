@@ -21,6 +21,7 @@ pub enum CqlType {
     BigInt = 0x0002,
     Text = 0x000A,
     Timestamp = 0x000B,
+    Varchar = 0x000D,
     Inet = 0x0010,
     List = 0x0020,
     Map = 0x0021,
