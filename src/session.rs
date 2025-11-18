@@ -1,3 +1,4 @@
+use openssl::ssl::{SslContextBuilder, SslMethod, SslVerifyMode};
 use scylla::client::SelfIdentity;
 use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
@@ -17,6 +18,15 @@ use crate::{requests::request::PreparedStatementWrapper, result::QueryResultWrap
 
 const DEFAULT_CACHE_SIZE: u32 = 512;
 
+// For now, ssl options include only rejectUnauthorized.
+// In practice, user can provide more options to configure
+// the ssl connection (see: ConnectionOptions typescript class)
+// This specific option is added, as it's used in the existing integration tests
+#[rustfmt::skip] // fmt splits the struct definition into multiple lines
+define_js_to_rust_convertible_object!(SslOptions {
+    reject_unauthorized, rejectUnauthorized: bool
+});
+
 define_js_to_rust_convertible_object!(SessionOptions {
     connect_points, connectPoints: Vec<String>,
     keyspace, keyspace: String,
@@ -24,7 +34,8 @@ define_js_to_rust_convertible_object!(SessionOptions {
     application_version, applicationVersion: String,
     credentials_username, credentialsUsername: String,
     credentials_password, credentialsPassword: String,
-    cache_size, cacheSize: u32
+    cache_size, cacheSize: u32,
+    ssl_options, sslOptions: SslOptions
 });
 
 #[napi]
@@ -42,7 +53,7 @@ impl SessionWrapper {
     /// Creates session based on the provided session options.
     #[napi]
     pub async fn create_session(options: SessionOptions) -> napi::Result<Self> {
-        let builder = configure_session_builder(&options);
+        let builder = configure_session_builder(&options)?;
         let session = builder.build().await.map_err(err_to_napi)?;
         let session: CachingSession = CachingSession::from(
             session,
@@ -219,7 +230,7 @@ pub fn create_prepared_batch(
     Ok(BatchWrapper { inner: batch })
 }
 
-fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
+fn configure_session_builder(options: &SessionOptions) -> napi::Result<SessionBuilder> {
     let mut builder = SessionBuilder::new();
     builder = builder.custom_identity(self_identity(options));
     builder = builder.known_nodes(options.connect_points.as_deref().unwrap_or(&[]));
@@ -240,7 +251,19 @@ fn configure_session_builder(options: &SessionOptions) -> SessionBuilder {
             )
         }
     }
-    builder
+
+    if let Some(ssl_options) = &options.ssl_options {
+        let mut ssl_context_builder =
+            SslContextBuilder::new(SslMethod::tls()).map_err(err_to_napi)?;
+
+        ssl_context_builder.set_verify(match ssl_options.reject_unauthorized {
+            Some(false) => SslVerifyMode::NONE,
+            Some(true) | None => SslVerifyMode::PEER,
+        });
+
+        builder = builder.tls_context(Some(ssl_context_builder.build()));
+    }
+    Ok(builder)
 }
 
 /// Creates object representing unprepared batch of statements.
