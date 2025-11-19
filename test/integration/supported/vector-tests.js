@@ -2,7 +2,7 @@
 const assert = require("assert");
 const helper = require("../../test-helper.js");
 
-const { types } = require("../../../index.js");
+const { types } = require("../../../main.js");
 const Vector = require("../../../lib/types/vector.js");
 const util = require("node:util");
 const vdescribe = helper.vdescribe;

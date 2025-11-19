@@ -21,6 +21,7 @@ pub enum CqlType {
     BigInt = 0x0002,
     Text = 0x000A,
     Timestamp = 0x000B,
+    Varchar = 0x000D,
     Inet = 0x0010,
     List = 0x0020,
     Map = 0x0021,
@@ -34,6 +35,11 @@ pub enum CqlType {
     Uuid = 0x000C,
     Varint = 0x000E,
     Custom = 0x0000,
+    // Vector is part of the Custom type. This value is assigning arbitrarily,
+    // from outside of possible types values range. This is used only internally,
+    // to avoid using enums with values in the Node-Api layer. It's later converted
+    // to Custom type with customTypeName, on the JS side to match the expected type representation.
+    Vector = 0x10001,
 }
 
 /// This struct is part of the `ComplexType` struct and is used to store information about UDTs.
@@ -55,6 +61,7 @@ pub struct ComplexType {
     pub(crate) support_type_2: Option<Box<ComplexType>>,
     pub(crate) inner_types: Vec<ComplexType>, // Used by Tuple and UDT
     pub(crate) udt_metadata: Option<UdtMetadata>,
+    pub vector_dimensions: Option<u16>, // Used by Vector type
 }
 
 #[napi]
@@ -109,6 +116,18 @@ impl ComplexType {
         ComplexType::two_support(base_type, support1, None)
     }
 
+    /// Constructor for a vector type
+    pub(crate) fn from_vector(subtype: ComplexType, dimension: u16) -> Self {
+        ComplexType {
+            base_type: CqlType::Vector,
+            support_type_1: Some(Box::new(subtype)),
+            support_type_2: None,
+            inner_types: vec![],
+            udt_metadata: None,
+            vector_dimensions: Some(dimension),
+        }
+    }
+
     /// Constructor for a object with two support types currently only map
     pub(crate) fn two_support(
         base_type: CqlType,
@@ -121,6 +140,7 @@ impl ComplexType {
             support_type_2: support2.map(Box::new),
             inner_types: vec![],
             udt_metadata: None,
+            vector_dimensions: None,
         }
     }
 
@@ -131,6 +151,7 @@ impl ComplexType {
             support_type_2: None,
             inner_types: columns,
             udt_metadata: None,
+            vector_dimensions: None,
         }
     }
 
@@ -162,6 +183,7 @@ impl ComplexType {
                 name: name.clone(),
                 field_names: items.iter().map(|(name, _)| name.to_string()).collect(),
             }),
+            vector_dimensions: None,
         }
     }
 }

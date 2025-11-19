@@ -331,6 +331,12 @@ impl ToNapiValue for CqlValueWrapper {
                         },
                     )
                 }
+                CqlValue::Vector(val) => Vec::to_napi_value(
+                    env,
+                    val.into_iter()
+                        .map(|v| CqlValueWrapper::to_napi_value(env, CqlValueWrapper { inner: v }))
+                        .collect(),
+                ),
                 other => unimplemented!("Missing implementation for CQL value {:?}", other),
             }
         }
@@ -353,7 +359,13 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             NativeType::Float => CqlType::Float,
             NativeType::Int => CqlType::Int,
             NativeType::BigInt => CqlType::BigInt,
-            NativeType::Text => CqlType::Text,
+            // Rust Driver unifies both VARCHAR and TEXT into NativeType::Text.
+            // CPP Driver, in accordance to the CQL protocol, has separate types for VARCHAR and TEXT.
+            // Even worse, Rust Driver even does not handle CQL TEXT correctly!
+            // It errors out on TEXT type...
+            // As the DBs (Cassandra and ScyllaDB) seem to send the VARCHAR type in the protocol,
+            // we will assume that the NativeType::Text is actually a VARCHAR type.
+            NativeType::Text => CqlType::Varchar,
             NativeType::Timestamp => CqlType::Timestamp,
             NativeType::Inet => CqlType::Inet,
             NativeType::SmallInt => CqlType::SmallInt,
@@ -389,10 +401,9 @@ pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
             definition.keyspace.to_string(),
         ),
         ColumnType::Tuple(t) => ComplexType::tuple_from_column_type(t.as_slice()),
-        ColumnType::Vector {
-            typ: _,
-            dimensions: _,
-        } => todo!(),
+        ColumnType::Vector { typ, dimensions } => {
+            ComplexType::from_vector(map_column_type_to_complex_type(typ), *dimensions)
+        }
         other => unimplemented!("Missing implementation for CQL type {:?}", other),
     }
 }
