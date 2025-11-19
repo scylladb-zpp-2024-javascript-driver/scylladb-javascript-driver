@@ -104,7 +104,8 @@ vdescribe(["5.0.0", "scylla"], "Vector tests", function () {
                     " with prepare to be false",
                 function (done) {
                     if (data.subtypeString === "my_udt") {
-                        this.skip();
+                        done();
+                        return;
                     }
                     const id = types.Uuid.random();
                     const vector = new Vector(data.value, data.subtypeString);
