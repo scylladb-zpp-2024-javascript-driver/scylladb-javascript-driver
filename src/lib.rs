@@ -7,6 +7,7 @@ pub mod errors;
 pub mod metadata;
 pub mod options;
 pub mod paging;
+pub mod policies;
 pub mod requests;
 pub mod result;
 pub mod session;

@@ -18,7 +18,8 @@ regex = "1.11.1"
 thiserror = "2.0.12"
 num-bigint = "0.4.6"
 openssl = "0.10.70"
-
+async-trait = "0.1.89"
+dns-lookup = "3.0.1"
 
 [build-dependencies]
 napi-build = "2.1.5"

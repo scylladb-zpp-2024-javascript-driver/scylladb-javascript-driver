@@ -30,3 +30,8 @@ jobs:
         run: npm run unit
       - name: Run not fully integrated unit tests
         run: npm run unit-not-supported
+      - name: Run rust unit tests
+        env:
+          CARGO_TERM_COLOR: always
+          RUST_BACKTRACE: full
+        run: cargo test
