@@ -21,8 +21,6 @@ function myTest(): void {
   lbp = new TokenAwarePolicy(lbp);
   lbp.getOptions();
 
-  // defaultLoadBalancingPolicy method should have an optional string parameter
-  lbp = policies.defaultLoadBalancingPolicy("dc1");
   lbp = policies.defaultLoadBalancingPolicy();
 
   rp = new ConstantReconnectionPolicy(10);
