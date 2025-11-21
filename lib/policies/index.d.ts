@@ -65,6 +65,18 @@ export namespace policies {
         filter?: (host: Host) => boolean;
       });
     }
+    
+    class LoadBalancingConfig {
+      preferDatacenter?: string;
+      preferRack?: string;
+      tokenAware?: boolean;
+      permitDcFailover?: boolean;
+      enableShufflingReplicas?: boolean;
+    }
+    
+    class NewDefaultLoadBalancingPolicy extends LoadBalancingPolicy {
+      constructor(config?: LoadBalancingConfig);
+    }
   }
 
   namespace reconnection {
