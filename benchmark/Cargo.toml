@@ -1,0 +1,30 @@
+[package]
+edition = "2024"
+name = "benchmark"
+version = "0.0.0"
+
+[dependencies]
+scylla = { version = "1.4.0", features = [] }
+tokio = { version = "1.34", features = ["full"] }
+uuid = "1"
+futures = "0.3"
+
+[[bin]]
+name = "select_benchmark"
+path = "logic_rust/select.rs"
+
+[[bin]]
+name = "insert_benchmark"
+path = "logic_rust/insert.rs"
+
+[[bin]]
+name = "concurrent_insert_benchmark"
+path = "logic_rust/concurrent_insert.rs"
+
+[[bin]]
+name = "concurrent_select_benchmark"
+path = "logic_rust/concurrent_select.rs"
+
+[[bin]]
+name = "batch_benchmark"
+path = "logic_rust/batch.rs"

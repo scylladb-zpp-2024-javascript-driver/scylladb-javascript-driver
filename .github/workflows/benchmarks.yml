@@ -26,6 +26,8 @@ jobs:
       - name: Build
         run: ${{ matrix.settings.build }}
         shell: bash
+      - name: Build rust benchmarks
+        run: cargo build -p benchmark
       - name: Install benchmarks dependencies
         run: |
           cd benchmark
