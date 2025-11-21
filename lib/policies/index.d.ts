@@ -4,9 +4,7 @@ import { types } from "../types";
 export namespace policies {
   function defaultAddressTranslator(): addressResolution.AddressTranslator;
 
-  function defaultLoadBalancingPolicy(
-    localDc?: string,
-  ): loadBalancing.LoadBalancingPolicy;
+  function defaultLoadBalancingPolicy(): loadBalancing.LoadBalancingPolicy;
 
   function defaultReconnectionPolicy(): reconnection.ReconnectionPolicy;
 
@@ -174,8 +172,7 @@ export namespace policies {
 
   namespace speculativeExecution {
     class ConstantSpeculativeExecutionPolicy
-      implements SpeculativeExecutionPolicy
-    {
+      implements SpeculativeExecutionPolicy {
       constructor(delay: number, maxSpeculativeExecutions: number);
 
       getOptions(): Map<string, object>;
