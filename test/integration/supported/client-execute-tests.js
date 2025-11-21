@@ -60,6 +60,15 @@ describe("Client @SERVER_API", function () {
             });
         });
 
+        it("should retrieve keyspace name", function (done) {
+            const client = setupInfo.client;
+            client.connect(function (err) {
+                assert.ifError(err);
+                assert.equal(client.keyspace, setupInfo.keyspace);
+                done();
+            });
+        });
+
         // Would require error throwing refactor
         // TODO: Fix this test
         context("with incorrect query parameters", () => {
