@@ -2,8 +2,7 @@ use napi::bindgen_prelude::BigInt;
 use scylla::statement::prepared::PreparedStatement;
 
 use crate::{
-    result::map_column_type_to_complex_type, types::type_wrappers::ComplexType,
-    utils::from_napi_obj::define_js_to_rust_convertible_object,
+    types::type_wrappers::ComplexType, utils::from_napi_obj::define_js_to_rust_convertible_object,
 };
 
 pub(crate) struct PreparedStatementWrapper {
@@ -53,11 +52,11 @@ impl QueryOptionsWrapper {
 
 impl PreparedStatementWrapper {
     /// Get array of expected types for this prepared statement.
-    pub fn get_expected_types(&self) -> Vec<ComplexType> {
+    pub fn get_expected_types(&self) -> Vec<ComplexType<'static>> {
         self.prepared
             .get_variable_col_specs()
             .iter()
-            .map(|e| map_column_type_to_complex_type(e.typ()))
+            .map(|e| ComplexType::new_owned(e.typ().clone()))
             .collect()
     }
 }

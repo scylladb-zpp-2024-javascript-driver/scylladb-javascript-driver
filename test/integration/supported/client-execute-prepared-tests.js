@@ -1388,7 +1388,7 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for client keyspace option
+        // No support for load balancing policies
         // TODO: fix this test
         /* describe("with a different keyspace", function () {
             it("should fill in the keyspace in the query options passed to the lbp", () => {

@@ -99,16 +99,19 @@ impl SessionWrapper {
     /// Prepares a statement through rust driver for a given session
     /// Return expected types for the prepared statement
     #[napi]
-    pub async fn prepare_statement(&self, statement: String) -> napi::Result<Vec<ComplexType>> {
+    pub async fn prepare_statement(
+        &self,
+        statement: String,
+    ) -> napi::Result<Vec<ComplexType<'static>>> {
         let statement: Statement = statement.into();
-        Ok(PreparedStatementWrapper {
+        let w = PreparedStatementWrapper {
             prepared: self
                 .inner
                 .add_prepared_statement(&statement) // TODO: change for add_prepared_statement_to_owned after it is made public
                 .await
                 .map_err(err_to_napi)?,
-        }
-        .get_expected_types())
+        };
+        Ok(w.get_expected_types())
     }
 
     /// Execute a given prepared statement against the database with provided parameters.

@@ -1,19 +1,14 @@
 use crate::{
     errors::err_to_napi,
-    types::{
-        local_date::LocalDateWrapper,
-        type_wrappers::{ComplexType, CqlType},
-        uuid::UuidWrapper,
-    },
+    types::{local_date::LocalDateWrapper, type_wrappers::ComplexType, uuid::UuidWrapper},
 };
 use napi::{
     Env, JsValue, Result,
     bindgen_prelude::{BigInt, Buffer, JsObjectValue, Object, ToNapiValue},
 };
 use scylla::{
-    cluster::metadata::{CollectionType, NativeType},
     errors::IntoRowsResultError,
-    frame::response::result::ColumnType,
+    frame::response::result::ColumnSpec,
     response::query_result::{QueryResult, QueryRowsResult},
     value::{CqlValue, Row},
 };
@@ -118,7 +113,7 @@ impl QueryResultWrapper {
 
     /// Get the names of the columns in order, as they appear in the query result
     #[napi]
-    pub fn get_columns_types(&self) -> Vec<ComplexType> {
+    pub fn get_columns_types(&self) -> Vec<ComplexType<'_>> {
         match &self.inner {
             QueryResultVariant::RowsResult(v) => v,
             QueryResultVariant::EmptyResult(_) => {
@@ -127,7 +122,7 @@ impl QueryResultWrapper {
         }
         .column_specs()
         .iter()
-        .map(|f| map_column_type_to_complex_type(f.typ()))
+        .map(|f: &ColumnSpec| ComplexType::new_borrowed(f.typ()))
         .collect()
     }
 
@@ -340,70 +335,5 @@ impl ToNapiValue for CqlValueWrapper {
                 other => unimplemented!("Missing implementation for CQL value {:?}", other),
             }
         }
-    }
-}
-
-/// Maps rust driver ColumnType representing type of the column with support types
-/// into ComplexType used in this code.
-pub(crate) fn map_column_type_to_complex_type(typ: &ColumnType) -> ComplexType {
-    match typ {
-        ColumnType::Native(native) => ComplexType::simple_type(match native {
-            NativeType::Ascii => CqlType::Ascii,
-            NativeType::Boolean => CqlType::Boolean,
-            NativeType::Blob => CqlType::Blob,
-            NativeType::Counter => CqlType::Counter,
-            NativeType::Date => CqlType::Date,
-            NativeType::Decimal => CqlType::Decimal,
-            NativeType::Double => CqlType::Double,
-            NativeType::Duration => CqlType::Duration,
-            NativeType::Float => CqlType::Float,
-            NativeType::Int => CqlType::Int,
-            NativeType::BigInt => CqlType::BigInt,
-            // Rust Driver unifies both VARCHAR and TEXT into NativeType::Text.
-            // CPP Driver, in accordance to the CQL protocol, has separate types for VARCHAR and TEXT.
-            // Even worse, Rust Driver even does not handle CQL TEXT correctly!
-            // It errors out on TEXT type...
-            // As the DBs (Cassandra and ScyllaDB) seem to send the VARCHAR type in the protocol,
-            // we will assume that the NativeType::Text is actually a VARCHAR type.
-            NativeType::Text => CqlType::Varchar,
-            NativeType::Timestamp => CqlType::Timestamp,
-            NativeType::Inet => CqlType::Inet,
-            NativeType::SmallInt => CqlType::SmallInt,
-            NativeType::TinyInt => CqlType::TinyInt,
-            NativeType::Time => CqlType::Time,
-            NativeType::Timeuuid => CqlType::Timeuuid,
-            NativeType::Uuid => CqlType::Uuid,
-            NativeType::Varint => CqlType::Varint,
-            other => unimplemented!("Missing implementation for CQL native type {:?}", other),
-        }),
-        ColumnType::Collection { frozen: _, typ } => match typ {
-            CollectionType::List(column_type) => ComplexType::one_support(
-                CqlType::List,
-                Some(map_column_type_to_complex_type(column_type)),
-            ),
-            CollectionType::Map(column_type, column_type1) => ComplexType::two_support(
-                CqlType::Map,
-                Some(map_column_type_to_complex_type(column_type)),
-                Some(map_column_type_to_complex_type(column_type1)),
-            ),
-            CollectionType::Set(column_type) => ComplexType::one_support(
-                CqlType::Set,
-                Some(map_column_type_to_complex_type(column_type)),
-            ),
-            other => unimplemented!("Missing implementation for CQL Collection type {:?}", other),
-        },
-        ColumnType::UserDefinedType {
-            frozen: _,
-            definition,
-        } => ComplexType::from_udt_column_type(
-            definition.field_types.as_slice(),
-            definition.name.to_string(),
-            definition.keyspace.to_string(),
-        ),
-        ColumnType::Tuple(t) => ComplexType::tuple_from_column_type(t.as_slice()),
-        ColumnType::Vector { typ, dimensions } => {
-            ComplexType::from_vector(map_column_type_to_complex_type(typ), *dimensions)
-        }
-        other => unimplemented!("Missing implementation for CQL type {:?}", other),
     }
 }
