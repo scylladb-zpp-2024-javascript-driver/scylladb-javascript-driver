@@ -1054,8 +1054,8 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for warnings in result set
         // TODO: fix this test
+        // Rust driver throws an error, instead of returning a warning
         /* vit(
             "2.2",
             "should include the warning in the ResultSet",

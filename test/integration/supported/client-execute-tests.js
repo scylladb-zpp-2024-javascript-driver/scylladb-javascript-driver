@@ -1088,12 +1088,15 @@ describe("Client @SERVER_API", function () {
             );
         });
 
-        // No support for info field
-        // TODO: Fix this test
-        /* vit(
+        vit(
             "2.2",
             "should include the warning in the ResultSet",
             function (done) {
+                // When testing on scylla, those warnings are not returned by the database
+                if (helper.getServerInfo().isScylla) {
+                    done();
+                    return;
+                }
                 const client = setupInfo.client;
                 let loggedMessage = false;
                 client.on("log", function (level, className, message) {
@@ -1124,14 +1127,14 @@ describe("Client @SERVER_API", function () {
                     assert.strictEqual(result.info.warnings.length, 1);
                     helper.assertContains(result.info.warnings[0], "batch");
                     helper.assertContains(result.info.warnings[0], "exceeding");
-                    assert.ok(loggedMessage);
+                    // TODO: Fix this test
+                    // Client does not expose log events.
+                    /* assert.ok(loggedMessage); */
                     done();
                 });
             },
-        ); */
+        );
 
-        // No support for buffer as input to any data type
-        // TODO: Fix this test
         it("should support buffer as input for any data type", () => {
             const buffer4 = utils.allocBufferFromArray([0, 0, 0, 1]);
             const buffer8 = utils.allocBuffer(8);
