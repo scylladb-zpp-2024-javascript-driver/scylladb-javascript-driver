@@ -19,6 +19,8 @@ thiserror = "2.0.12"
 num-bigint = "0.4.6"
 openssl = "0.10.70"
 
+[lints.rust]
+unsafe-op-in-unsafe-fn = "warn"
 
 [build-dependencies]
 napi-build = "2.1.5"
