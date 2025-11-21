@@ -11,11 +11,6 @@ const types = require("../../../lib/types");
 describe("Client @SERVER_API", function () {
     this.timeout(60000);
     context("with ssl enabled", function () {
-        // CCM does not support Scylla with ssl
-        // Would require merging of https://github.com/scylladb/scylla-ccm/pull/682
-        if (helper.getServerInfo().isScylla) {
-            return;
-        }
         const keyspace = helper.getRandomName("ks");
         const table = keyspace + "." + helper.getRandomName("table");
         const setupQueries = [
