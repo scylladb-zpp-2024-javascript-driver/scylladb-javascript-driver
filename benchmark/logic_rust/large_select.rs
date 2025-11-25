@@ -5,5 +5,5 @@ mod parametrized_select;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    parametrized_select_benchmark(10).await
+    parametrized_select_benchmark(5000).await
 }

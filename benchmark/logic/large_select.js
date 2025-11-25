@@ -2,4 +2,4 @@
 
 const selectWithRows = require("./parametrized_select");
 
-selectWithRows(10);
+selectWithRows(5000);
