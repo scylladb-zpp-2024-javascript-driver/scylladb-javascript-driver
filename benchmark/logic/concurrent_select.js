@@ -1,6 +1,6 @@
 "use strict";
 const async = require("async");
-// Possible values of argv[2] (driver) are scylladb-javascript-driver and cassandra-driver.
+// Possible values of argv[2] (driver) are scylladb-nodejs-rs-driver and cassandra-driver.
 const cassandra = require(process.argv[2]);
 const utils = require("./utils");
 const { exit } = require("process");
@@ -34,11 +34,7 @@ async.series(
                         query: 'SELECT * FROM benchmarks.basic',
                     });
                 }
-                try {
-                    const _result = await cassandra.concurrent.executeConcurrent(client, allParameters, { prepare: true, collectResults: true });
-                } catch (err) {
-                    return next(err);
-                }
+                utils
             }
             await utils.repeatCapped(limited, iterCnt);
             next();

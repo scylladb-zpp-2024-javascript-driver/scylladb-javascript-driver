@@ -87,7 +87,7 @@ for ben in benchmarks:
     df_mem[ben] = pd.DataFrame(columns=['n', libs[0], libs[1], 'rust-driver'])
 
     # Build Rust benchmark
-    data = run("cargo build --bin "+name_rust[ben]+" -r",
+    data = run("cargo build -p benchmark --bin "+name_rust[ben]+" -r",
                capture_output=True, shell=True, text=True,
                executable='/bin/bash')
 
@@ -107,7 +107,7 @@ for ben in benchmarks:
         # ------ rust -------
         for _ in range(repeat):
             data = run_process("CNT=" + str(int(n)) +
-                               " /usr/bin/time -v cargo run --bin " +
+                               " /usr/bin/time -v cargo run -p benchmark --bin " +
                                name_rust[ben] + " -r ")
 
             if data.returncode != 0:
@@ -223,5 +223,5 @@ wh = SyncWebhook.from_url(os.environ['DISCORD_BENCHMARKS_WEBHOOK'])
 
 wh.send(content="Branch: " + branch +
         " commit: https://github.com/scylladb-zpp-2024-javascript-driver/" +
-        "scylladb-javascript-driver/commit/"
+        "scylladb-nodejs-rs-driver/commit/"
         + commit, file=File("graph.png"))
