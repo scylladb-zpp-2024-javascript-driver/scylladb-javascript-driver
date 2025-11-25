@@ -227,6 +227,5 @@ commit = data.stdout.replace('\n', '')
 wh = SyncWebhook.from_url(os.environ['DISCORD_BENCHMARKS_WEBHOOK'])
 
 wh.send(content="Branch: " + branch +
-        " commit: https://github.com/scylladb-zpp-2024-javascript-driver/" +
-        "scylladb-nodejs-rs-driver/commit/"
-        + commit, file=File("graph.png"))
+        " commit: https://github.com/scylladb/nodejs-rs-driver/commit/" +
+        commit, file=File("graph.png"))
