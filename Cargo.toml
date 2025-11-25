@@ -22,6 +22,9 @@ openssl = "0.10.70"
 [lints.rust]
 unsafe-op-in-unsafe-fn = "warn"
 
+[workspace]
+members = ["benchmark"]
+
 [build-dependencies]
 napi-build = "2.1.5"
 
@@ -32,22 +35,3 @@ strip = "symbols"
 [profile.dev]
 panic = "abort"
 
-[[bin]]
-name = "select_benchmark"
-path = "benchmark/logic_rust/select.rs"
-
-[[bin]]
-name = "insert_benchmark"
-path = "benchmark/logic_rust/insert.rs"
-
-[[bin]]
-name = "concurrent_insert_benchmark"
-path = "benchmark/logic_rust/concurrent_insert.rs"
-
-[[bin]]
-name = "concurrent_select_benchmark"
-path = "benchmark/logic_rust/concurrent_select.rs"
-
-[[bin]]
-name = "batch_benchmark"
-path = "benchmark/logic_rust/batch.rs"
