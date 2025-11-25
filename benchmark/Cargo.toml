@@ -28,3 +28,7 @@ path = "logic_rust/concurrent_select.rs"
 [[bin]]
 name = "batch_benchmark"
 path = "logic_rust/batch.rs"
+
+[[bin]]
+name = "paging_benchmark"
+path = "logic_rust/paging.rs"
