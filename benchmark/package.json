@@ -1,5 +1,5 @@
 {
-    "name": "scylladb-javascript-driver-benchmarks",
+    "name": "scylladb-nodejs-rs-driver-benchmarks",
     "description": "Benchmarks for the driver",
     "version": "0.0.2",
     "license": "Apache-2.0",

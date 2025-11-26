@@ -60,6 +60,8 @@ n_min["concurrent_select.js"] = 400_000 / 64
 n_min["insert.js"] = 400_000 / 64
 n_min["select.js"] = 100_000 / 64
 n_min["batch.js"] = 3_000_000 / 64
+n_min["paging.js"] = 10_000 / 64
+n_min["large_select.js"] = 4_000 / 64
 
 steps = {}
 
@@ -68,7 +70,8 @@ step = 4
 # --------- libs and rust benchmark names ----------
 libs = ["scylladb-nodejs-rs-driver", "cassandra-driver"]
 benchmarks = ["concurrent_insert.js", "insert.js", "select.js",
-              "concurrent_select.js", "batch.js"]
+             "concurrent_select.js", "batch.js", "paging.js",
+             "large_select.js"]
 
 name_rust = {}
 name_rust["concurrent_insert.js"] = "concurrent_insert_benchmark"
@@ -76,6 +79,8 @@ name_rust["insert.js"] = "insert_benchmark"
 name_rust["select.js"] = "select_benchmark"
 name_rust["concurrent_select.js"] = "concurrent_select_benchmark"
 name_rust["batch.js"] = "batch_benchmark"
+name_rust["paging.js"] = "paging_benchmark"
+name_rust["large_select.js"] = "large_select_benchmark"
 
 
 df = {}
@@ -87,7 +92,7 @@ for ben in benchmarks:
     df_mem[ben] = pd.DataFrame(columns=['n', libs[0], libs[1], 'rust-driver'])
 
     # Build Rust benchmark
-    data = run("cargo build --bin "+name_rust[ben]+" -r",
+    data = run("cargo build -p benchmark --bin "+name_rust[ben]+" -r",
                capture_output=True, shell=True, text=True,
                executable='/bin/bash')
 
@@ -107,7 +112,7 @@ for ben in benchmarks:
         # ------ rust -------
         for _ in range(repeat):
             data = run_process("CNT=" + str(int(n)) +
-                               " /usr/bin/time -v cargo run --bin " +
+                               " /usr/bin/time -v cargo run -p benchmark --bin " +
                                name_rust[ben] + " -r ")
 
             if data.returncode != 0:
@@ -222,6 +227,5 @@ commit = data.stdout.replace('\n', '')
 wh = SyncWebhook.from_url(os.environ['DISCORD_BENCHMARKS_WEBHOOK'])
 
 wh.send(content="Branch: " + branch +
-        " commit: https://github.com/scylladb-zpp-2024-javascript-driver/" +
-        "scylladb-javascript-driver/commit/"
-        + commit, file=File("graph.png"))
+        " commit: https://github.com/scylladb/nodejs-rs-driver/commit/" +
+        commit, file=File("graph.png"))

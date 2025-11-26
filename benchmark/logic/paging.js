@@ -1,9 +1,10 @@
 "use strict";
 const async = require("async");
-// Possible values of argv[2] (driver) are scylladb-nodejs-rs-driver and cassandra-driver.
+// Possible values of argv[2] (driver) are scylladb-javascript-driver and cassandra-driver.
 const cassandra = require(process.argv[2]);
 const utils = require("./utils");
 const { exit } = require("process");
+const { assert } = require("console");
 
 const client = new cassandra.Client(utils.getClientArgs());
 const iterCnt = parseInt(process.argv[3]);
@@ -16,10 +17,10 @@ async.series(
         async function insert(next) {
             let query =
                 "INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)";
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 50; i++) {
                 let id = cassandra.types.Uuid.random();
                 try {
-                    await client.execute(query, [id, 100], { prepare: true });
+                    await client.execute(query, [id, 10], { prepare: true });
                 } catch (err) {
                     return next(err);
                 }
@@ -28,13 +29,19 @@ async.series(
         },
         async function select(next) {
             let limited = async function (steps) {
-                let allParameters = [];
                 for (let i = 0; i < steps; i++) {
-                    allParameters.push({
-                        query: 'SELECT * FROM benchmarks.basic',
-                    });
+                    try {
+                        let s = 0;
+                        let q = await client.execute('SELECT * FROM benchmarks.basic', [], { prepare: true, fetchSize: 1 });
+                        for await (const row of q) {
+                            s += row['val'];
+                        }
+                        assert(s === 500);
+                    } catch (err) {
+                        return next(err);
+                    }
+
                 }
-                utils
             }
             await utils.repeatCapped(limited, iterCnt);
             next();

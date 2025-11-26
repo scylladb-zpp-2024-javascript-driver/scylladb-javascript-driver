@@ -14,6 +14,10 @@ name = "select_benchmark"
 path = "logic_rust/select.rs"
 
 [[bin]]
+name = "large_select_benchmark"
+path = "logic_rust/large_select.rs"
+
+[[bin]]
 name = "insert_benchmark"
 path = "logic_rust/insert.rs"
 
@@ -28,3 +32,7 @@ path = "logic_rust/concurrent_select.rs"
 [[bin]]
 name = "batch_benchmark"
 path = "logic_rust/batch.rs"
+
+[[bin]]
+name = "paging_benchmark"
+path = "logic_rust/paging.rs"

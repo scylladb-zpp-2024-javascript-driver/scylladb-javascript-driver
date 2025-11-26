@@ -1,11 +1,9 @@
-use scylla::{
-    client::{caching_session::CachingSession, session_builder::SessionBuilder},
-    statement::batch::{Batch, BatchStatement},
-};
+use scylla::statement::batch::{Batch, BatchStatement};
 use std::{cmp::min, env};
 use uuid::Uuid;
 
-const DEFAULT_CACHE_SIZE: u32 = 512;
+mod common;
+
 // Empirically determined max batch size, that doesn't cause database error.
 const STEP: i32 = 3971;
 
@@ -16,29 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|s: String| s.parse::<i32>().ok())
         .expect("CNT parameter is required.");
 
-    let uri: String = env::var("SCYLLA_URI").unwrap_or_else(|_| "172.42.0.2:9042".to_string());
-
-    let session = SessionBuilder::new().known_node(uri).build().await?;
-
-    let session: CachingSession = CachingSession::from(session, DEFAULT_CACHE_SIZE as usize);
-
-    session
-        .execute_unpaged(
-            "CREATE KEYSPACE IF NOT EXISTS benchmarks WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': '1' }", 
-            &[],
-        )
-        .await?;
-
-    session
-        .execute_unpaged("DROP TABLE IF EXISTS benchmarks.basic", &[])
-        .await?;
-
-    session
-        .execute_unpaged(
-            "CREATE TABLE benchmarks.basic (id uuid, val int, PRIMARY KEY(id))",
-            &[],
-        )
-        .await?;
+    let session = common::init_simple_table().await?;
 
     let insert_query = "INSERT INTO benchmarks.basic (id, val) VALUES (?, ?)";
 
