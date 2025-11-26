@@ -846,7 +846,7 @@ describe("Client", function () {
             );
         }); */
         // TODO: Fix this test
-        // No support for warnings in ResultSet
+        // Rust driver throws an error, instead of returning a warning
         /* vit(
             "2.2",
             "should include the warning in the ResultSet",
