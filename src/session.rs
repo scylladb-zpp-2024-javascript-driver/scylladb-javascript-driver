@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use openssl::ssl::{SslContextBuilder, SslMethod, SslVerifyMode};
 use scylla::client::SelfIdentity;
 use scylla::client::caching_session::CachingSession;
 use scylla::client::session_builder::SessionBuilder;
+use scylla::policies::load_balancing::{self, LoadBalancingPolicy};
 use scylla::response::PagingState;
 use scylla::statement::batch::Batch;
 use scylla::statement::{Consistency, SerialConsistency, Statement};
@@ -24,7 +27,17 @@ const DEFAULT_CACHE_SIZE: u32 = 512;
 // This specific option is added, as it's used in the existing integration tests
 #[rustfmt::skip] // fmt splits the struct definition into multiple lines
 define_js_to_rust_convertible_object!(SslOptions {
-    reject_unauthorized, rejectUnauthorized: bool
+    reject_unauthorized, rejectUnauthorized: bool,
+});
+
+#[rustfmt::skip] // fmt splits the struct definition into multiple lines
+define_js_to_rust_convertible_object!(
+LoadBalancingConfig {
+    prefer_datacenter, preferDatacenter: String,
+    prefer_rack, preferRack: String,
+    token_aware, tokenAware: bool,
+    permit_dc_failover, permitDcFailover: bool,
+    enable_shuffling_replicas, enableShufflingReplicas: bool,
 });
 
 define_js_to_rust_convertible_object!(SessionOptions {
@@ -35,7 +48,8 @@ define_js_to_rust_convertible_object!(SessionOptions {
     credentials_username, credentialsUsername: String,
     credentials_password, credentialsPassword: String,
     cache_size, cacheSize: u32,
-    ssl_options, sslOptions: SslOptions
+    ssl_options, sslOptions: SslOptions,
+    load_balancing_config, loadBalancingConfig: LoadBalancingConfig,
 });
 
 #[napi]
@@ -46,6 +60,7 @@ pub struct BatchWrapper {
 #[napi]
 pub struct SessionWrapper {
     pub(crate) inner: CachingSession,
+    pub(crate) session_load_balancing_policy: Option<Arc<dyn LoadBalancingPolicy>>,
 }
 
 #[napi]
@@ -59,7 +74,12 @@ impl SessionWrapper {
             session,
             options.cache_size.unwrap_or(DEFAULT_CACHE_SIZE) as usize,
         );
-        Ok(SessionWrapper { inner: session })
+        Ok(SessionWrapper {
+            inner: session,
+            session_load_balancing_policy: create_load_balancing_policy(
+                &options.load_balancing_config,
+            )?,
+        })
     }
 
     /// Returns the name of the current keyspace
@@ -86,7 +106,7 @@ impl SessionWrapper {
         params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let statement: Statement = apply_statement_options(query.into(), &options.options)?;
+        let statement: Statement = self.apply_statement_options(query.into(), &options.options)?;
         let query_result = self
             .inner
             .get_session()
@@ -131,7 +151,7 @@ impl SessionWrapper {
         params: Vec<EncodedValuesWrapper>,
         options: &QueryOptionsWrapper,
     ) -> napi::Result<QueryResultWrapper> {
-        let query = apply_statement_options(query.into(), &options.options)?;
+        let query = self.apply_statement_options(query.into(), &options.options)?;
         QueryResultWrapper::from_query(
             self.inner
                 .execute_unpaged(query, params)
@@ -170,7 +190,7 @@ impl SessionWrapper {
         options: &QueryOptionsWrapper,
         paging_state: Option<&PagingStateWrapper>,
     ) -> napi::Result<PagingResult> {
-        let statement: Statement = apply_statement_options(query.into(), &options.options)?;
+        let statement: Statement = self.apply_statement_options(query.into(), &options.options)?;
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
@@ -204,7 +224,7 @@ impl SessionWrapper {
         let paging_state = paging_state
             .map(|e| e.inner.clone())
             .unwrap_or(PagingState::start());
-        let prepared = apply_statement_options(query.into(), &options.options)?;
+        let prepared = self.apply_statement_options(query.into(), &options.options)?;
 
         let (result, paging_state) = self
             .inner
@@ -216,21 +236,38 @@ impl SessionWrapper {
             paging_state: paging_state.into(),
         })
     }
-}
 
-/// Creates object representing a prepared batch of statements.
-/// Requires each passed statement to be already prepared.
-#[napi]
-pub fn create_prepared_batch(
-    statements: Vec<String>,
-    options: &QueryOptionsWrapper,
-) -> napi::Result<BatchWrapper> {
-    let mut batch: Batch = Default::default();
-    statements
-        .iter()
-        .for_each(|q| batch.append_statement(q.as_str()));
-    batch = apply_batch_options(batch, &options.options)?;
-    Ok(BatchWrapper { inner: batch })
+    /// Creates object representing a prepared batch of statements.
+    /// Requires each passed statement to be already prepared.
+    #[napi]
+    pub fn create_prepared_batch(
+        &self,
+        statements: Vec<String>,
+        options: &QueryOptionsWrapper,
+    ) -> napi::Result<BatchWrapper> {
+        let mut batch: Batch = Default::default();
+        statements
+            .iter()
+            .for_each(|q| batch.append_statement(q.as_str()));
+        batch = self.apply_batch_options(batch, &options.options)?;
+        Ok(BatchWrapper { inner: batch })
+    }
+
+    /// Creates object representing unprepared batch of statements.
+    #[napi]
+    pub fn create_unprepared_batch(
+        &self,
+        statements: Vec<String>,
+        options: &QueryOptionsWrapper,
+    ) -> napi::Result<BatchWrapper> {
+        let mut batch: Batch = Default::default();
+        statements
+            .into_iter()
+            .for_each(|q| batch.append_statement(q.as_str()));
+
+        batch = self.apply_batch_options(batch, &options.options)?;
+        Ok(BatchWrapper { inner: batch })
+    }
 }
 
 fn configure_session_builder(options: &SessionOptions) -> napi::Result<SessionBuilder> {
@@ -269,59 +306,87 @@ fn configure_session_builder(options: &SessionOptions) -> napi::Result<SessionBu
     Ok(builder)
 }
 
-/// Creates object representing unprepared batch of statements.
-#[napi]
-pub fn create_unprepared_batch(
-    statements: Vec<String>,
-    options: &QueryOptionsWrapper,
-) -> napi::Result<BatchWrapper> {
-    let mut batch: Batch = Default::default();
-    statements
-        .into_iter()
-        .for_each(|q| batch.append_statement(q.as_str()));
+fn create_load_balancing_policy(
+    config: &Option<LoadBalancingConfig>,
+) -> napi::Result<Option<Arc<dyn LoadBalancingPolicy>>> {
+    match config {
+        Some(config) => {
+            let mut builder = load_balancing::DefaultPolicyBuilder::new();
 
-    batch = apply_batch_options(batch, &options.options)?;
-    Ok(BatchWrapper { inner: batch })
+            match (&config.prefer_datacenter, &config.prefer_rack) {
+                (Some(dc), None) => {
+                    builder = builder.prefer_datacenter(dc.to_owned());
+                }
+                (Some(dc), Some(rack)) => {
+                    builder = builder.prefer_datacenter_and_rack(dc.to_owned(), rack.to_owned());
+                }
+                (None, Some(_)) => {
+                    return Err(js_error(
+                        "Rack preference cannot be set without setting dc preference",
+                    ));
+                }
+                (None, None) => {}
+            }
+
+            if let Some(token_aware) = config.token_aware {
+                builder = builder.token_aware(token_aware);
+            }
+            if let Some(permit_dc_failover) = config.permit_dc_failover {
+                builder = builder.permit_dc_failover(permit_dc_failover);
+            }
+            if let Some(enable_shuffling_replicas) = config.enable_shuffling_replicas {
+                builder = builder.enable_shuffling_replicas(enable_shuffling_replicas);
+            }
+            Ok(Some(builder.build()))
+        }
+        None => Ok(None),
+    }
 }
 
 /// Macro to allow applying options to any query type
 macro_rules! make_apply_options {
     ($statement_type: ty, $fn_name: ident) => {
-        fn $fn_name(
-            mut statement: $statement_type,
-            options: &QueryOptionsObj,
-        ) -> napi::Result<$statement_type> {
-            if let Some(o) = options.consistency {
-                statement.set_consistency(
-                    Consistency::try_from(o)
-                        .map_err(|_| js_error(format!("Unknown consistency value: {o}")))?,
-                );
-            }
+        impl SessionWrapper {
+            fn $fn_name(
+                &self,
+                mut statement: $statement_type,
+                options: &QueryOptionsObj,
+            ) -> napi::Result<$statement_type> {
+                if let Some(o) = options.consistency {
+                    statement.set_consistency(
+                        Consistency::try_from(o)
+                            .map_err(|_| js_error(format!("Unknown consistency value: {o}")))?,
+                    );
+                }
 
-            if let Some(o) = options.serial_consistency {
-                statement
-                    .set_serial_consistency(Some(SerialConsistency::try_from(o).map_err(
-                        |_| js_error(format!("Unknown serial consistency value: {o}")),
+                if let Some(o) = options.serial_consistency {
+                    statement.set_serial_consistency(Some(
+                        SerialConsistency::try_from(o).map_err(|_| {
+                            js_error(format!("Unknown serial consistency value: {o}"))
+                        })?,
+                    ));
+                }
+
+                if let Some(o) = options.is_idempotent {
+                    statement.set_is_idempotent(o);
+                }
+
+                if let Some(o) = &options.timestamp {
+                    statement.set_timestamp(Some(bigint_to_i64(
+                        o.clone(),
+                        "Timestamp cannot overflow i64",
                     )?));
-            }
+                }
+                // TODO: Update it to allow collection of information from traced query
+                // Currently it's just passing the value, but not able to access any tracing information
+                if let Some(o) = options.trace_query {
+                    statement.set_tracing(o);
+                }
 
-            if let Some(o) = options.is_idempotent {
-                statement.set_is_idempotent(o);
-            }
+                statement.set_load_balancing_policy(self.session_load_balancing_policy.clone());
 
-            if let Some(o) = &options.timestamp {
-                statement.set_timestamp(Some(bigint_to_i64(
-                    o.clone(),
-                    "Timestamp cannot overflow i64",
-                )?));
+                Ok(statement)
             }
-            // TODO: Update it to allow collection of information from traced query
-            // Currently it's just passing the value, but not able to access any tracing information
-            if let Some(o) = options.trace_query {
-                statement.set_tracing(o);
-            }
-
-            Ok(statement)
         }
     };
 }
@@ -330,20 +395,24 @@ macro_rules! make_apply_options {
 macro_rules! make_non_batch_apply_options {
     ($statement_type: ty, $fn_name: ident, $partial_name: ident) => {
         make_apply_options!($statement_type, $partial_name);
-        fn $fn_name(
-            statement: $statement_type,
-            options: &QueryOptionsObj,
-        ) -> napi::Result<$statement_type> {
-            // Statement with partial options applied -
-            // those that are common with batch queries
-            let mut statement_with_part_of_options_applied = $partial_name(statement, options)?;
-            if let Some(o) = options.fetch_size {
-                if !o.is_positive() {
-                    return Err(js_error("fetch size must be a positive value"));
+        impl SessionWrapper {
+            fn $fn_name(
+                &self,
+                statement: $statement_type,
+                options: &QueryOptionsObj,
+            ) -> napi::Result<$statement_type> {
+                // Statement with partial options applied -
+                // those that are common with batch queries
+                let mut statement_with_part_of_options_applied =
+                    self.$partial_name(statement, options)?;
+                if let Some(o) = options.fetch_size {
+                    if !o.is_positive() {
+                        return Err(js_error("fetch size must be a positive value"));
+                    }
+                    statement_with_part_of_options_applied.set_page_size(o);
                 }
-                statement_with_part_of_options_applied.set_page_size(o);
+                Ok(statement_with_part_of_options_applied)
             }
-            Ok(statement_with_part_of_options_applied)
         }
     };
 }
