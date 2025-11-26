@@ -1,9 +1,9 @@
 use crate::{
-    errors::err_to_napi,
+    errors::{ConvertedResult, IntoConvertedError, JsResult, with_custom_error_sync},
     types::{local_date::LocalDateWrapper, type_wrappers::ComplexType, uuid::UuidWrapper},
 };
 use napi::{
-    Env, JsValue, Result,
+    Env, JsValue,
     bindgen_prelude::{BigInt, Buffer, JsObjectValue, Object, ToNapiValue},
 };
 use scylla::{
@@ -63,12 +63,12 @@ pub struct MetaColumnWrapper {
 #[napi]
 impl QueryResultWrapper {
     /// Converts rust query result into query result wrapper that can be passed to NAPI-RS
-    pub fn from_query(result: QueryResult) -> napi::Result<QueryResultWrapper> {
+    pub fn from_query(result: QueryResult) -> ConvertedResult<QueryResultWrapper> {
         let value = match result.into_rows_result() {
             Ok(v) => QueryResultVariant::RowsResult(v),
             Err(IntoRowsResultError::ResultNotRows(v)) => QueryResultVariant::EmptyResult(v),
             Err(IntoRowsResultError::ResultMetadataLazyDeserializationError(e)) => {
-                return Err(err_to_napi(e));
+                return Err(e).into_converted_error();
             }
         };
         Ok(QueryResultWrapper { inner: value })
@@ -76,24 +76,26 @@ impl QueryResultWrapper {
 
     /// Extracts all the rows of the result into a vector of rows
     #[napi]
-    pub fn get_rows(&self) -> napi::Result<Option<Vec<RowWrapper>>> {
-        let result = match &self.inner {
-            QueryResultVariant::RowsResult(v) => v,
-            QueryResultVariant::EmptyResult(_) => {
-                return Ok(None);
-            }
-        };
+    pub fn get_rows(&self) -> JsResult<Option<Vec<RowWrapper>>> {
+        with_custom_error_sync(|| {
+            let result = match &self.inner {
+                QueryResultVariant::RowsResult(v) => v,
+                QueryResultVariant::EmptyResult(_) => {
+                    return Ok(None);
+                }
+            };
 
-        let rows = result.rows::<Row>()
+            let rows = result.rows::<Row>()
             .expect("Type check against the Row type has failed; this is a bug in the underlying Rust driver");
 
-        Ok(Some(
-            rows.map(|f| {
-                f.map(|v| RowWrapper { inner: v.columns })
-                    .map_err(err_to_napi)
-            })
-            .collect::<Result<Vec<_>, _>>()?,
-        ))
+            Ok(Some(
+                rows.map(|f| {
+                    f.map(|v| RowWrapper { inner: v.columns })
+                        .into_converted_error()
+                })
+                .collect::<ConvertedResult<Vec<_>>>()?,
+            ))
+        })
     }
 
     /// Get the names of the columns in order, as they appear in the query result
