@@ -32,6 +32,7 @@ define_js_to_rust_convertible_object!(SessionOptions {
     keyspace, keyspace: String,
     application_name, applicationName: String,
     application_version, applicationVersion: String,
+    client_id, clientId: String,
     credentials_username, credentialsUsername: String,
     credentials_password, credentialsPassword: String,
     cache_size, cacheSize: u32,
@@ -361,6 +362,9 @@ fn self_identity(options: &SessionOptions) -> SelfIdentity<'static> {
     }
     if let Some(app_version) = &options.application_name {
         self_identity.set_application_version(app_version.clone());
+    }
+    if let Some(client_id) = &options.client_id {
+        self_identity.set_client_id(client_id.to_owned());
     }
     self_identity
 }
