@@ -1,7 +1,7 @@
 use napi::bindgen_prelude::{Buffer, ToNapiValue};
 use scylla::response::{PagingState, PagingStateResponse};
 
-use crate::{errors::js_error, result::QueryResultWrapper};
+use crate::{errors::js_error, result::QueryResultWrapper, session::QueryExecuter};
 
 #[napi]
 pub struct PagingStateWrapper {
@@ -45,6 +45,14 @@ impl From<PagingStateResponse> for PagingStateResponseWrapper {
 pub struct PagingResult {
     pub(crate) paging_state: PagingStateResponseWrapper,
     pub(crate) result: QueryResultWrapper,
+    pub(crate) executer: Option<QueryExecuter>,
+}
+
+impl PagingResult {
+    pub(crate) fn with_executer(mut self, executer: QueryExecuter) -> Self {
+        self.executer = Some(executer);
+        self
+    }
 }
 
 impl ToNapiValue for PagingResult {
@@ -62,6 +70,7 @@ impl ToNapiValue for PagingResult {
                 vec![
                     PagingStateResponseWrapper::to_napi_value(env, val.paging_state),
                     QueryResultWrapper::to_napi_value(env, val.result),
+                    Option::to_napi_value(env, val.executer),
                 ],
             )
         }
