@@ -10,12 +10,14 @@ use scylla::{
 
 use crate::errors::js_error;
 
+#[derive(Clone)]
 enum MaybeUnsetNullableValue<T> {
     Value(T),
     Null,
     Unset,
 }
 
+#[derive(Clone)]
 pub struct EncodedValuesWrapper {
     inner: MaybeUnsetNullableValue<Vec<u8>>,
 }

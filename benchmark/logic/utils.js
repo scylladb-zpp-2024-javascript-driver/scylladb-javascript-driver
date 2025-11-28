@@ -52,7 +52,22 @@ async function repeatCapped(callback, n) {
     
 }
 
+async function executeMultipleRepeatCapped(callback, n, asyncLevel) {
+    /**
+     * @type {Array<Promise<_>>}
+     */
+    let promises = [];
+    for (let c = 0; c< asyncLevel; c++) {
+        promises.push(repeatCapped(callback, n));
+    }
+    for (let c = 0; c< asyncLevel; c++) {
+        await promises[c];
+    }
+    
+}
+
 exports.tableSchemaBasic = tableSchemaBasic;
 exports.getClientArgs = getClientArgs;
 exports.prepareDatabase = prepareDatabase;
 exports.repeatCapped = repeatCapped;
+exports.executeMultipleRepeatCapped = executeMultipleRepeatCapped;

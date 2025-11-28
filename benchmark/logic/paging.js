@@ -43,7 +43,7 @@ async.series(
 
                 }
             }
-            await utils.repeatCapped(limited, iterCnt);
+            await utils.executeMultipleRepeatCapped(limited, iterCnt, 20);
             next();
         },
         function r() {
